@@ -3,7 +3,7 @@ import type { Site, Page, Links, Socials } from "@types"
 // Global
 export const SITE: Site = {
   TITLE: "sehahub",
-  DESCRIPTION: "백엔드·인프라 중심 풀스택 개발자 seha의 작업물. 라이브 데모로 직접 만져볼 수 있습니다.",
+  DESCRIPTION: "안녕하세요 개발자 새하(seha)입니다.",
   AUTHOR: "seha",
 }
 
@@ -60,7 +60,7 @@ export const SOCIALS: Socials = [
     HREF: "mailto:sehahub.info@gmail.com",
   },
   {
-    NAME: "Github",
+    NAME: "GitHub",
     ICON: "github",
     TEXT: "koseha",
     HREF: "https://github.com/koseha",

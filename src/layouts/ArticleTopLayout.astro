@@ -29,14 +29,16 @@ const repoUrl = collection === "projects" ? data.repoUrl : null
       <svg class="size-5 stroke-current">
         <use href="/ui.svg#calendar"/>
       </svg>
-      {formatDate(date)}
+      {data.period ?? formatDate(date)}
     </div>
-    <div class="flex items-center gap-2">
-      <svg class="size-5 stroke-current">
-        <use href="/ui.svg#book-open"/>
-      </svg>
-      {readingTime(body)}
-    </div>
+    {collection === "blog" && (
+      <div class="flex items-center gap-2">
+        <svg class="size-5 stroke-current">
+          <use href="/ui.svg#book-open"/>
+        </svg>
+        {readingTime(body)}
+      </div>
+    )}
   </div>
   <h1 class="text-3xl font-semibold text-black dark:text-white mt-2">
     {title}

@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        "sans": ["Pretendard", ...defaultTheme.fontFamily.sans],
+        "sans": ["Atkinson Hyperlegible", "Wanted Sans Variable", ...defaultTheme.fontFamily.sans],
       },
       typography: {
         DEFAULT: {

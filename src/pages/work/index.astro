@@ -19,12 +19,9 @@ const work = await Promise.all(
 function formatWorkDate(input: Date | string) {
   if (typeof input === "string") return input
 
-  const month = input.toLocaleDateString("en-US", {
-    month: "short",
-  })
-
-  const year = new Date(input).getFullYear()
-  return `${month} ${year}`
+  const year = input.getFullYear()
+  const month = String(input.getMonth() + 1).padStart(2, "0")
+  return `${year}.${month}`
 }
 ---
 
@@ -43,7 +40,7 @@ function formatWorkDate(input: Date | string) {
           work.map((entry) => (
             <li class="animate border-b border-black/10 dark:border-white/25 mt-4 py-8 first-of-type:mt-0 first-of-type:pt-0 last-of-type:border-none">
               <div class="text-sm uppercase mb-4">
-                {formatWorkDate(entry.data.dateStart)} - {formatWorkDate(entry.data.dateEnd)}
+                {formatWorkDate(entry.data.dateStart)} ~ {formatWorkDate(entry.data.dateEnd)}
               </div>
               <div class="text-black dark:text-white font-semibold">
                 {entry.data.company}
