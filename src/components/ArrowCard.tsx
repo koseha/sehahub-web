@@ -17,7 +17,7 @@ export default function ArrowCard({ entry, pill }: Props) {
             </div>
           }
           <div class="text-sm uppercase">
-            {entry.data.period ?? formatDate(entry.data.date)}
+            {(entry.collection === "projects" ? entry.data.period : undefined) ?? formatDate(entry.data.date)}
           </div>
         </div>
         <div class="font-semibold mt-3 text-black dark:text-white line-clamp-2">

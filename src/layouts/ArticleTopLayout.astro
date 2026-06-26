@@ -12,6 +12,7 @@ const { title, summary, date } = data
 
 const demoUrl = collection === "projects" ? data.demoUrl : null
 const repoUrl = collection === "projects" ? data.repoUrl : null
+const period = collection === "projects" ? data.period : null
 ---
 
 <div>
@@ -29,7 +30,7 @@ const repoUrl = collection === "projects" ? data.repoUrl : null
       <svg class="size-5 stroke-current">
         <use href="/ui.svg#calendar"/>
       </svg>
-      {data.period ?? formatDate(date)}
+      {period ?? formatDate(date)}
     </div>
     {collection === "blog" && (
       <div class="flex items-center gap-2">
