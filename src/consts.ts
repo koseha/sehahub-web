@@ -16,7 +16,7 @@ export const WORK: Page = {
 // Blog Page
 export const BLOG: Page = {
   TITLE: "Blog",
-  DESCRIPTION: "개발하며 정리한 글.",
+  DESCRIPTION: "생각은 덜어내고, 배운 것은 선명하게 기록합니다.",
 }
 
 // Projects Page
