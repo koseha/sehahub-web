@@ -22,7 +22,7 @@ export const BLOG: Page = {
 // Projects Page
 export const PROJECTS: Page = {
   TITLE: "Projects",
-  DESCRIPTION: "직접 만든 작업물. 라이브 데모로 만져볼 수 있습니다.",
+  DESCRIPTION: "생각을 코드로 옮긴 결과물. 모든 프로젝트는 라이브 데모로 직접 경험할 수 있습니다.",
 }
 
 // Search Page
