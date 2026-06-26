@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # dev tooling (screenshots)
 scripts/
+
+# wrangler (cloudflare)
+.wrangler/
