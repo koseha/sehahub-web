@@ -6,6 +6,11 @@ import solidJs from "@astrojs/solid-js"
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://astro-sphere-demo.vercel.app",
-  integrations: [mdx(), sitemap(), solidJs(), tailwind({ applyBaseStyles: false })],
+  site: "https://sehahub.info",
+  integrations: [
+    mdx(),
+    sitemap({ filter: (page) => !page.endsWith("/blog/") && !page.endsWith("/search/") }),
+    solidJs(),
+    tailwind({ applyBaseStyles: false }),
+  ],
 })

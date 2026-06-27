@@ -3,7 +3,7 @@ import type { Site, Page, Links, Socials } from "@types"
 // Global
 export const SITE: Site = {
   TITLE: "sehahub",
-  DESCRIPTION: "안녕하세요 개발자 새하(seha)입니다.",
+  DESCRIPTION: "백엔드·인프라와 관리자 백오피스를 직접 구축하는 개발자 새하(seha)의 포트폴리오. 모든 작업물은 라이브 데모로 직접 경험할 수 있습니다.",
   AUTHOR: "seha",
 }
 
