@@ -5,6 +5,9 @@ date: "2026-06-01"
 period: "2026.01 ~ 진행 중"
 team: "웹 6명 → 모바일 8명"
 teamSize: "8명"
+badges:
+- WEB
+- DEMO
 draft: false
 tags:
 - NestJS

@@ -32,8 +32,9 @@ const projects = defineCollection({
     demoUrl: z.string().optional(),
     repoUrl: z.string().optional(),
     period: z.string().optional(),
-    team: z.string().optional(),
-    teamSize: z.string().optional(),
+    team: z.string().optional(), // 상세용: 팀 구성 서술 (예: 웹 6명 → 모바일 8명)
+    teamSize: z.string().optional(), // 카드용: 현재 규모 (예: 8명)
+    badges: z.array(z.enum(["WEB", "MOBILE", "DEMO", "OSS"])).optional(),
   }),
 })
 

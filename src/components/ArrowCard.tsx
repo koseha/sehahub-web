@@ -9,6 +9,7 @@ type Props = {
 export default function ArrowCard({ entry, pill }: Props) {
   const period = entry.collection === "projects" ? entry.data.period : undefined
   const teamSize = entry.collection === "projects" ? entry.data.teamSize : undefined
+  const badges = entry.collection === "projects" ? entry.data.badges : undefined
   return (
     <a href={`/${entry.collection}/${entry.slug}`} class="group p-4 gap-3 flex items-center border rounded-lg hover:bg-black/5 hover:dark:bg-white/10 border-black/15 dark:border-white/20 transition-colors duration-300 ease-in-out">
       <div class="w-full group-hover:text-black group-hover:dark:text-white blend">
@@ -23,10 +24,10 @@ export default function ArrowCard({ entry, pill }: Props) {
           </div>
           {teamSize &&
             <div class="flex items-center gap-1.5 text-sm uppercase border-l border-black/15 dark:border-white/25 pl-3">
-              <svg class="size-4 stroke-current">
+              <svg class="size-4 stroke-current" aria-hidden="true">
                 <use href="/ui.svg#users"/>
               </svg>
-              {teamSize}
+              <span class="sr-only">팀 규모 </span>{teamSize}
             </div>
           }
         </div>
@@ -37,6 +38,15 @@ export default function ArrowCard({ entry, pill }: Props) {
         <div class="text-sm line-clamp-2">
           {entry.data.summary}
         </div>
+        {badges && badges.length > 0 &&
+          <ul class="flex flex-wrap mt-2 gap-1">
+            {badges.map((b: string) => (
+              <li class="text-xs uppercase font-medium py-0.5 px-2 rounded border border-black/40 dark:border-white/40 text-black dark:text-white">
+                {b}
+              </li>
+            ))}
+          </ul>
+        }
         <ul class="flex flex-wrap mt-2 gap-1">
           {entry.data.tags.map((tag: string) => ( // this line has an error; Parameter 'tag' implicitly has an 'any' type.ts(7006)
             <li class="text-xs uppercase py-0.5 px-2 rounded bg-black/5 dark:bg-white/20 text-black/75 dark:text-white/75">
