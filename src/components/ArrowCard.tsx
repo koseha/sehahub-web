@@ -49,13 +49,14 @@ export default function ArrowCard({ entry, pill }: Props) {
           </ul>
         }
         <ul class="flex flex-wrap mt-2 gap-1">
-          {entry.data.tags.map((tag: string) => ( // this line has an error; Parameter 'tag' implicitly has an 'any' type.ts(7006)
+          {entry.data.tags.map((tag: string) => (
             <li class="pill pill-muted">
               {truncateText(tag, 20)}
             </li>
           ))}
         </ul>
       </div>
+      {/* Solid(.tsx) 경계로 @components/ArrowIcon.astro 미통합 — 우측 화살표(direction=right 동일) 인라인 유지 */}
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="stroke-current group-hover:stroke-black group-hover:dark:stroke-white">
         <line x1="5" y1="12" x2="19" y2="12" class="scale-x-0 group-hover:scale-x-100 translate-x-4 group-hover:translate-x-1 transition-all duration-300 ease-in-out" />
         <polyline points="12 5 19 12 12 19" class="translate-x-0 group-hover:translate-x-1 transition-all duration-300 ease-in-out" />
