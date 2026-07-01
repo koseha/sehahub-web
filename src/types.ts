@@ -1,3 +1,5 @@
+import type { CollectionEntry } from "astro:content"
+
 export type Page = {
   TITLE: string
   DESCRIPTION: string
@@ -18,3 +20,9 @@ export type Socials = {
   TEXT: string
   HREF: string
 }[]
+
+export function isProject(
+  entry: CollectionEntry<"blog"> | CollectionEntry<"projects">
+): entry is CollectionEntry<"projects"> {
+  return entry.collection === "projects"
+}

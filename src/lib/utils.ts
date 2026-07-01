@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { getCollection, type CollectionEntry } from "astro:content"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -33,4 +34,12 @@ export function truncateText(str: string, maxLength: number): string {
   let sliced = str.slice(0, cutoff).trimEnd();
 
   return sliced + ellipsis;
+}
+
+export async function getSortedEntries<C extends "blog" | "projects">(
+  collection: C
+): Promise<CollectionEntry<C>[]> {
+  return (await getCollection(collection))
+    .filter((entry) => !entry.data.draft)
+    .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
 }

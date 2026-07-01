@@ -1,5 +1,6 @@
 import { formatDate, truncateText } from "@lib/utils"
 import type { CollectionEntry } from "astro:content"
+import { isProject } from "@types"
 
 type Props = {
   entry: CollectionEntry<"blog"> | CollectionEntry<"projects">
@@ -7,11 +8,11 @@ type Props = {
 }
 
 export default function ArrowCard({ entry, pill }: Props) {
-  const period = entry.collection === "projects" ? entry.data.period : undefined
-  const teamSize = entry.collection === "projects" ? entry.data.teamSize : undefined
-  const badges = entry.collection === "projects" ? entry.data.badges : undefined
+  const period = isProject(entry) ? entry.data.period : undefined
+  const teamSize = isProject(entry) ? entry.data.teamSize : undefined
+  const badges = isProject(entry) ? entry.data.badges : undefined
   return (
-    <a href={`/${entry.collection}/${entry.slug}`} class="group p-4 gap-3 flex items-center border rounded-lg hover:bg-black/5 hover:dark:bg-white/10 border-black/15 dark:border-white/20 transition-colors duration-300 ease-in-out">
+    <a href={`/${entry.collection}/${entry.slug}`} class="group card-link">
       <div class="w-full group-hover:text-black group-hover:dark:text-white blend">
         <div class="flex flex-wrap items-center gap-2">
           {pill &&
@@ -41,7 +42,7 @@ export default function ArrowCard({ entry, pill }: Props) {
         {badges && badges.length > 0 &&
           <ul class="flex flex-wrap mt-2 gap-1">
             {badges.map((b: string) => (
-              <li class="text-xs uppercase font-medium py-0.5 px-2 rounded border border-black/40 dark:border-white/40 text-black dark:text-white">
+              <li class="pill pill-outline">
                 {b}
               </li>
             ))}
@@ -49,7 +50,7 @@ export default function ArrowCard({ entry, pill }: Props) {
         }
         <ul class="flex flex-wrap mt-2 gap-1">
           {entry.data.tags.map((tag: string) => ( // this line has an error; Parameter 'tag' implicitly has an 'any' type.ts(7006)
-            <li class="text-xs uppercase py-0.5 px-2 rounded bg-black/5 dark:bg-white/20 text-black/75 dark:text-white/75">
+            <li class="pill pill-muted">
               {truncateText(tag, 20)}
             </li>
           ))}

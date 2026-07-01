@@ -54,7 +54,7 @@ function formatWorkDate(input: Date | string) {
               {entry.data.stack && entry.data.stack.length > 0 && (
                 <ul class="flex flex-wrap gap-1 mt-2">
                   {entry.data.stack.map((s: string) => (
-                    <li class="text-xs uppercase py-0.5 px-2 rounded bg-black/5 dark:bg-white/20 text-black/75 dark:text-white/75">{s}</li>
+                    <li class="pill pill-muted">{s}</li>
                   ))}
                 </ul>
               )}
