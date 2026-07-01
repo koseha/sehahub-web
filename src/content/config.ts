@@ -32,6 +32,8 @@ const projects = defineCollection({
     demoUrl: z.string().optional(),
     repoUrl: z.string().optional(),
     period: z.string().optional(),
+    team: z.string().optional(),
+    teamSize: z.string().optional(),
   }),
 })
 

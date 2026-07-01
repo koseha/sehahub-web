@@ -7,6 +7,8 @@ type Props = {
 }
 
 export default function ArrowCard({ entry, pill }: Props) {
+  const period = entry.collection === "projects" ? entry.data.period : undefined
+  const teamSize = entry.collection === "projects" ? entry.data.teamSize : undefined
   return (
     <a href={`/${entry.collection}/${entry.slug}`} class="group p-4 gap-3 flex items-center border rounded-lg hover:bg-black/5 hover:dark:bg-white/10 border-black/15 dark:border-white/20 transition-colors duration-300 ease-in-out">
       <div class="w-full group-hover:text-black group-hover:dark:text-white blend">
@@ -17,8 +19,16 @@ export default function ArrowCard({ entry, pill }: Props) {
             </div>
           }
           <div class="text-sm uppercase">
-            {entry.data.period ?? formatDate(entry.data.date)}
+            {period ?? formatDate(entry.data.date)}
           </div>
+          {teamSize &&
+            <div class="flex items-center gap-1.5 text-sm uppercase border-l border-black/15 dark:border-white/25 pl-3">
+              <svg class="size-4 stroke-current">
+                <use href="/ui.svg#users"/>
+              </svg>
+              {teamSize}
+            </div>
+          }
         </div>
         <div class="font-semibold mt-3 text-black dark:text-white line-clamp-2">
           {entry.data.title}
