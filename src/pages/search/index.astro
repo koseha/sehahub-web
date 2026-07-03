@@ -5,12 +5,11 @@ import TopLayout from "@layouts/TopLayout.astro";
 import BottomLayout from "@layouts/BottomLayout.astro";
 import Search from "@components/Search";
 import { SEARCH } from "@consts";
+import { isPublished } from "@lib/content";
 
-const posts = (await getCollection("blog")).filter((post) => !post.data.draft);
+const posts = (await getCollection("blog")).filter(isPublished);
 
-const projects = (await getCollection("projects")).filter(
-  (post) => !post.data.draft,
-);
+const projects = (await getCollection("projects")).filter(isPublished);
 
 const data = [...posts, ...projects] as CollectionEntry<"blog">[];
 ---
