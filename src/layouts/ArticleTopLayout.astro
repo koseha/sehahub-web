@@ -16,6 +16,10 @@ const demoUrl = isProject(entry) ? entry.data.demoUrl : null
 const repoUrl = isProject(entry) ? entry.data.repoUrl : null
 const team = isProject(entry) ? entry.data.team : null
 const period = isProject(entry) ? entry.data.period : null
+// MOBILE 단독 프로젝트는 링크가 데모가 아니라 스토어 — 문구 분기.
+// DEMO 배지는 웹 라이브 데모 전용, 모바일 앱 스토어 링크에는 붙이지 않는다
+const badges = isProject(entry) ? entry.data.badges : null
+const isMobileOnly = !!badges && badges.includes("MOBILE") && !badges.includes("WEB") && !badges.includes("DEMO")
 ---
 
 <div>
@@ -63,12 +67,12 @@ const period = isProject(entry) ? entry.data.period : null
           <use href="/ui.svg#globe" class="fill-current group-hover:fill-black group-hover:dark:fill-white blend"/>
         </svg>
         <span class="text-current group-hover:text-black group-hover:dark:text-white blend">
-          라이브 데모
+          {isMobileOnly ? "App Store" : "라이브 데모"}
         </span>
       </a>
       :
       <span class="flex gap-2 items-center px-3 py-1.5 truncate rounded text-xs md:text-sm lg:text-base border border-black/15 dark:border-white/20 opacity-60">
-        라이브 데모 준비 중
+        {isMobileOnly ? "App Store 출시 준비 중" : "라이브 데모 준비 중"}
       </span>
     }
     {repoUrl &&
