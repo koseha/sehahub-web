@@ -6,7 +6,12 @@ import BottomLayout from "@layouts/BottomLayout.astro";
 import SearchCollection from "@components/SearchCollection";
 import { PROJECTS } from "@consts";
 
-const projects = await getSortedEntries("projects");
+const allProjects = await getSortedEntries("projects");
+// 아일랜드 직렬화에서 이미지 메타데이터(fsPath 로컬 절대경로) 제외 — 카드에선 미사용
+const projects = allProjects.map((p) => {
+  const { images: _images, ...data } = p.data;
+  return { ...p, data };
+});
 
 const tags = [
   ...new Set(projects.flatMap((project) => project.data.tags)),

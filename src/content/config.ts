@@ -24,19 +24,22 @@ const blog = defineCollection({
 
 const projects = defineCollection({
   type: "content",
-  schema: z.object({
-    title: z.string(),
-    summary: z.string(),
-    date: z.coerce.date(),
-    tags: z.array(z.string()),
-    draft: z.boolean().optional(),
-    demoUrl: z.string().optional(),
-    repoUrl: z.string().optional(),
-    period: z.string().optional(),
-    team: z.string().optional(), // 상세용: 팀 구성 서술 (예: 웹 6명 → 모바일 8명)
-    teamSize: z.string().optional(), // 카드용: 현재 규모 (예: 8명)
-    badges: z.array(z.enum(["WEB", "MOBILE", "DEMO", "OSS"])).optional(),
-  }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      summary: z.string(),
+      date: z.coerce.date(),
+      tags: z.array(z.string()),
+      draft: z.boolean().optional(),
+      demoUrl: z.string().optional(),
+      repoUrl: z.string().optional(),
+      period: z.string().optional(),
+      team: z.string().optional(), // 상세용: 팀 구성 서술 (예: 웹 6명 → 모바일 8명)
+      teamSize: z.string().optional(), // 카드용: 현재 규모 (예: 8명)
+      badges: z.array(z.enum(["WEB", "MOBILE", "DEMO", "OSS"])).optional(),
+      // 상세 상단 스크린샷 스트립 — 아일랜드 props로 직렬화 금지(fsPath 로컬 경로 유출)
+      images: z.array(z.object({ src: image(), caption: z.string() })).optional(),
+    }),
 })
 
 export const collections = { work, blog, projects }

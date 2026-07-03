@@ -9,7 +9,11 @@ import { isPublished } from "@lib/content";
 
 const posts = (await getCollection("blog")).filter(isPublished);
 
-const projects = (await getCollection("projects")).filter(isPublished);
+// 아일랜드 직렬화에서 이미지 메타데이터(fsPath 로컬 절대경로) 제외 — 검색 카드에선 미사용
+const projects = (await getCollection("projects")).filter(isPublished).map((p) => {
+  const { images: _images, ...data } = p.data;
+  return { ...p, data };
+});
 
 const data = [...posts, ...projects] as CollectionEntry<"blog">[];
 ---
