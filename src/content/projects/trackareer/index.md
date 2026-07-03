@@ -16,6 +16,11 @@ tags:
 - Refine
 - TypeScript
 demoUrl: "https://trackareer-admin.sehahub.info"
+images:
+- src: ./web-dashboard.png
+  caption: 관리자 대시보드
+- src: ./web-members.png
+  caption: 회원 관리 목록
 ---
 
 여러 채용 사이트의 공고를 모아 지원 현황을 추적·관리하는 구직 관리 서비스입니다. 백엔드·인프라 전반과 관리자 백오피스(admin)를 맡았습니다.
