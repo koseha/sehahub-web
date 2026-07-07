@@ -6,7 +6,7 @@ period: "2026.04 ~ 진행 중"
 team: "개인 프로젝트 (1인)"
 badges:
 - MOBILE
-draft: true
+draft: false
 tags:
 - Flutter
 - Supabase
@@ -36,3 +36,7 @@ tags:
 ## 스택
 
 Flutter · Supabase · Riverpod
+
+## 문의
+
+앱 관련 문의: [sehahub.info@gmail.com](mailto:sehahub.info@gmail.com)
