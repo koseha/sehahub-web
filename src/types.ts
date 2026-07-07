@@ -26,3 +26,9 @@ export function isProject(
 ): entry is CollectionEntry<"projects"> {
   return entry.collection === "projects"
 }
+
+export function isPinned(
+  entry: CollectionEntry<"blog"> | CollectionEntry<"projects">
+): boolean {
+  return isProject(entry) && Boolean(entry.data.pinned)
+}

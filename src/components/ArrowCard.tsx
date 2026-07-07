@@ -17,9 +17,12 @@ export default function ArrowCard({ entry, pill }: Props) {
       <div class="w-full group-hover:text-black group-hover:dark:text-white blend">
         <div class="flex flex-wrap items-center gap-2">
           {pinned &&
-            <svg class="size-4 stroke-current" aria-hidden="true">
-              <use href="/ui.svg#pin"/>
-            </svg>
+            <>
+              <svg class="size-4 stroke-current" aria-hidden="true">
+                <use href="/ui.svg#pin"/>
+              </svg>
+              <span class="sr-only">고정된 프로젝트 </span>
+            </>
           }
           {pill &&
             <div class="text-sm capitalize px-2 py-0.5 rounded-full border border-black/15 dark:border-white/25">

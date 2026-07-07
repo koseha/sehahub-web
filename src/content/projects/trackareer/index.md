@@ -9,6 +9,7 @@ badges:
 - WEB
 - DEMO
 draft: false
+pinned: true
 tags:
 - NestJS
 - PostgreSQL

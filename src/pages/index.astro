@@ -1,5 +1,5 @@
 ---
-import { getSortedEntries } from "@lib/content"
+import { getSortedEntries, pinnedFirst } from "@lib/content"
 import PageLayout from "@layouts/PageLayout.astro"
 import ArrowCard from "@components/ArrowCard"
 import { SITE, SOCIALS } from "@consts"
@@ -8,7 +8,7 @@ import MeteorShower from "@components/MeteorShower.astro"
 
 const posts = (await getSortedEntries("blog")).slice(0, 3)
 
-const projects = (await getSortedEntries("projects")).slice(0, 3)
+const projects = pinnedFirst(await getSortedEntries("projects")).slice(0, 3)
 
 const stack = [
   "TypeScript",
