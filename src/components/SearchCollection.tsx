@@ -37,7 +37,15 @@ export default function SearchCollection({ entry_name, data, tags }: Props) {
         )
       )
     );
-    setCollection(descending() ? filtered.toReversed() : filtered)
+    if (query().length < 2) {
+      // 기본·태그 필터 뷰: pinned는 정렬 토글과 무관하게 상단 고정, 나머지만 반전
+      const pinned = filtered.filter((entry) => (entry.data as { pinned?: boolean }).pinned)
+      const rest = filtered.filter((entry) => !(entry.data as { pinned?: boolean }).pinned)
+      setCollection([...pinned, ...(descending() ? rest.toReversed() : rest)])
+    } else {
+      // 검색 중엔 관련도 순서 유지 — 핀 특별 취급 없음
+      setCollection(descending() ? filtered.toReversed() : filtered)
+    }
   })
 
   function toggleDescending() {

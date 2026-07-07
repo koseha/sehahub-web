@@ -11,10 +11,16 @@ export default function ArrowCard({ entry, pill }: Props) {
   const period = isProject(entry) ? entry.data.period : undefined
   const teamSize = isProject(entry) ? entry.data.teamSize : undefined
   const badges = isProject(entry) ? entry.data.badges : undefined
+  const pinned = isProject(entry) ? entry.data.pinned : undefined
   return (
     <a href={`/${entry.collection}/${entry.slug}`} class="group card-link">
       <div class="w-full group-hover:text-black group-hover:dark:text-white blend">
         <div class="flex flex-wrap items-center gap-2">
+          {pinned &&
+            <svg class="size-4 stroke-current" aria-hidden="true">
+              <use href="/ui.svg#pin"/>
+            </svg>
+          }
           {pill &&
             <div class="text-sm capitalize px-2 py-0.5 rounded-full border border-black/15 dark:border-white/25">
               {entry.collection === "blog" ? "post" : "project"}

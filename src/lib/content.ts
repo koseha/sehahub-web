@@ -14,5 +14,11 @@ export async function getSortedEntries<C extends "blog" | "projects">(
 ): Promise<CollectionEntry<C>[]> {
   return (await getCollection(collection))
     .filter(isPublished)
-    .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+    .sort((a, b) => {
+      // pinned 우선(projects 전용 필드 — blog는 전부 falsy) → 그 안에서 date 내림차순
+      const pinDiff =
+        Number(Boolean((b.data as { pinned?: boolean }).pinned)) -
+        Number(Boolean((a.data as { pinned?: boolean }).pinned))
+      return pinDiff !== 0 ? pinDiff : b.data.date.getTime() - a.data.date.getTime()
+    })
 }

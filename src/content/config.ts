@@ -31,6 +31,7 @@ const projects = defineCollection({
       date: z.coerce.date(),
       tags: z.array(z.string()),
       draft: z.boolean().optional(),
+      pinned: z.boolean().optional(), // 목록·메인 상단 고정 (정렬 토글 무관)
       demoUrl: z.string().optional(),
       repoUrl: z.string().optional(),
       period: z.string().optional(),
