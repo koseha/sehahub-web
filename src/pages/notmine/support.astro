@@ -1,0 +1,22 @@
+---
+import PageLayout from "@layouts/PageLayout.astro"
+import TopLayout from "@layouts/TopLayout.astro"
+import BottomLayout from "@layouts/BottomLayout.astro"
+import { Content } from "./_support.md"
+---
+
+<PageLayout title="내돈아님 지원" description="내돈아님 앱의 자주 묻는 질문과 문의 안내입니다.">
+  <TopLayout>
+    <div class="animate">
+      <h1 class="page-heading text-3xl">내돈아님 지원</h1>
+      <p class="mt-3 text-sm opacity-75">자주 묻는 질문과 문의 안내</p>
+    </div>
+  </TopLayout>
+  <BottomLayout>
+    <div class="animate">
+      <article>
+        <Content />
+      </article>
+    </div>
+  </BottomLayout>
+</PageLayout>
