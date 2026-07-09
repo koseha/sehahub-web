@@ -2,18 +2,30 @@
 title: "내돈아님"
 summary: "다가오는 고정 지출을 월급 주기로 묶어 확보해야 할 금액을 바로 보여주는 iOS 앱."
 date: "2026-04-17"
-period: "2026.04 ~ 진행 중"
+period: "2026.04 ~ 진행 중 · App Store 첫 출시 2026.07"
 team: "개인 프로젝트 (1인)"
 badges:
 - MOBILE
 draft: false
+pinned: true
 tags:
 - Flutter
 - Supabase
 - Riverpod
+images:
+- src: ./01_home.png
+  caption: 홈 — 다음 월급까지 확보해야 할 금액
+- src: ./02_register.png
+  caption: 지출 등록
+- src: ./03_monthly.png
+  caption: 월별 지출 내역
+- src: ./04_settings.png
+  caption: 설정
 ---
 
 월세 전기세 관리비처럼 날짜도 금액도 제각각인 고정 지출을 월급 주기 기준으로 모아 보여주는 예정 지출 관리 앱입니다. 가계부처럼 지난 소비를 기록하는 대신 앞으로 나갈 돈에만 집중해 다음 월급까지 확보해야 할 금액을 바로 알려줍니다.
+
+2026년 7월 App Store에 첫 출시했습니다. [App Store에서 받기](https://apps.apple.com/kr/app/id6786492719)
 
 ## 핵심 도전·결정
 
