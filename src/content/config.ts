@@ -34,6 +34,7 @@ const projects = defineCollection({
       pinned: z.boolean().optional(), // 목록·메인 상단 고정 (정렬 토글 무관)
       demoUrl: z.string().optional(),
       storeUrl: z.string().optional(), // 앱 스토어 링크 — 스토어 URL은 demoUrl이 아니라 이 필드에 (라벨 규약)
+      releasesUrl: z.string().optional(), // 업데이트 내역(사이트 내부 라우트) — 대표 링크는 전부 헤더 링크 박스로
       repoUrl: z.string().optional(),
       period: z.string().optional(),
       team: z.string().optional(), // 상세용: 팀 구성 서술 (예: 웹 6명 → 모바일 8명)

@@ -15,6 +15,7 @@ const { title, summary, date } = data
 
 const demoUrl = isProject(entry) ? entry.data.demoUrl : null
 const storeUrl = isProject(entry) ? entry.data.storeUrl : null
+const releasesUrl = isProject(entry) ? entry.data.releasesUrl : null
 const repoUrl = isProject(entry) ? entry.data.repoUrl : null
 const team = isProject(entry) ? entry.data.team : null
 const period = isProject(entry) ? entry.data.period : null
@@ -93,6 +94,16 @@ const images = isProject(entry) ? entry.data.images : null
         라이브 데모 준비 중
       </span>
     )}
+    {releasesUrl &&
+      <a href={releasesUrl} class="group flex gap-2 items-center px-3 py-1.5 truncate rounded text-xs md:text-sm lg:text-base border border-black/25 dark:border-white/25 hover:bg-black/5 hover:dark:bg-white/15 blend">
+        <svg class="size-4 stroke-current group-hover:stroke-black group-hover:dark:stroke-white blend">
+          <use href="/ui.svg#book-open"/>
+        </svg>
+        <span class="text-current group-hover:text-black group-hover:dark:text-white blend">
+          업데이트 내역
+        </span>
+      </a>
+    }
     {repoUrl &&
       <a href={repoUrl} target="_blank" class="group flex gap-2 items-center px-3 py-1.5 truncate rounded text-xs md:text-sm lg:text-base border border-black/25 dark:border-white/25 hover:bg-black/5 hover:dark:bg-white/15 blend">
         <svg class="size-4">
