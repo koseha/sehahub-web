@@ -4,6 +4,7 @@ summary: "다가오는 고정 지출을 월급 주기로 묶어 확보해야 할
 date: "2026-04-17"
 period: "2026.04 ~ 진행 중 · App Store 첫 출시 2026.07"
 team: "개인 프로젝트 (1인)"
+storeUrl: "https://apps.apple.com/kr/app/id6786492719"
 badges:
 - MOBILE
 draft: false

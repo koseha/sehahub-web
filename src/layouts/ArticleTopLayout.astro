@@ -14,10 +14,12 @@ const { collection, data, body } = entry
 const { title, summary, date } = data
 
 const demoUrl = isProject(entry) ? entry.data.demoUrl : null
+const storeUrl = isProject(entry) ? entry.data.storeUrl : null
 const repoUrl = isProject(entry) ? entry.data.repoUrl : null
 const team = isProject(entry) ? entry.data.team : null
 const period = isProject(entry) ? entry.data.period : null
-// MOBILE 단독 프로젝트는 링크가 데모가 아니라 스토어 — 문구 분기.
+// 스토어 슬롯 = storeUrl 기준(있으면 버튼, 없고 MOBILE 단독이면 준비 중 플레이스홀더).
+// 데모 슬롯 = MOBILE 단독이면 억제(단 demoUrl 명시 시 노출). demoUrl에 스토어 URL 금지 — storeUrl 필드가 규약.
 // DEMO 배지는 웹 라이브 데모 전용, 모바일 앱 스토어 링크에는 붙이지 않는다
 const badges = isProject(entry) ? entry.data.badges : null
 const isMobileOnly = !!badges && badges.includes("MOBILE") && !badges.includes("WEB") && !badges.includes("DEMO")
@@ -63,20 +65,34 @@ const images = isProject(entry) ? entry.data.images : null
   </div>
   {collection === "projects" &&
   <div class="mt-4 flex flex-wrap gap-2">
-    {demoUrl ?
+    {storeUrl ?
+      <a href={storeUrl} target="_blank" class="group flex gap-2 items-center px-3 py-1.5 truncate rounded text-xs md:text-sm lg:text-base border border-black/25 dark:border-white/25 hover:bg-black/5 hover:dark:bg-white/15 blend">
+        <svg class="size-4">
+          <use href="/ui.svg#globe" class="fill-current group-hover:fill-black group-hover:dark:fill-white blend"/>
+        </svg>
+        <span class="text-current group-hover:text-black group-hover:dark:text-white blend">
+          App Store
+        </span>
+      </a>
+      : isMobileOnly &&
+      <span class="flex gap-2 items-center px-3 py-1.5 truncate rounded text-xs md:text-sm lg:text-base border border-black/15 dark:border-white/20 opacity-60">
+        App Store 출시 준비 중
+      </span>
+    }
+    {(!isMobileOnly || demoUrl) && (demoUrl ?
       <a href={demoUrl} target="_blank" class="group flex gap-2 items-center px-3 py-1.5 truncate rounded text-xs md:text-sm lg:text-base border border-black/25 dark:border-white/25 hover:bg-black/5 hover:dark:bg-white/15 blend">
         <svg class="size-4">
           <use href="/ui.svg#globe" class="fill-current group-hover:fill-black group-hover:dark:fill-white blend"/>
         </svg>
         <span class="text-current group-hover:text-black group-hover:dark:text-white blend">
-          {isMobileOnly ? "App Store" : "라이브 데모"}
+          라이브 데모
         </span>
       </a>
       :
       <span class="flex gap-2 items-center px-3 py-1.5 truncate rounded text-xs md:text-sm lg:text-base border border-black/15 dark:border-white/20 opacity-60">
-        {isMobileOnly ? "App Store 출시 준비 중" : "라이브 데모 준비 중"}
+        라이브 데모 준비 중
       </span>
-    }
+    )}
     {repoUrl &&
       <a href={repoUrl} target="_blank" class="group flex gap-2 items-center px-3 py-1.5 truncate rounded text-xs md:text-sm lg:text-base border border-black/25 dark:border-white/25 hover:bg-black/5 hover:dark:bg-white/15 blend">
         <svg class="size-4">
