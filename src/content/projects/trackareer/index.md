@@ -2,7 +2,7 @@
 title: "trackareer"
 summary: "여러 채용 사이트의 공고를 모아 지원 현황을 추적·관리하는 구직 관리 서비스."
 date: "2026-06-01"
-period: "2026.01 ~ 진행 중 · 모바일 앱 App Store 출시 2026.07"
+period: "2026.01 ~ 진행 중 · App Store 첫 출시 2026.07"
 team: "웹 6명 → 모바일 8명"
 teamSize: "8명"
 badges:
