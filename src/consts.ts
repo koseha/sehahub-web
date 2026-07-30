@@ -3,7 +3,7 @@ import type { Site, Page, Links, Socials } from "@types"
 // Global
 export const SITE: Site = {
   TITLE: "sehahub",
-  DESCRIPTION: "백엔드·인프라와 관리자 백오피스를 직접 구축하는 개발자 새하(seha)의 포트폴리오. 모든 작업물은 라이브 데모로 직접 경험할 수 있습니다.",
+  DESCRIPTION: "백엔드·인프라와 관리자 백오피스를 직접 구축하는 개발자 새하(seha)의 포트폴리오. 라이브 데모나 App Store에서 직접 만져볼 수 있습니다.",
   AUTHOR: "seha",
 }
 
@@ -22,7 +22,7 @@ export const BLOG: Page = {
 // Projects Page
 export const PROJECTS: Page = {
   TITLE: "Projects",
-  DESCRIPTION: "생각을 코드로 옮긴 결과물. 모든 프로젝트는 라이브 데모로 직접 경험할 수 있습니다.",
+  DESCRIPTION: "생각을 코드로 옮긴 결과물. 라이브 데모나 App Store에서 직접 만져볼 수 있습니다.",
 }
 
 // Search Page
