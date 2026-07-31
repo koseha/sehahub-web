@@ -1,24 +1,13 @@
 ---
-import { getSortedEntries } from "@lib/content";
+import { getSortedEntries, pinnedFirst } from "@lib/content";
 import PageLayout from "@layouts/PageLayout.astro";
 import TopLayout from "@layouts/TopLayout.astro";
 import BottomLayout from "@layouts/BottomLayout.astro";
-import SearchCollection from "@components/SearchCollection";
+import ProjectCard from "@components/ProjectCard.astro";
 import { PROJECTS } from "@consts";
 
-const allProjects = await getSortedEntries("projects");
-// 아일랜드 직렬화에서 이미지 메타데이터(fsPath 로컬 절대경로) 제외 — 카드에선 미사용
-const projects = allProjects.map((p) => {
-  const { images: _images, ...data } = p.data;
-  return { ...p, data };
-});
-
-const tags = [
-  ...new Set(projects.flatMap((project) => project.data.tags)),
-].sort((a, b) => a.localeCompare(b));
-
-const estimated_initial_size =
-  28 + projects.length * 158 + (projects.length - 1) * 12;
+// 필터·검색 아일랜드 제거 — 정적 렌더. 정렬은 기존 헬퍼 그대로(pinned 상단 고정)
+const projects = pinnedFirst(await getSortedEntries("projects"));
 ---
 
 <PageLayout title={PROJECTS.TITLE} description={PROJECTS.DESCRIPTION}>
@@ -33,17 +22,14 @@ const estimated_initial_size =
     </div>
   </TopLayout>
   <BottomLayout>
-    <div
-      id="search-collection-wrapper"
-      class="animate"
-      style={{ minHeight: `${estimated_initial_size}px` }}
-    >
-      <SearchCollection
-        client:load
-        entry_name={"projects"}
-        tags={tags}
-        data={projects}
-      />
+    <div class="animate">
+      <ul class="flex flex-col gap-6">
+        {projects.map((project, i) => (
+          <li>
+            <ProjectCard entry={project} index={i} />
+          </li>
+        ))}
+      </ul>
     </div>
   </BottomLayout>
 </PageLayout>

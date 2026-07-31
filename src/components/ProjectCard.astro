@@ -1,0 +1,201 @@
+---
+// 프로젝트 목록 전용 카드. ArrowCard(블로그·검색·홈 공유)는 건드리지 않는다.
+import { Image } from "astro:assets"
+import type { CollectionEntry } from "astro:content"
+
+type Props = {
+  entry: CollectionEntry<"projects">
+  index: number
+}
+
+const { entry, index } = Astro.props
+
+const BANNER_W = 728
+const MAX_H = 460
+
+// 배너 높이 = 스크린샷을 다 담는 높이(상한 MAX_H).
+// 이미지 크기는 픽셀이 아니라 배너 대비 비율로 준다 — 픽셀로 박으면 배너가 좁아지는
+// 모바일에서 이미지가 배너를 넘쳐 잘린다(375px 실측으로 확인).
+function fitBox(img: ImageMetadata) {
+  const r = img.width / img.height
+  const h = Math.min(MAX_H, Math.round(BANNER_W / r))
+  const w = Math.round(h * r)
+  return { w, h, widthPct: (w / BANNER_W) * 100 }
+}
+
+const imgs = entry.data.images ?? []
+const box = imgs.length > 0 ? fitBox(imgs[0].src) : null
+const team = entry.data.teamSize ?? entry.data.team
+const cid = `pc-${entry.slug}`
+---
+
+<div
+  class="group relative grid overflow-hidden rounded-lg border border-black/15 dark:border-white/20 blend hover:border-black/30 hover:dark:border-white/40"
+>
+  <div class="order-2 p-5">
+    {entry.data.badges && entry.data.badges.length > 0 && (
+      <ul class="flex flex-wrap gap-1.5">
+        {entry.data.badges.map((b) => (
+          <li class="pill pill-outline inline-flex items-center gap-1">
+            {b === "DEMO" && (
+              <svg class="size-3 stroke-current" aria-hidden="true">
+                <use href="/ui.svg#globe" />
+              </svg>
+            )}
+            {b}
+          </li>
+        ))}
+      </ul>
+    )}
+
+    <h3 class="text-lg font-semibold text-black dark:text-white mt-3">
+      <a
+        href={`/projects/${entry.slug}`}
+        class="hover:underline underline-offset-2 after:absolute after:inset-0 after:content-['']"
+      >{entry.data.title}</a>
+    </h3>
+
+    <div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+      <span class="inline-flex items-center gap-1.5">
+        <svg class="size-4 stroke-current shrink-0" aria-hidden="true">
+          <use href="/ui.svg#calendar" />
+        </svg>
+        {entry.data.period}
+      </span>
+      {team && (
+        <span class="inline-flex items-center gap-1.5">
+          <svg class="size-4 stroke-current shrink-0" aria-hidden="true">
+            <use href="/ui.svg#users" />
+          </svg>
+          {team}
+        </span>
+      )}
+    </div>
+
+    <p class="text-sm mt-3">{entry.data.summary}</p>
+
+    <div class="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span class="text-xs uppercase opacity-50 shrink-0">스택</span>
+      <ul class="flex flex-wrap gap-1">
+        {entry.data.tags.map((t) => (
+          <li class="pill pill-muted">{t}</li>
+        ))}
+      </ul>
+    </div>
+
+    <span class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-black dark:text-white">
+      자세히 보기
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="stroke-current"
+        aria-hidden="true"
+      >
+        <line
+          x1="5"
+          y1="12"
+          x2="19"
+          y2="12"
+          class="scale-x-0 group-hover:scale-x-100 translate-x-4 group-hover:translate-x-1 transition-all duration-300 ease-in-out"
+        />
+        <polyline
+          points="12 5 19 12 12 19"
+          class="translate-x-0 group-hover:translate-x-1 transition-all duration-300 ease-in-out"
+        />
+      </svg>
+    </span>
+  </div>
+
+  {/* 배너는 DOM에서 텍스트 뒤 · 시각 배치는 order로 위. 앞에 두면 제목 링크의
+      stretched-link(after:inset-0)가 배너를 덮어 스와이프가 죽는다 */}
+  {box && (
+    <div
+      class="order-1 relative bg-neutral-200/70 dark:bg-neutral-900 border-b border-black/10 dark:border-white/15 max-h-[70vh]"
+      style={`aspect-ratio: ${BANNER_W} / ${box.h};`}
+    >
+      <div
+        class="pc-track flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        data-card={cid}
+        tabindex="0"
+        role="region"
+        aria-label="스크린샷"
+      >
+        {imgs.map((img) => (
+          <div class="snap-center shrink-0 w-full h-full grid place-items-center overflow-hidden">
+            <Image
+              src={img.src}
+              alt={img.caption}
+              widths={[BANNER_W, BANNER_W * 2]}
+              sizes={`(min-width: 768px) ${BANNER_W}px, 100vw`}
+              loading={index === 0 ? "eager" : "lazy"}
+              class="object-contain ring-1 ring-black/15 dark:ring-white/20 shadow-md shadow-black/10 dark:shadow-black/40"
+              style={`width:${box.widthPct.toFixed(3)}%; height:100%; max-width:100%; max-height:100%;`}
+            />
+          </div>
+        ))}
+      </div>
+
+      {imgs.length > 1 && (
+        <>
+          <button
+            type="button"
+            data-nav="prev"
+            data-card={cid}
+            aria-label="이전 화면"
+            class="absolute z-10 left-3 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-full bg-white/90 dark:bg-black/70 border border-black/15 dark:border-white/25 text-black dark:text-white text-sm leading-none backdrop-blur-sm"
+          >‹</button>
+          <button
+            type="button"
+            data-nav="next"
+            data-card={cid}
+            aria-label="다음 화면"
+            class="absolute z-10 right-3 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-full bg-white/90 dark:bg-black/70 border border-black/15 dark:border-white/25 text-black dark:text-white text-sm leading-none backdrop-blur-sm"
+          >›</button>
+          <div
+            data-count={cid}
+            aria-live="polite"
+            class="absolute z-10 bottom-3 right-3 px-2 py-0.5 rounded text-xs tabular-nums bg-white/90 dark:bg-black/70 border border-black/10 dark:border-white/20 text-black dark:text-white"
+          >1 / {imgs.length}</div>
+        </>
+      )}
+    </div>
+  )}
+</div>
+
+<script>
+  // 캐러셀 — 스와이프·스크롤은 CSS(scroll-snap)로 동작하고, JS는 버튼과 카운터만 담당한다.
+  document.querySelectorAll<HTMLElement>(".pc-track").forEach((track) => {
+    const id = track.dataset.card
+    const count = track.children.length
+    const label = document.querySelector<HTMLElement>(`[data-count="${id}"]`)
+
+    const sync = () => {
+      if (!label) return
+      const w = track.clientWidth || 1
+      const idx = Math.round(track.scrollLeft / w)
+      // aria-live 리전이라 값이 그대로여도 대입하면 중복 알림이 된다
+      const next = `${idx + 1} / ${count}`
+      if (label.textContent !== next) label.textContent = next
+    }
+    track.addEventListener("scroll", () => window.requestAnimationFrame(sync), { passive: true })
+    sync()
+
+    document.querySelectorAll<HTMLElement>(`[data-nav][data-card="${id}"]`).forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault()
+        const w = track.clientWidth || 1
+        const idx = Math.round(track.scrollLeft / w)
+        const next = btn.dataset.nav === "next"
+          ? Math.min(idx + 1, count - 1)
+          : Math.max(idx - 1, 0)
+        track.scrollTo({ left: next * w, behavior: "smooth" })
+      })
+    })
+  })
+</script>
