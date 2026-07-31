@@ -30,58 +30,9 @@ const cid = `pc-${entry.slug}`
 ---
 
 <div
-  class="group relative overflow-hidden rounded-lg border border-black/15 dark:border-white/20 blend hover:border-black/30 hover:dark:border-white/40"
+  class="group relative grid overflow-hidden rounded-lg border border-black/15 dark:border-white/20 blend hover:border-black/30 hover:dark:border-white/40"
 >
-  {box && (
-    <div
-      class="relative bg-neutral-200/70 dark:bg-neutral-900 border-b border-black/10 dark:border-white/15 max-h-[70vh]"
-      style={`aspect-ratio: ${BANNER_W} / ${box.h};`}
-    >
-      <div
-        class="pc-track flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        data-card={cid}
-      >
-        {imgs.map((img) => (
-          <div class="snap-center shrink-0 w-full h-full grid place-items-center overflow-hidden">
-            <Image
-              src={img.src}
-              alt={img.caption}
-              widths={[BANNER_W, BANNER_W * 2]}
-              sizes={`(min-width: 768px) ${BANNER_W}px, 100vw`}
-              loading={index === 0 ? "eager" : "lazy"}
-              class="object-contain ring-1 ring-black/15 dark:ring-white/20 shadow-md shadow-black/10 dark:shadow-black/40"
-              style={`width:${box.widthPct.toFixed(3)}%; height:100%; max-width:100%; max-height:100%;`}
-            />
-          </div>
-        ))}
-      </div>
-
-      {imgs.length > 1 && (
-        <>
-          <button
-            type="button"
-            data-nav="prev"
-            data-card={cid}
-            aria-label="이전 화면"
-            class="absolute z-10 left-3 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-full bg-white/90 dark:bg-black/70 border border-black/15 dark:border-white/25 text-black dark:text-white text-sm leading-none backdrop-blur-sm"
-          >‹</button>
-          <button
-            type="button"
-            data-nav="next"
-            data-card={cid}
-            aria-label="다음 화면"
-            class="absolute z-10 right-3 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-full bg-white/90 dark:bg-black/70 border border-black/15 dark:border-white/25 text-black dark:text-white text-sm leading-none backdrop-blur-sm"
-          >›</button>
-          <div
-            data-count={cid}
-            class="absolute z-10 bottom-3 right-3 px-2 py-0.5 rounded text-xs tabular-nums bg-white/90 dark:bg-black/70 border border-black/10 dark:border-white/20 text-black dark:text-white"
-          >1 / {imgs.length}</div>
-        </>
-      )}
-    </div>
-  )}
-
-  <div class="p-5">
+  <div class="order-2 p-5">
     {entry.data.badges && entry.data.badges.length > 0 && (
       <ul class="flex flex-wrap gap-1.5">
         {entry.data.badges.map((b) => (
@@ -160,6 +111,61 @@ const cid = `pc-${entry.slug}`
       </svg>
     </span>
   </div>
+
+  {/* 배너는 DOM에서 텍스트 뒤 · 시각 배치는 order로 위. 앞에 두면 제목 링크의
+      stretched-link(after:inset-0)가 배너를 덮어 스와이프가 죽는다 */}
+  {box && (
+    <div
+      class="order-1 relative bg-neutral-200/70 dark:bg-neutral-900 border-b border-black/10 dark:border-white/15 max-h-[70vh]"
+      style={`aspect-ratio: ${BANNER_W} / ${box.h};`}
+    >
+      <div
+        class="pc-track flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        data-card={cid}
+        tabindex="0"
+        role="region"
+        aria-label="스크린샷"
+      >
+        {imgs.map((img) => (
+          <div class="snap-center shrink-0 w-full h-full grid place-items-center overflow-hidden">
+            <Image
+              src={img.src}
+              alt={img.caption}
+              widths={[BANNER_W, BANNER_W * 2]}
+              sizes={`(min-width: 768px) ${BANNER_W}px, 100vw`}
+              loading={index === 0 ? "eager" : "lazy"}
+              class="object-contain ring-1 ring-black/15 dark:ring-white/20 shadow-md shadow-black/10 dark:shadow-black/40"
+              style={`width:${box.widthPct.toFixed(3)}%; height:100%; max-width:100%; max-height:100%;`}
+            />
+          </div>
+        ))}
+      </div>
+
+      {imgs.length > 1 && (
+        <>
+          <button
+            type="button"
+            data-nav="prev"
+            data-card={cid}
+            aria-label="이전 화면"
+            class="absolute z-10 left-3 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-full bg-white/90 dark:bg-black/70 border border-black/15 dark:border-white/25 text-black dark:text-white text-sm leading-none backdrop-blur-sm"
+          >‹</button>
+          <button
+            type="button"
+            data-nav="next"
+            data-card={cid}
+            aria-label="다음 화면"
+            class="absolute z-10 right-3 top-1/2 -translate-y-1/2 size-8 grid place-items-center rounded-full bg-white/90 dark:bg-black/70 border border-black/15 dark:border-white/25 text-black dark:text-white text-sm leading-none backdrop-blur-sm"
+          >›</button>
+          <div
+            data-count={cid}
+            aria-live="polite"
+            class="absolute z-10 bottom-3 right-3 px-2 py-0.5 rounded text-xs tabular-nums bg-white/90 dark:bg-black/70 border border-black/10 dark:border-white/20 text-black dark:text-white"
+          >1 / {imgs.length}</div>
+        </>
+      )}
+    </div>
+  )}
 </div>
 
 <script>
@@ -170,9 +176,12 @@ const cid = `pc-${entry.slug}`
     const label = document.querySelector<HTMLElement>(`[data-count="${id}"]`)
 
     const sync = () => {
+      if (!label) return
       const w = track.clientWidth || 1
       const idx = Math.round(track.scrollLeft / w)
-      if (label) label.textContent = `${idx + 1} / ${count}`
+      // aria-live 리전이라 값이 그대로여도 대입하면 중복 알림이 된다
+      const next = `${idx + 1} / ${count}`
+      if (label.textContent !== next) label.textContent = next
     }
     track.addEventListener("scroll", () => window.requestAnimationFrame(sync), { passive: true })
     sync()
