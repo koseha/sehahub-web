@@ -10,7 +10,7 @@ export const SITE: Site = {
 // Work Page
 export const WORK: Page = {
   TITLE: "Work",
-  DESCRIPTION: "지나온 경력.",
+  DESCRIPTION: "지나온 경력을 정리합니다.",
 }
 
 // Blog Page
