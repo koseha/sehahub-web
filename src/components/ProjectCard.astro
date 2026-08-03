@@ -38,7 +38,9 @@ const cid = `pc-${entry.slug}`
         {entry.data.badges.map((b) => (
           <li class="pill pill-outline inline-flex items-center gap-1">
             {b === "DEMO" && (
-              <svg class="size-3 stroke-current" aria-hidden="true">
+              // globe는 fill 기반 심볼이다(users·calendar와 달리 fill="none"이 없다).
+              // stroke-current면 다크에서 검정 fill 위에 0.75px 외곽선만 남는다.
+              <svg class="size-3 fill-current" aria-hidden="true">
                 <use href="/ui.svg#globe" />
               </svg>
             )}
