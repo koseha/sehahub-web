@@ -25,6 +25,35 @@ function fitBox(img: ImageMetadata) {
 
 const imgs = entry.data.images ?? []
 const box = imgs.length > 0 ? fitBox(imgs[0].src) : null
+
+// 반응형 이미지 — 선언(sizes)과 후보(widths)를 둘 다 실제 렌더 박스에서 파생시킨다.
+// 상수를 박으면 배너 기하가 바뀔 때 선언만 남아 거짓이 된다.
+const CARD_W = BANNER_W - 2 // 카드 border 1px×2
+const GUTTER = 40 + 2 // Container px-5 + border
+const PHONE_VW = 430 // 휴대폰 최대 뷰포트
+const PHONE_W = PHONE_VW - GUTTER
+// sizes 에 나가는 값과 후보 산출에 쓰는 값을 같은 수에서 뽑는다. 둘이 갈리면
+// 앵커가 한 끗 차이로 빗나가 과대율이 1.00 → 1.50 으로 점프한다.
+const frac = box ? Number((box.widthPct / 100).toFixed(4)) : 0
+const deskPx = Math.ceil(CARD_W * frac)
+const sizes = `(min-width: 768px) ${deskPx}px, calc((100vw - ${GUTTER}px) * ${frac})`
+
+// sizes 두 분기에 각각 앵커를 두고 DPR 1~3 을 깐다. 15% 이내로 붙는 후보는 큰 쪽만 남긴다.
+// 데스크톱에만 앵커를 두면 휴대폰 요구폭이 사다리에서 가장 넓은 간격 한복판에 떨어진다.
+function widthsFor(srcW: number) {
+  const mobPx = Math.ceil(PHONE_W * frac)
+  const raw = [mobPx * 2, mobPx * 3, deskPx, deskPx * 2, deskPx * 3]
+  // 클램프를 dedupe 보다 먼저 — 뒤집히면 원본보다 큰 폭이 남아 descriptor 가 거짓이 된다
+  const c = [...new Set(raw.map((w) => Math.min(w, srcW)))].sort((a, b) => a - b)
+  // 직전에 "채택한" 값과 비교한다. 원본 이웃과 비교하면 15% 이내가 연쇄될 때
+  // 살아남은 계단 사이가 1.15 를 넘어버린다(예: [100,114,130,148,169] → [169])
+  const kept: number[] = []
+  for (let i = c.length - 1; i >= 0; i--) {
+    if (kept.length === 0 || kept[kept.length - 1] / c[i] > 1.15) kept.push(c[i])
+  }
+  return kept.reverse()
+}
+
 const team = entry.data.teamSize ?? entry.data.team
 const cid = `pc-${entry.slug}`
 ---
@@ -128,14 +157,14 @@ const cid = `pc-${entry.slug}`
         role="region"
         aria-label="스크린샷"
       >
-        {imgs.map((img) => (
+        {imgs.map((img, i) => (
           <div class="snap-center shrink-0 w-full h-full grid place-items-center overflow-hidden">
             <Image
               src={img.src}
               alt={img.caption}
-              widths={[BANNER_W, BANNER_W * 2]}
-              sizes={`(min-width: 768px) ${BANNER_W}px, 100vw`}
-              loading={index === 0 ? "eager" : "lazy"}
+              widths={widthsFor(img.src.width)}
+              sizes={sizes}
+              loading={index === 0 && i === 0 ? "eager" : "lazy"}
               class="object-contain ring-1 ring-black/15 dark:ring-white/20 shadow-md shadow-black/10 dark:shadow-black/40"
               style={`width:${box.widthPct.toFixed(3)}%; height:100%; max-width:100%; max-height:100%;`}
             />
