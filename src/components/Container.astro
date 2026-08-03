@@ -1,4 +1,7 @@
 ---
+// ⚠️ 아래 `px-5` 를 바꾸면 `src/lib/layout.ts` 의 CONTAINER_PX 도 함께 바꿀 것.
+// ProjectCard 가 그 값에서 배너 폭과 이미지 sizes 를 유도하는데, 어긋나면
+// "과소 선언 = 흐림" 방향이라 눈에 띄지 않는다.
 import { cn } from "@lib/utils"
 
 type Props = {
