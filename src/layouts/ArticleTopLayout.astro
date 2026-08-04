@@ -3,6 +3,7 @@ import type { CollectionEntry } from "astro:content"
 import { Image } from "astro:assets"
 import { formatDate, readingTime } from "@lib/utils"
 import ArrowIcon from "@components/ArrowIcon.astro"
+import { slotWidths } from "@lib/layout"
 import { isProject } from "@types"
 
 type Props = {
@@ -25,6 +26,19 @@ const period = isProject(entry) ? entry.data.period : null
 const badges = isProject(entry) ? entry.data.badges : null
 const isMobileOnly = !!badges && badges.includes("MOBILE") && !badges.includes("WEB") && !badges.includes("DEMO")
 const images = isProject(entry) ? entry.data.images : null
+
+// 스크린샷 스트립의 기하. 🔴 아래 클래스 리터럴과 같은 수여야 한다 — Tailwind JIT 가
+// 동적 클래스명을 못 잡으므로 리터럴을 지울 수 없다. 나란히 두는 것이 배선이다
+// (Container 의 px-5 ↔ layout.ts 의 CONTAINER_PX 와 같은 처방).
+const SHOT_VH = 45 // h-[45svh]
+const SHOT_MAX_H = 480 // max-h-[480px]
+const SHOT_BORDER = 1 // border
+
+// 실그림 폭 = (요소높이 − 테두리 2) × 종횡비. border-box 라 테두리를 빼야 한다.
+// 🔴 엄격 올림(floor+1)이다 — Math.ceil 은 1440/900 = 1.6 처럼 4자리 유한소수인
+//    자산에서 아무것도 올리지 않아 선언이 실그림보다 작아질 수 있다(= 흐림).
+const shotSizes = (m: ImageMetadata) =>
+  `calc((min(${SHOT_VH}svh, ${SHOT_MAX_H}px) - ${SHOT_BORDER * 2}px) * ${(Math.floor((m.width / m.height) * 1e4) + 1) / 1e4})`
 ---
 
 <div>
@@ -120,7 +134,19 @@ const images = isProject(entry) ? entry.data.images : null
     <div tabindex="0" role="region" aria-label="스크린샷" class="mt-6 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2">
       {images.map((img) => (
         <figure class="shrink-0 snap-start">
-          <Image src={img.src} alt={img.caption} class="h-[45svh] max-h-[480px] w-auto rounded border border-black/15 dark:border-white/20" />
+          {/* widths 는 목록 카드와 같은 사다리다 — 같은 폭을 요청하면 Astro 가 같은 파일을
+              내주므로(DEFAULT_HASH_PROPS 에 sizes 없음) 목록을 거쳐 온 방문자에게 캐시 히트한다.
+              sizes 만 여기서 따로 만든다: 상세는 높이 기반이라 형태가 아예 다르다.
+              🔴 아래 class 의 `h-[45svh] max-h-[480px] border` ← 프론트매터의
+                 SHOT_VH / SHOT_MAX_H / SHOT_BORDER 와 같은 수여야 한다(한쪽만 고치면
+                 sizes 가 조용히 거짓이 된다). */}
+          <Image
+            src={img.src}
+            alt={img.caption}
+            widths={slotWidths(images[0].src, img.src)}
+            sizes={shotSizes(img.src)}
+            class="h-[45svh] max-h-[480px] w-auto rounded border border-black/15 dark:border-white/20"
+          />
           <figcaption class="mt-2 text-sm text-center opacity-75">{img.caption}</figcaption>
         </figure>
       ))}
