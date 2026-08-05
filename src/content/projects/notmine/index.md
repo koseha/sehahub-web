@@ -9,7 +9,6 @@ releasesUrl: "/notmine/releases"
 badges:
 - MOBILE
 draft: false
-pinned: true
 tags:
 - Flutter
 - Supabase

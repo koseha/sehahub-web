@@ -10,7 +10,6 @@ badges:
 - MOBILE
 - DEMO
 draft: false
-pinned: true
 tags:
 - NestJS
 - TypeORM
