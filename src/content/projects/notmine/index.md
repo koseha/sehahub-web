@@ -16,10 +16,12 @@ tags:
 images:
 - src: ./01_home.png
   caption: 홈 — 다음 월급까지 확보해야 할 금액
-- src: ./02_register.png
-  caption: 지출 등록
 - src: ./03_monthly.png
   caption: 월별 지출 내역
+- src: ./05_recurring.png
+  caption: 반복 지출 현황 — 뭐가 언제 끝나는지
+- src: ./02_register.png
+  caption: 지출 등록
 - src: ./04_settings.png
   caption: 설정
 ---
