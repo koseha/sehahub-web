@@ -15,13 +15,15 @@ tags:
 - Riverpod
 images:
 - src: ./01_home.png
-  caption: 홈 — 다음 월급까지 확보해야 할 금액
+  caption: 홈 — 다음 월급까지 통장에서 나갈 돈
+- src: ./06_category.png
+  caption: 카테고리별 — 통장에서 나갈 돈과 카드로 쓴 돈을 나눠서
 - src: ./03_monthly.png
   caption: 월별 지출 내역
+- src: ./02_register.png
+  caption: 지출 등록 — 출금 수단과 지출 종류
 - src: ./05_recurring.png
   caption: 반복 지출 현황 — 뭐가 언제 끝나는지
-- src: ./02_register.png
-  caption: 지출 등록
 - src: ./04_settings.png
   caption: 설정
 ---
