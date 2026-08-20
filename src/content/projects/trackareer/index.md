@@ -18,7 +18,9 @@ tags:
 - React
 - Refine
 - TypeScript
-demoUrl: "https://trackareer-admin.sehahub.info"
+demos:
+- url: "https://trackareer-admin.sehahub.info"
+  label: "라이브 데모"
 storeUrl: "https://apps.apple.com/kr/app/id6770530325"
 images:
 - src: ./web-dashboard.png

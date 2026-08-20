@@ -32,8 +32,9 @@ const projects = defineCollection({
       tags: z.array(z.string()),
       draft: z.boolean().optional(),
       pinned: z.boolean().optional(), // 목록·메인 상단 고정 (정렬 토글 무관)
-      demoUrl: z.string().optional(),
-      storeUrl: z.string().optional(), // 앱 스토어 링크 — 스토어 URL은 demoUrl이 아니라 이 필드에 (라벨 규약)
+      // 라이브 데모 링크 — 트랙이 여럿이면 여러 개(버튼 라벨은 데이터가 든다)
+      demos: z.array(z.object({ url: z.string(), label: z.string() })).optional(),
+      storeUrl: z.string().optional(), // 앱 스토어 링크 — 스토어 URL은 demos가 아니라 이 필드에 (라벨 규약)
       releasesUrl: z.string().optional(), // 업데이트 내역(사이트 내부 라우트) — 대표 링크는 전부 헤더 링크 박스로
       repoUrl: z.string().optional(),
       period: z.string().optional(),

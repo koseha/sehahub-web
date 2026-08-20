@@ -1,6 +1,6 @@
 ---
 title: "AI 페이퍼 트레이딩"
-summary: "같은 데이터와 같은 지시를 받은 AI 셋이 각자 가상 자금을 운용하는 실험 기록."
+summary: "같은 데이터와 같은 지시를 받은 AI 셋이 각자 가상 자금을 운용하는 실험 기록. 국내와 미국 두 트랙."
 date: "2026-07-27"
 period: "2026.07 ~ 진행 중"
 team: "개인 프로젝트 (1인)"
@@ -12,17 +12,30 @@ tags:
 - Python
 - GitHub Actions
 - Cloudflare Pages
-demoUrl: "https://ai-paper-trading.sehahub.info"
+- Cloudflare Workers
+demos:
+- url: "https://ai-paper-trading.sehahub.info"
+  label: "국내 트랙 데모"
+- url: "https://ai-paper-trading-us.sehahub.info"
+  label: "미국 트랙 데모"
 images:
-- src: ./01_dashboard.png
-  caption: 계좌 현황과 자산 추이
+- src: ./01_leaderboard.png
+  caption: 국내 트랙 — 리더보드와 장중 실시간 표시
 - src: ./02_rounds.png
   caption: 회차별 판단 기록
+- src: ./03_us_leaderboard.png
+  caption: 미국 트랙 — 8종목 유니버스
 ---
 
 AI에게 산업 사이클 지표와 주가를 주고 가상 자금을 운용시키면 어떻게 되는지 지켜보는 실험입니다. **가상 계좌이고 실제 매매는 없습니다.** 어떤 종목도 권하지 않습니다.
 
-계좌 셋에게 주는 데이터와 지시는 완전히 같습니다. 그래야 계좌 사이의 차이를 성격 차이가 아니라 판단 차이로 읽을 수 있습니다. 각 계좌는 첫 회차에 자기 운용 원칙을 스스로 정하고 이후 회차에서 그 원칙을 지키거나 바꿉니다. 벤치마크 계좌와 사람 계좌가 같은 회차에 함께 기록됩니다.
+계좌 셋에게 주는 데이터와 지시는 완전히 같습니다. 그래야 계좌 사이의 차이를 성격 차이가 아니라 판단 차이로 읽을 수 있습니다. 각 계좌는 첫 회차에 자기 운용 원칙을 스스로 정하고 이후 회차에서 그 원칙을 지키거나 바꿉니다. 벤치마크 계좌는 첫 회차에 균등 매수한 뒤 아무것도 하지 않습니다. 이게 없으면 수익률 숫자를 해석할 수 없습니다. 여기에 입력 제약 없이 판단하는 계좌 하나를 별도 트랙으로 함께 굴립니다. 이 계좌는 뉴스도 공시도 다른 계좌의 판단도 볼 수 있어 AI 셋과 조건이 다르고 그래서 같은 표에 놓지 않습니다.
+
+## 두 트랙
+
+국내 트랙은 산업 사이클 지표와 주가를 봅니다. 미국 트랙은 별도 저장소의 수집기가 공시·실적·옵션·공매도·심리 등 무료로 닿는 소스를 모아 판정 규칙 없이 통째로 넘깁니다. 규칙을 미리 두지 않은 이유는 축이 늘어날수록 우연히 맞아떨어지는 조건이 반드시 나오기 때문입니다.
+
+두 트랙은 통화도 대상도 시작 시점도 다르고 AI가 보는 것도 다릅니다. 성적을 나란히 놓고 비교할 수 없습니다.
 
 ## 만들면서 신경 쓴 것
 
@@ -32,6 +45,44 @@ AI에게 산업 사이클 지표와 주가를 주고 가상 자금을 운용시�
 
 **검사기를 믿지 않기.** 화면 산출물을 검사하는 게이트를 열 종 만들고 일부러 고장 낸 코드를 넣어 그 게이트가 실제로 잡는지 확인했습니다. 매수·매도에 방향색을 쓰지 못하게 막는 검사가 파스텔 색을 통째로 놓치고 있던 것을 이 방식으로 찾았습니다. 검사기를 만들었다는 것과 그게 잡는다는 것은 다릅니다.
 
+**공급이 끊겨도 화면이 완결되게 하기.** 회차 종가로 서버에서 완성된 HTML을 먼저 만들고 장중 시세는 같은 서버의 JSON을 30초마다 받아 그 위에 덧그립니다. 시세 공급원이 집에 둔 상주 머신이라 언제든 끊길 수 있습니다. 그래서 공급이 죽어도 화면은 회차 기준으로 멀쩡하고 기준 시각을 함께 띄워 멈춘 것이 보이게 했습니다.
+
 ## 스택
 
-의존성 없이 파이썬 표준 라이브러리만으로 HTML 한 장을 만듭니다. 차트도 SVG를 직접 생성합니다. GitHub Actions에서 렌더링하고 Cloudflare Pages로 배포합니다. 외부 요청과 스크립트가 0개인지는 배포 전에 기계가 검사합니다.
+<div class="not-prose my-8 rounded border border-black/15 dark:border-white/20 p-5 text-sm">
+  <div class="flex flex-col gap-6">
+    <div>
+      <div class="mb-2 text-xs uppercase tracking-wide opacity-60">기록층 · 회차마다</div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">회차 기록 JSON</span>
+        <span class="opacity-40" aria-hidden="true">&rarr;</span>
+        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">site.py</span>
+        <span class="opacity-40" aria-hidden="true">&rarr;</span>
+        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">GitHub Actions</span>
+        <span class="opacity-40" aria-hidden="true">&rarr;</span>
+        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">Cloudflare Pages</span>
+        <span class="opacity-40" aria-hidden="true">&rarr;</span>
+        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1 font-medium text-black dark:text-white">완성된 HTML 한 장</span>
+      </div>
+    </div>
+    <div>
+      <div class="mb-2 text-xs uppercase tracking-wide opacity-60">표시층 · 장중 30초</div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">시세 API</span>
+        <span class="opacity-40" aria-hidden="true">&rarr;</span>
+        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">맥미니 폴러</span>
+        <span class="opacity-40" aria-hidden="true">&rarr;</span>
+        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">Cloudflare KV</span>
+        <span class="opacity-40" aria-hidden="true">&rarr;</span>
+        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">Worker /live.json</span>
+        <span class="opacity-40" aria-hidden="true">&rarr;</span>
+        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1 font-medium text-black dark:text-white">브라우저가 숫자만 덧그림</span>
+      </div>
+    </div>
+    <div class="opacity-70">표시층이 죽어도 기록층이 그린 화면은 그대로 남습니다. 기준 시각만 낡습니다.</div>
+  </div>
+</div>
+
+의존성 없이 파이썬 표준 라이브러리만으로 HTML 한 장을 만듭니다. 차트도 SVG를 직접 생성합니다. GitHub Actions에서 렌더링하고 Cloudflare Pages로 배포합니다.
+
+장중 시세만 경로가 다릅니다. 시세 API가 호출 IP를 확인해서 CI 러너에서는 부를 수 없습니다. 그래서 집에 둔 맥미니가 30초마다 시세를 받아 Cloudflare KV에 넣고 Worker가 같은 도메인으로 내줍니다. 제3자 요청이 0건인지는 배포 전에 기계가 검사합니다.
