@@ -22,11 +22,13 @@ demos:
   label: "단타봇 데모"
 images:
 - src: ./01_leaderboard.png
-  caption: 국내 트랙 — 리더보드와 장중 실시간 표시
+  caption: 국내 트랙 — 계좌별 누적 성적과 장중 실시간 표시
 - src: ./02_rounds.png
-  caption: 회차별 판단 기록
+  caption: 회차 기록 — AI가 남긴 판단 근거
 - src: ./03_us_leaderboard.png
-  caption: 미국 트랙 — 8종목 유니버스
+  caption: 미국 트랙 — 대형주 8종목과 벤치마크 계좌
+- src: ./04_danta.png
+  caption: 단타 관전봇 — 봇 넷의 당일 성적
 ---
 
 AI에게 산업 사이클 지표와 주가를 주고 가상 자금을 운용시키면 어떻게 되는지 지켜보는 실험입니다. **가상 계좌이고 실제 매매는 없습니다.** 어떤 종목도 권하지 않습니다.
