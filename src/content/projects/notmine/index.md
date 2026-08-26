@@ -32,7 +32,7 @@ images:
 
 월세 전기세 관리비처럼 날짜도 금액도 제각각인 고정 지출을 월급 주기 기준으로 모아 보여주는 예정 지출 관리 앱입니다. 가계부처럼 지난 소비를 기록하는 대신 앞으로 나갈 돈에만 집중해 다음 월급까지 확보해야 할 금액을 바로 알려줍니다.
 
-2026년 7월 App Store에 첫 출시했습니다.
+2026년 7월 App Store에 첫 출시했고 2026년 8월 일곱 번째 버전 v1.6.0을 냈습니다.
 
 ## 핵심 도전·결정
 
@@ -51,6 +51,39 @@ images:
 - 택한 것: 주기는 월급일부터 다음 월급일 전날까지. 월급일 31일은 말일 자동 보정. 반복 지출은 미리 만들지 않고 조회 시 온디맨드 생성
 - 버린 대안: 캘린더 월 기준 집계 · 반복 건 사전 일괄 생성
 - 트레이드오프: 주기 경계와 말일 보정의 계산 복잡도 ↔ 체감과 일치하는 숫자
+
+<div class="not-prose flow-box">
+  <div class="flex flex-col gap-6">
+    <div>
+      <div class="flow-label">캘린더 월 · 8월 1일 ~ 31일 (월급일 25일인 예)</div>
+      <div class="flow-row">
+        <span class="flow-node">통신비 8/5</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">카드값 8/14</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node flow-node-end">월급 8/25</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">월세 8/26</span>
+      </div>
+      <div class="flow-note mt-2">8/5와 8/14는 월급 전에 이미 나간 돈이고 다음 월급 전에 나갈 9/5와 9/14는 8월 칸에 없습니다. "다음 월급까지 얼마 남겨야 하나"에 답이 안 나옵니다.</div>
+    </div>
+    <div>
+      <div class="flow-label">월급 주기 · 8월 25일 ~ 9월 24일</div>
+      <div class="flow-row">
+        <span class="flow-node flow-node-end">월급 8/25</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">월세 8/26</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">통신비 9/5</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">카드값 9/14</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">다음 월급 전날 9/24</span>
+      </div>
+      <div class="flow-note mt-2">이 구간에 통장에서 나갈 돈만 더하면 그게 남겨 둘 금액입니다. 월급일이 31일이면 짧은 달은 말일로 맞춥니다.</div>
+    </div>
+  </div>
+</div>
 
 ### 분류축은 소비 항목이 아니라 출금 수단 (1.5.0)
 
