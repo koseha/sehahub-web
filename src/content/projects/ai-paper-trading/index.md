@@ -59,39 +59,39 @@ AI에게 산업 사이클 지표와 주가를 주고 가상 자금을 운용시�
 
 **공급이 끊겨도 화면이 완결되게 하기.** 회차 종가로 서버에서 완성된 HTML을 먼저 만들고 장중 시세는 같은 서버의 JSON을 30초마다 받아 그 위에 덧그립니다. 시세 공급원이 집에 둔 상주 머신이라 언제든 끊길 수 있습니다. 그래서 공급이 죽어도 화면은 회차 기준으로 멀쩡하고 기준 시각을 함께 띄워 멈춘 것이 보이게 했습니다.
 
-## 스택
+## 구조
 
-<div class="not-prose my-8 rounded border border-black/15 dark:border-white/20 p-5 text-sm">
+<div class="not-prose flow-box">
   <div class="flex flex-col gap-6">
     <div>
-      <div class="mb-2 text-xs uppercase tracking-wide opacity-60">기록층 · 회차마다</div>
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">회차 기록 JSON</span>
-        <span class="opacity-40" aria-hidden="true">&rarr;</span>
-        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">site.py</span>
-        <span class="opacity-40" aria-hidden="true">&rarr;</span>
-        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">GitHub Actions</span>
-        <span class="opacity-40" aria-hidden="true">&rarr;</span>
-        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">Cloudflare Pages</span>
-        <span class="opacity-40" aria-hidden="true">&rarr;</span>
-        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1 font-medium text-black dark:text-white">완성된 HTML 한 장</span>
+      <div class="flow-label">기록층 · 회차마다</div>
+      <div class="flow-row">
+        <span class="flow-node">회차 기록 JSON</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">site.py</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">GitHub Actions</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">Cloudflare Pages</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node flow-node-end">완성된 HTML 한 장</span>
       </div>
     </div>
     <div>
-      <div class="mb-2 text-xs uppercase tracking-wide opacity-60">표시층 · 장중 30초</div>
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">시세 API</span>
-        <span class="opacity-40" aria-hidden="true">&rarr;</span>
-        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">맥미니 폴러</span>
-        <span class="opacity-40" aria-hidden="true">&rarr;</span>
-        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">Cloudflare KV</span>
-        <span class="opacity-40" aria-hidden="true">&rarr;</span>
-        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1">Worker /live.json</span>
-        <span class="opacity-40" aria-hidden="true">&rarr;</span>
-        <span class="inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1 font-medium text-black dark:text-white">브라우저가 숫자만 덧그림</span>
+      <div class="flow-label">표시층 · 장중 30초</div>
+      <div class="flow-row">
+        <span class="flow-node">시세 API</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">맥미니 폴러</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">Cloudflare KV</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node">Worker /live.json</span>
+        <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+        <span class="flow-node flow-node-end">브라우저가 숫자만 덧그림</span>
       </div>
     </div>
-    <div class="opacity-70">표시층이 죽어도 기록층이 그린 화면은 그대로 남습니다. 기준 시각만 낡습니다.</div>
+    <div class="flow-note">표시층이 죽어도 기록층이 그린 화면은 그대로 남습니다. 기준 시각만 낡습니다.</div>
   </div>
 </div>
 

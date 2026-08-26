@@ -104,6 +104,36 @@ article {
   @apply font-medium border border-black/40 dark:border-white/40 text-black dark:text-white;
 }
 
+/* 흐름 도식 — 프로젝트 상세의 구조 블록(AI 페이퍼 · trackareer 공용). 마크다운 안에서 `not-prose` 와 함께 쓴다.
+   한 곳에서 고치면 모든 도식이 같이 바뀐다(페이지마다 클래스 문자열을 복붙하지 않는다). */
+.flow-box {
+  @apply my-8 rounded border border-black/15 dark:border-white/20 p-5 text-sm;
+}
+
+.flow-label {
+  @apply mb-2 text-xs uppercase tracking-wide opacity-60;
+}
+
+.flow-row {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.flow-node {
+  @apply inline-flex items-center rounded border border-black/20 dark:border-white/25 px-2.5 py-1;
+}
+
+.flow-node-end {
+  @apply font-medium text-black dark:text-white;
+}
+
+.flow-arrow {
+  @apply opacity-40;
+}
+
+.flow-note {
+  @apply opacity-70;
+}
+
 .card-link {
   @apply p-4 gap-3 flex items-center border rounded-lg hover:bg-black/5 hover:dark:bg-white/10 border-black/15 dark:border-white/20 blend;
 }
