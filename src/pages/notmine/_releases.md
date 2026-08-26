@@ -1,4 +1,4 @@
-최신 버전은 [App Store](https://apps.apple.com/kr/app/id6786492719)에서 받을 수 있습니다.
+최신 버전은 [App Store](https://apps.apple.com/app/apple-store/id6786492719?pt=129113064&ct=sehahub-releases&mt=8)에서 받을 수 있습니다.
 
 ## v1.6.0 — 2026년 8월 26일
 
@@ -49,4 +49,4 @@
 
 ---
 
-[App Store에서 받기](https://apps.apple.com/kr/app/id6786492719) · [지원 페이지](/notmine/support)
+[App Store에서 받기](https://apps.apple.com/app/apple-store/id6786492719?pt=129113064&ct=sehahub-releases&mt=8) · [지원 페이지](/notmine/support)
