@@ -16,12 +16,14 @@ tags:
 images:
 - src: ./01_home.png
   caption: 홈 — 다음 월급까지 통장에서 나갈 돈
+- src: ./02_edit.png
+  caption: 지출 수정 — 매달 금액이 달라지면 유동 금액
 - src: ./06_category.png
   caption: 카테고리별 — 통장에서 나갈 돈과 카드로 쓴 돈을 나눠서
 - src: ./03_monthly.png
   caption: 월별 지출 내역
-- src: ./02_register.png
-  caption: 지출 등록 — 출금 수단과 지출 종류
+- src: ./07_isheet.png
+  caption: 이 화면 보는 법 — 오른쪽 위 i 설명
 - src: ./05_recurring.png
   caption: 반복 지출 현황 — 뭐가 언제 끝나는지
 - src: ./04_settings.png
