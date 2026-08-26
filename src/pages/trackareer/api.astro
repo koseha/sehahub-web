@@ -1,0 +1,204 @@
+---
+import PageLayout from "@layouts/PageLayout.astro"
+import TopLayout from "@layouts/TopLayout.astro"
+import BottomLayout from "@layouts/BottomLayout.astro"
+import ArrowIcon from "@components/ArrowIcon.astro"
+import spec from "../../data/trackareer-admin-openapi.json"
+
+// trackareer-server 가 내는 OpenAPI 문서에서 관리자(/admin) 경로만 추린 정적 스냅샷 렌더. 외부 스크립트 없음.
+// 데이터 갱신: 서버를 로컬 기동한 뒤 `node tools/openapi-admin-snapshot.mjs [입력] [서버 커밋 표기]` (스크립트 머리말 참고).
+const s: any = spec
+const METHODS = ["get", "post", "patch", "put", "delete"]
+const GROUPS: Record<string, string> = {
+  auth: "인증",
+  users: "회원",
+  inquiries: "문의",
+  admins: "관리자 계정",
+  audit: "감사 로그",
+  "batch-runs": "배치 실행 로그",
+  push: "푸시",
+  stats: "통계",
+}
+const ORDER = Object.keys(GROUPS)
+const allSchemas: Record<string, any> = s.components.schemas
+
+const escape = (v: unknown) => String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+const refName = (r: string) => r.split("/").pop() ?? r
+// 속성·타입 정보가 아무것도 없는 스키마(서버 DTO 에 type 이 빠져 `Object` 로 잡힌 것) — 링크·목록에서 빼고 "object" 로만 표기
+const isBare = (name: string) => {
+  const sc = allSchemas[name]
+  const empty = (o: unknown) => !o || (typeof o === "object" && Object.keys(o as object).length === 0)
+  return !!sc && empty(sc.properties) && !sc.allOf && !sc.oneOf && !sc.anyOf && !sc.enum && !sc.items && !sc.additionalProperties
+}
+// 스키마 → 타입 표기(HTML). $ref 는 아래 스키마 절 앵커로 링크. format · nullable 은 어느 분기든 끝에 붙인다.
+const typeHtml = (sc: any): string => {
+  if (!sc) return "—"
+  let base: string
+  if (sc.$ref) {
+    const n = refName(sc.$ref)
+    base = isBare(n) ? "object" : `<a href="#schema-${n}">${escape(n)}</a>`
+  } else if (sc.allOf) base = sc.allOf.map(typeHtml).join(" &amp; ")
+  else if (sc.oneOf) base = sc.oneOf.map(typeHtml).join(" | ")
+  else if (sc.anyOf) base = sc.anyOf.map(typeHtml).join(" | ")
+  else if (sc.type === "array") base = `${typeHtml(sc.items)}[]`
+  else if (sc.enum) base = sc.enum.map((e: unknown) => escape(JSON.stringify(e))).join(" | ")
+  else base = escape(sc.type ?? "object")
+  if (sc.format) base += ` (${escape(sc.format)})`
+  if (sc.nullable) base += " | null"
+  return base
+}
+const jsonSchema = (content: any) => content?.["application/json"]?.schema
+// 템플릿 안에서는 제네릭(<any>)이 JSX 태그로 파싱되므로 여기서 감싼다
+const entries = (o: any): [string, any][] => Object.entries(o ?? {})
+const withDefault = (p: any) => {
+  const desc: string = p.description ?? ""
+  const d = p.schema?.default
+  return d === undefined ? desc : `${desc}${desc ? " " : ""}(기본 ${JSON.stringify(d)})`
+}
+
+type Op = { method: string; path: string; op: any }
+const ops: Op[] = []
+for (const [path, item] of Object.entries<any>(s.paths)) {
+  for (const m of METHODS) if (item[m]) ops.push({ method: m, path, op: item[m] })
+}
+const groupOf = (path: string) => path.split("/")[2] ?? ""
+const byPath = (a: Op, b: Op) => a.path.localeCompare(b.path) || METHODS.indexOf(a.method) - METHODS.indexOf(b.method)
+const groups = ORDER
+  .map((key) => ({ key, label: GROUPS[key], ops: ops.filter((o) => groupOf(o.path) === key).sort(byPath) }))
+  .filter((g) => g.ops.length > 0)
+const ungrouped = ops.filter((o) => !ORDER.includes(groupOf(o.path))).sort(byPath)
+if (ungrouped.length > 0) groups.push({ key: "etc", label: "기타", ops: ungrouped })
+const schemas = Object.entries<any>(allSchemas).filter(([name]) => !isBare(name))
+const pathCount = Object.keys(s.paths).length
+const snapshot = s["x-snapshot"]
+---
+
+<PageLayout title="trackareer 관리자 API" description="trackareer-server OpenAPI 문서에서 관리자(/admin) 경로만 추린 정적 스냅샷입니다.">
+  <TopLayout>
+    <div class="animate">
+      <a href="/projects/trackareer" class="group w-fit p-1.5 gap-1.5 text-sm flex items-center border rounded hover:bg-black/5 hover:dark:bg-white/10 border-black/15 dark:border-white/20 transition-colors duration-300 ease-in-out">
+        <ArrowIcon direction="left" />
+        <div class="w-full group-hover:text-black group-hover:dark:text-white transition-colors duration-300 ease-in-out">
+          trackareer
+        </div>
+      </a>
+      <h1 class="page-heading text-3xl mt-12">trackareer 관리자 API</h1>
+      <p class="mt-3 text-sm opacity-75">
+        trackareer-server의 OpenAPI 3.0 문서 가운데 제가 설계한 관리자 API(/admin)만 추린 정적 스냅샷입니다. 앱 API는 팀 서비스라 공개하지 않습니다. 인증은 앱 사용자와 분리된 관리자 JWT(Bearer)입니다.
+      </p>
+      <p class="mt-3 text-sm">
+        권한은 SUPER_ADMIN과 ADMIN 두 단계이고 관리자 행위는 감사 로그에 남습니다. 회원 목록의 이메일은 앞 두 글자만 보이고 상세에서만 전체를 봅니다. 푸시는 멱등하게 처리해 중복 발송을 막고 마케팅 푸시는 야간에 차단합니다. 통계에는 생존자 편향이 있는 지표를 표기했습니다.
+      </p>
+      <p class="mt-2 text-sm opacity-75">
+        경로 {pathCount} · 오퍼레이션 {ops.length} · 스키마 {schemas.length} · 스냅샷 {snapshot.date} · {snapshot.source}
+      </p>
+    </div>
+  </TopLayout>
+  <BottomLayout>
+    <div class="animate">
+      <article>
+        {groups.map((g) => (
+          <section>
+            <h2>{g.label}</h2>
+            {g.ops.map(({ method, path, op }) => (
+              <details class="my-3 rounded border border-black/15 dark:border-white/20">
+                <summary class="cursor-pointer p-3">
+                  <span class="inline-flex flex-wrap items-center gap-2">
+                    <span class="pill pill-outline">{method}</span>
+                    <code class="text-sm">{path}</code>
+                    <span class="text-sm opacity-75">{op.summary}</span>
+                  </span>
+                </summary>
+                <div class="px-3 pb-3 text-sm flex flex-col gap-3">
+                  {op.description && <p class="my-0 opacity-75">{op.description}</p>}
+                  {op.parameters?.length > 0 && (
+                    <div>
+                      <div class="text-xs uppercase opacity-60">파라미터</div>
+                      <table class="w-full text-left my-0">
+                        <thead><tr><th>이름</th><th>위치</th><th>타입</th><th>필수</th><th>설명</th></tr></thead>
+                        <tbody>
+                          {op.parameters.map((p: any) => (
+                            <tr>
+                              <td><code>{p.name}</code></td>
+                              <td>{p.in}</td>
+                              <td set:html={typeHtml(p.schema)} />
+                              <td>{p.required ? "필수" : ""}</td>
+                              <td>{withDefault(p)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {op.requestBody && (
+                    <div>
+                      <div class="text-xs uppercase opacity-60">요청 본문</div>
+                      <span set:html={typeHtml(jsonSchema(op.requestBody.content))} />
+                    </div>
+                  )}
+                  <div>
+                    <div class="text-xs uppercase opacity-60">응답</div>
+                    <ul class="my-0">
+                      {entries(op.responses).map(([code, r]) => (
+                        <li>
+                          <code>{code}</code> <span set:html={typeHtml(jsonSchema(r.content))} />
+                          {r.description ? <span class="opacity-75"> — {r.description}</span> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {op.security?.length > 0 && <div class="opacity-75">인증: Bearer (관리자 JWT)</div>}
+                </div>
+              </details>
+            ))}
+          </section>
+        ))}
+        <section>
+          <h2>스키마</h2>
+          {schemas.map(([name, sc]) => (
+            <details class="my-2 rounded border border-black/15 dark:border-white/20" id={`schema-${name}`}>
+              <summary class="cursor-pointer p-3"><code class="text-sm">{name}</code></summary>
+              <div class="px-3 pb-3 text-sm">
+                {sc.properties ? (
+                  <table class="w-full text-left my-0">
+                    <thead><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr></thead>
+                    <tbody>
+                      {entries(sc.properties).map(([pn, ps]) => (
+                        <tr>
+                          <td><code>{pn}</code></td>
+                          <td set:html={typeHtml(ps)} />
+                          <td>{sc.required?.includes(pn) ? "필수" : ""}</td>
+                          <td>{withDefault({ description: ps.description, schema: ps })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <span set:html={typeHtml(sc)} />
+                )}
+              </div>
+            </details>
+          ))}
+        </section>
+      </article>
+    </div>
+  </BottomLayout>
+</PageLayout>
+
+<style>
+  /* 타이포그래피 플러그인이 인라인 code 앞뒤에 그리는 백틱을 이 페이지에서는 끈다 — 경로·필드·상태코드가 전부 code 라 표식이 소음이 된다 */
+  code::before,
+  code::after {
+    content: none;
+  }
+</style>
+
+<script>
+  // $ref 링크·URL 해시로 온 스키마 <details> 를 펼친다 — 브라우저는 닫힌 details 로 스크롤만 하고 열지 않는다
+  const openTarget = () => {
+    const el = location.hash ? document.getElementById(location.hash.slice(1)) : null
+    if (el instanceof HTMLDetailsElement) el.open = true
+  }
+  openTarget()
+  addEventListener("hashchange", openTarget)
+</script>

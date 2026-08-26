@@ -1,0 +1,3915 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "Trackareer Server",
+  "version": "0.0.1"
+ },
+ "x-snapshot": {
+  "date": "2026-08-26",
+  "source": "trackareer-server main 3164378 (2026-08-18)",
+  "scope": "admin paths only"
+ },
+ "paths": {
+  "/admin/users": {
+   "get": {
+    "operationId": "AdminUsersController_list",
+    "parameters": [
+     {
+      "name": "page",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": 1,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "limit",
+      "required": false,
+      "in": "query",
+      "description": "최대 100 (초과 시 100으로 클램프)",
+      "schema": {
+       "default": 20,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "sort",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": "createdAt",
+       "type": "string",
+       "enum": [
+        "createdAt",
+        "postingCount"
+       ]
+      }
+     },
+     {
+      "name": "order",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": "desc",
+       "type": "string",
+       "enum": [
+        "asc",
+        "desc"
+       ]
+      }
+     },
+     {
+      "name": "q",
+      "required": false,
+      "in": "query",
+      "description": "이메일/닉네임 검색",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "ACTIVE",
+        "PENDING_DELETION"
+       ]
+      }
+     },
+     {
+      "name": "provider",
+      "required": false,
+      "in": "query",
+      "description": "가입 유형",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "KAKAO",
+        "APPLE"
+       ]
+      }
+     },
+     {
+      "name": "marketingConsent",
+      "required": false,
+      "in": "query",
+      "description": "마케팅 수신 동의 여부",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "activated",
+      "required": false,
+      "in": "query",
+      "description": "활성화 여부(가입→첫 공고 등록)",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "includeInternal",
+      "required": false,
+      "in": "query",
+      "description": "내부 계정(팀원·QA) 포함 여부. 기본 false = 숨김. 통계는 이 값과 무관하게 항상 제외한다.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "createdFrom",
+      "required": false,
+      "in": "query",
+      "description": "가입일 시작 (ISO8601)",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "createdTo",
+      "required": false,
+      "in": "query",
+      "description": "가입일 종료 (ISO8601)",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminUserListResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "회원 목록 (검색·필터·정렬·페이지네이션)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/users/{id}": {
+   "get": {
+    "operationId": "AdminUsersController_detail",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "number"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminUserDetailResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     },
+     "404": {
+      "description": "존재하지 않는 회원"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "회원 상세 (PII 최소화·email 전체)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/users/{id}/internal": {
+   "patch": {
+    "description": "켜면 이 유저와 그 파생 데이터가 admin 통계에서 빠진다(회원 목록에는 토글로 계속 보인다). daily_stat은 스냅샷이라 켠 시점 이전 적재분은 소급되지 않는다 — 추이에 계단이 한 번 생기므로 새 팀원 계정은 만든 직후 켜고, 켠 뒤에는 끄지 않는 것을 기본으로 한다.",
+    "operationId": "AdminUsersController_setInternal",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "number"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ChangeUserInternalDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminUserInternalResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     },
+     "404": {
+      "description": "존재하지 않는 회원"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "내부 계정(팀원·QA) 플래그 토글 — 통계 집계 제외 여부",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/users/{id}/restore": {
+   "post": {
+    "operationId": "AdminUsersController_restore",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "number"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminRestoreResponseDto"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "삭제 대기 상태가 아닌 계정"
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     },
+     "404": {
+      "description": "존재하지 않는 회원"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "삭제 대기 계정 복구",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/inquiries": {
+   "get": {
+    "operationId": "AdminInquiriesController_list",
+    "parameters": [
+     {
+      "name": "page",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": 1,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "limit",
+      "required": false,
+      "in": "query",
+      "description": "최대 100 (초과 시 100으로 클램프)",
+      "schema": {
+       "default": 20,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "sort",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": "createdAt",
+       "type": "string",
+       "enum": [
+        "createdAt",
+        "answeredAt"
+       ]
+      }
+     },
+     {
+      "name": "order",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": "desc",
+       "type": "string",
+       "enum": [
+        "asc",
+        "desc"
+       ]
+      }
+     },
+     {
+      "name": "q",
+      "required": false,
+      "in": "query",
+      "description": "제목/내용 검색",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "PENDING",
+        "ANSWERED"
+       ]
+      }
+     },
+     {
+      "name": "category",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "FEATURE_REQUEST",
+        "BUG_REPORT",
+        "HELP",
+        "ETC"
+       ]
+      }
+     },
+     {
+      "name": "createdFrom",
+      "required": false,
+      "in": "query",
+      "description": "등록일 시작 (ISO8601)",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "createdTo",
+      "required": false,
+      "in": "query",
+      "description": "등록일 종료 (ISO8601)",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminInquiryListResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "문의 목록 (검색·필터·페이지네이션)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/inquiries/{id}": {
+   "get": {
+    "operationId": "AdminInquiriesController_detail",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "number"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminInquiryDetailResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     },
+     "404": {
+      "description": "존재하지 않는 문의 (INQUIRY_NOT_FOUND)"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "문의 상세 (본문 + 답변 이력)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/inquiries/{id}/reply": {
+   "post": {
+    "operationId": "AdminInquiriesController_reply",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "number"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AdminInquiryReplyDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminInquiryDetailResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     },
+     "404": {
+      "description": "존재하지 않는 문의 (INQUIRY_NOT_FOUND)"
+     },
+     "409": {
+      "description": "이미 답변 완료된 문의 (INQUIRY_ALREADY_ANSWERED)"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "문의 답변 (이메일 발송 → 상태변경·알림·감사)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/auth/login": {
+   "post": {
+    "operationId": "AdminAuthController_login",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AdminLoginDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminLoginResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "이메일/비밀번호 불일치 (INVALID_CREDENTIALS)"
+     },
+     "403": {
+      "description": "비활성 계정 (ACCOUNT_INACTIVE)"
+     },
+     "429": {
+      "description": "로그인 시도 초과로 잠금 (ACCOUNT_LOCKED)"
+     }
+    },
+    "summary": "admin 로그인 (이메일/비밀번호)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/auth/refresh": {
+   "post": {
+    "operationId": "AdminAuthController_refresh",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AdminRefreshDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminLoginResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 리프레시 토큰 (INVALID_REFRESH_TOKEN)"
+     }
+    },
+    "summary": "admin 액세스 토큰 재발급 (리프레시 로테이션)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/auth/logout": {
+   "post": {
+    "operationId": "AdminAuthController_logout",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AdminLogoutDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "204": {
+      "description": "로그아웃 성공"
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "admin 로그아웃 (리프레시 토큰 무효화)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/auth/password": {
+   "patch": {
+    "operationId": "AdminAuthController_changePassword",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AdminChangePasswordDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "204": {
+      "description": "변경 성공"
+     },
+     "400": {
+      "description": "현재 비밀번호와 동일/이메일과 동일 등 정책 위반 (WEAK_PASSWORD)"
+     },
+     "401": {
+      "description": "현재 비밀번호 불일치 (INVALID_CURRENT_PASSWORD)\n\n유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "admin 본인 비밀번호 변경",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/stats/summary": {
+   "get": {
+    "operationId": "AdminStatsController_summary",
+    "parameters": [
+     {
+      "name": "from",
+      "required": false,
+      "in": "query",
+      "description": "집계 시작일 (KST, YYYY-MM-DD). 미지정 시 종료일 기준 최근 30일",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "to",
+      "required": false,
+      "in": "query",
+      "description": "집계 종료일 (KST, YYYY-MM-DD). 미지정 시 오늘(KST)",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminStatsSummaryResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "대시보드 통계 요약 (핵심5, 즉석 집계)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/stats/members": {
+   "get": {
+    "operationId": "AdminStatsController_members",
+    "parameters": [
+     {
+      "name": "from",
+      "required": false,
+      "in": "query",
+      "description": "집계 시작일 (KST, YYYY-MM-DD). 미지정 시 종료일 기준 최근 30일",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "to",
+      "required": false,
+      "in": "query",
+      "description": "집계 종료일 (KST, YYYY-MM-DD). 미지정 시 오늘(KST)",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminStatsMembersResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "회원 분포 (탈퇴사유[기간]·마케팅동의율[스냅샷]·플랫폼[스냅샷])",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/stats/postings": {
+   "get": {
+    "operationId": "AdminStatsController_postings",
+    "parameters": [
+     {
+      "name": "from",
+      "required": false,
+      "in": "query",
+      "description": "집계 시작일 (KST, YYYY-MM-DD). 미지정 시 종료일 기준 최근 30일",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "to",
+      "required": false,
+      "in": "query",
+      "description": "집계 종료일 (KST, YYYY-MM-DD). 미지정 시 오늘(KST)",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminStatsPostingsResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "공고 통계 (지원전환율·등록→지원 소요시간) ⚠ survivorship 편향",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/stats/engagement": {
+   "get": {
+    "operationId": "AdminStatsController_engagement",
+    "parameters": [
+     {
+      "name": "from",
+      "required": false,
+      "in": "query",
+      "description": "집계 시작일 (KST, YYYY-MM-DD). 미지정 시 종료일 기준 최근 30일",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "to",
+      "required": false,
+      "in": "query",
+      "description": "집계 종료일 (KST, YYYY-MM-DD). 미지정 시 오늘(KST)",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminStatsEngagementResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "알림 인게이지먼트 (읽음률)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/stats/active-users": {
+   "get": {
+    "operationId": "AdminStatsController_activeUsers",
+    "parameters": [
+     {
+      "name": "from",
+      "required": false,
+      "in": "query",
+      "description": "집계 시작일 (KST, YYYY-MM-DD). 미지정 시 종료일 기준 최근 30일",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "to",
+      "required": false,
+      "in": "query",
+      "description": "집계 종료일 (KST, YYYY-MM-DD). 미지정 시 오늘(KST)",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminStatsActiveUsersResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "활성 사용자 (DAU series·WAU·MAU) ⚠ survivorship 편향",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/stats/trends": {
+   "get": {
+    "operationId": "AdminStatsController_trends",
+    "parameters": [
+     {
+      "name": "from",
+      "required": false,
+      "in": "query",
+      "description": "시작일 (KST, YYYY-MM-DD). 미지정 시 종료일 기준 최근 12개월",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "to",
+      "required": false,
+      "in": "query",
+      "description": "종료일 (KST, YYYY-MM-DD). 미지정 시 오늘(KST)",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "granularity",
+      "required": false,
+      "in": "query",
+      "description": "롤업 단위. 미지정 시 month",
+      "schema": {
+       "default": "month",
+       "type": "string",
+       "enum": [
+        "week",
+        "month"
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminStatsTrendsResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "통계 추세 (daily_stat 주/월 롤업)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/admins": {
+   "get": {
+    "operationId": "AdminAdminsController_list",
+    "parameters": [
+     {
+      "name": "page",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": 1,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "limit",
+      "required": false,
+      "in": "query",
+      "description": "최대 100 (초과 시 100으로 클램프)",
+      "schema": {
+       "default": 20,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminAccountListResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "관리자 계정 목록 (SUPER 전용)",
+    "tags": [
+     "admin"
+    ]
+   },
+   "post": {
+    "operationId": "AdminAdminsController_create",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateAdminDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminCreatedResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     },
+     "409": {
+      "description": "이미 사용 중인 이메일 (EMAIL_ALREADY_EXISTS)"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "관리자 계정 생성 (임시비번 1회 평문 반환)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/admins/{id}/role": {
+   "patch": {
+    "operationId": "AdminAdminsController_changeRole",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "number"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ChangeAdminRoleDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminAccountDetailResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "본인 강등 / 마지막 활성 SUPER 강등 (CANNOT_MODIFY_SELF · LAST_ACTIVE_SUPER_ADMIN)"
+     },
+     "404": {
+      "description": "존재하지 않는 관리자 (ADMIN_NOT_FOUND)"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "관리자 권한 변경",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/admins/{id}/status": {
+   "patch": {
+    "operationId": "AdminAdminsController_changeStatus",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "number"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ChangeAdminStatusDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminAccountDetailResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "본인 비활성 / 마지막 활성 SUPER 비활성 (CANNOT_MODIFY_SELF · LAST_ACTIVE_SUPER_ADMIN)"
+     },
+     "404": {
+      "description": "존재하지 않는 관리자 (ADMIN_NOT_FOUND)"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "관리자 활성/비활성 토글",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/admins/{id}/reset-password": {
+   "patch": {
+    "operationId": "AdminAdminsController_resetPassword",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "number"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminResetPasswordResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "본인 비밀번호 초기화 (CANNOT_MODIFY_SELF)"
+     },
+     "404": {
+      "description": "존재하지 않는 관리자 (ADMIN_NOT_FOUND)"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "관리자 비밀번호 초기화 (임시비번 1회 평문 반환)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/audit": {
+   "get": {
+    "operationId": "AdminAuditController_list",
+    "parameters": [
+     {
+      "name": "page",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": 1,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "limit",
+      "required": false,
+      "in": "query",
+      "description": "최대 100 (초과 시 100으로 클램프)",
+      "schema": {
+       "default": 20,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "sort",
+      "required": false,
+      "in": "query",
+      "description": "정렬 기준 (createdAt만 허용)",
+      "schema": {
+       "default": "createdAt",
+       "type": "string",
+       "enum": [
+        "createdAt"
+       ]
+      }
+     },
+     {
+      "name": "order",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": "desc",
+       "type": "string",
+       "enum": [
+        "asc",
+        "desc"
+       ]
+      }
+     },
+     {
+      "name": "actionType",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "RESTORE_ACCOUNT",
+        "REPLY_INQUIRY",
+        "DELETE_INQUIRY",
+        "DELETE_POSTING",
+        "FORCE_WITHDRAW",
+        "CREATE_ADMIN",
+        "CHANGE_ADMIN_ROLE",
+        "TOGGLE_ADMIN",
+        "SEND_PUSH",
+        "TRIGGER_BATCH",
+        "BULK_PII_VIEW",
+        "LOGIN_FAIL",
+        "RESET_ADMIN_PASSWORD",
+        "TOGGLE_USER_INTERNAL"
+       ]
+      }
+     },
+     {
+      "name": "targetType",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "USER",
+        "INQUIRY",
+        "ADMIN",
+        "POSTING",
+        "BATCH",
+        "PUSH",
+        "AUTH"
+       ]
+      }
+     },
+     {
+      "name": "createdFrom",
+      "required": false,
+      "in": "query",
+      "description": "조회 시작일 (KST, YYYY-MM-DD, 포함)",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "createdTo",
+      "required": false,
+      "in": "query",
+      "description": "조회 종료일 (KST, YYYY-MM-DD, 포함)",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminAuditListResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "감사 로그 조회 (SUPER 전용)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/batch-runs": {
+   "get": {
+    "operationId": "AdminBatchRunsController_list",
+    "parameters": [
+     {
+      "name": "page",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": 1,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "limit",
+      "required": false,
+      "in": "query",
+      "description": "최대 100 (초과 시 100으로 클램프)",
+      "schema": {
+       "default": 20,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "sort",
+      "required": false,
+      "in": "query",
+      "description": "정렬 기준 (startedAt만 허용)",
+      "schema": {
+       "default": "startedAt",
+       "type": "string",
+       "enum": [
+        "startedAt"
+       ]
+      }
+     },
+     {
+      "name": "order",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": "desc",
+       "type": "string",
+       "enum": [
+        "asc",
+        "desc"
+       ]
+      }
+     },
+     {
+      "name": "jobName",
+      "required": false,
+      "in": "query",
+      "description": "잡 이름 정확 일치 필터 (예: today-notifications)",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "RUNNING",
+        "SUCCESS",
+        "FAILED"
+       ]
+      }
+     },
+     {
+      "name": "createdFrom",
+      "required": false,
+      "in": "query",
+      "description": "조회 시작일 (KST, YYYY-MM-DD, 포함)",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "createdTo",
+      "required": false,
+      "in": "query",
+      "description": "조회 종료일 (KST, YYYY-MM-DD, 포함)",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdminBatchRunsListResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "배치 실행 로그 조회 (ADMIN+SUPER)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/push/preview": {
+   "post": {
+    "operationId": "AdminPushController_preview",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SendPushDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PushPreviewResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "푸시 발송 전 대상수 미리보기 (SUPER 전용, 발송 X)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/push": {
+   "post": {
+    "operationId": "AdminPushController_send",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SendPushDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SendPushResponseDto"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "마케팅 푸시 야간 차단 (PUSH_MARKETING_NIGHT_BLOCKED)"
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "푸시 발송 (SUPER 전용, 비가역·멱등)",
+    "tags": [
+     "admin"
+    ]
+   },
+   "get": {
+    "operationId": "AdminPushController_list",
+    "parameters": [
+     {
+      "name": "page",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": 1,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "limit",
+      "required": false,
+      "in": "query",
+      "description": "최대 100 (초과 시 100으로 클램프)",
+      "schema": {
+       "default": 20,
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Object"
+        }
+       ]
+      }
+     },
+     {
+      "name": "sort",
+      "required": false,
+      "in": "query",
+      "description": "정렬 기준 (createdAt만 허용)",
+      "schema": {
+       "default": "createdAt",
+       "type": "string",
+       "enum": [
+        "createdAt"
+       ]
+      }
+     },
+     {
+      "name": "order",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "default": "desc",
+       "type": "string",
+       "enum": [
+        "asc",
+        "desc"
+       ]
+      }
+     },
+     {
+      "name": "kind",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "NOTICE",
+        "MARKETING"
+       ]
+      }
+     },
+     {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "schema": {
+       "type": "string",
+       "enum": [
+        "SENDING",
+        "SENT",
+        "FAILED"
+       ]
+      }
+     },
+     {
+      "name": "createdFrom",
+      "required": false,
+      "in": "query",
+      "description": "조회 시작일 (KST, YYYY-MM-DD, 포함)",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "createdTo",
+      "required": false,
+      "in": "query",
+      "description": "조회 종료일 (KST, YYYY-MM-DD, 포함)",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PushCampaignListResponseDto"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "푸시 발송 이력 조회 (SUPER 전용)",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/push/test": {
+   "post": {
+    "operationId": "AdminPushController_sendTest",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SendPushTestDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SendPushTestResponseDto"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "userId·email 미지정/동시지정 또는 입력 검증 실패"
+     },
+     "401": {
+      "description": "유효하지 않은 admin 액세스 토큰"
+     },
+     "403": {
+      "description": "권한 부족 / 비활성 계정 / 비밀번호 변경 필요"
+     }
+    },
+    "security": [
+     {
+      "bearer": []
+     }
+    ],
+    "summary": "단일 회원 테스트 발송 (SUPER 전용, 진단용·이력 미기록)",
+    "tags": [
+     "admin"
+    ]
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "AdminAccountDetailResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminAccountItemDto"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "AdminAccountItemDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "email": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string",
+      "enum": [
+       "SUPER_ADMIN",
+       "ADMIN"
+      ]
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "ACTIVE",
+       "INACTIVE"
+      ]
+     },
+     "lastLoginAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "createdAt": {
+      "format": "date-time",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "email",
+     "name",
+     "role",
+     "status",
+     "lastLoginAt",
+     "createdAt"
+    ]
+   },
+   "AdminAccountListResponseDto": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminAccountItemDto"
+      }
+     },
+     "total": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "items",
+     "total"
+    ]
+   },
+   "AdminActivationRateDto": {
+    "type": "object",
+    "properties": {
+     "registered": {
+      "type": "number",
+      "description": "첫 공고 등록 경험이 있는 ACTIVE 회원 수"
+     },
+     "total": {
+      "type": "number",
+      "description": "ACTIVE 회원 수 (분모)"
+     },
+     "rate": {
+      "type": "number",
+      "description": "registered / total (0~1, 소수 4자리)"
+     }
+    },
+    "required": [
+     "registered",
+     "total",
+     "rate"
+    ]
+   },
+   "AdminAtRiskDto": {
+    "type": "object",
+    "properties": {
+     "overdueNotApplied": {
+      "type": "number",
+      "description": "마감 지남 & 미지원 (현재 스냅샷)"
+     },
+     "deadlineSoon": {
+      "type": "number",
+      "description": "7일 내 마감 임박 & 미지원 (현재 스냅샷)"
+     }
+    },
+    "required": [
+     "overdueNotApplied",
+     "deadlineSoon"
+    ]
+   },
+   "AdminAuditItemDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "adminId": {
+      "type": "number",
+      "nullable": true,
+      "description": "행위 관리자 id (LOGIN_FAIL 등 식별 전·관리자 삭제 시 null)"
+     },
+     "adminName": {
+      "type": "string",
+      "nullable": true,
+      "description": "행위 관리자 이름 (LEFT JOIN admin — 미식별/삭제 시 null)"
+     },
+     "actionType": {
+      "type": "string",
+      "enum": [
+       "RESTORE_ACCOUNT",
+       "REPLY_INQUIRY",
+       "DELETE_INQUIRY",
+       "DELETE_POSTING",
+       "FORCE_WITHDRAW",
+       "CREATE_ADMIN",
+       "CHANGE_ADMIN_ROLE",
+       "TOGGLE_ADMIN",
+       "SEND_PUSH",
+       "TRIGGER_BATCH",
+       "BULK_PII_VIEW",
+       "LOGIN_FAIL",
+       "RESET_ADMIN_PASSWORD",
+       "TOGGLE_USER_INTERNAL"
+      ]
+     },
+     "targetType": {
+      "type": "string",
+      "enum": [
+       "USER",
+       "INQUIRY",
+       "ADMIN",
+       "POSTING",
+       "BATCH",
+       "PUSH",
+       "AUTH"
+      ]
+     },
+     "targetId": {
+      "type": "string",
+      "nullable": true,
+      "description": "대상 식별자 raw (이름 해석 안 함)"
+     },
+     "note": {
+      "type": "string",
+      "nullable": true,
+      "description": "비고 (role 변경·email 등; 시크릿 미포함)"
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "발생 시각"
+     }
+    },
+    "required": [
+     "id",
+     "adminId",
+     "adminName",
+     "actionType",
+     "targetType",
+     "targetId",
+     "note",
+     "createdAt"
+    ]
+   },
+   "AdminAuditListResponseDto": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminAuditItemDto"
+      }
+     },
+     "total": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "items",
+     "total"
+    ]
+   },
+   "AdminBatchRunItemDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "jobName": {
+      "type": "string",
+      "description": "잡 이름 (예: today-notifications)"
+     },
+     "startedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "시작 시각"
+     },
+     "finishedAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true,
+      "description": "종료 시각 (RUNNING이면 null)"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "RUNNING",
+       "SUCCESS",
+       "FAILED"
+      ]
+     },
+     "result": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      },
+      "nullable": true,
+      "description": "성공 시 잡 반환값 스냅샷({processed}/{deleted}), 그 외 null"
+     },
+     "error": {
+      "type": "string",
+      "nullable": true,
+      "description": "실패 메시지 (FAILED일 때), 그 외 null"
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "적재 시각"
+     },
+     "durationMs": {
+      "type": "number",
+      "nullable": true,
+      "description": "실행 소요(ms) = finishedAt-startedAt. 미완료(RUNNING)면 null"
+     }
+    },
+    "required": [
+     "id",
+     "jobName",
+     "startedAt",
+     "finishedAt",
+     "status",
+     "result",
+     "error",
+     "createdAt",
+     "durationMs"
+    ]
+   },
+   "AdminBatchRunsListResponseDto": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminBatchRunItemDto"
+      }
+     },
+     "total": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "items",
+     "total"
+    ]
+   },
+   "AdminChangePasswordDto": {
+    "type": "object",
+    "properties": {
+     "currentPassword": {
+      "type": "string"
+     },
+     "newPassword": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 64
+     }
+    },
+    "required": [
+     "currentPassword",
+     "newPassword"
+    ]
+   },
+   "AdminCreatedResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminAccountItemDto"
+     },
+     "tempPassword": {
+      "type": "string",
+      "description": "1회성 임시 비밀번호(평문). 이후 재조회 불가."
+     }
+    },
+    "required": [
+     "item",
+     "tempPassword"
+    ]
+   },
+   "AdminDauPointDto": {
+    "type": "object",
+    "properties": {
+     "date": {
+      "type": "string",
+      "description": "KST 활동 일자 (YYYY-MM-DD)"
+     },
+     "count": {
+      "type": "number",
+      "description": "해당 일자 활성 유저 수 (DISTINCT userId)"
+     }
+    },
+    "required": [
+     "date",
+     "count"
+    ]
+   },
+   "AdminInquiryDetailDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "userId": {
+      "type": "number"
+     },
+     "nickname": {
+      "type": "string",
+      "nullable": true
+     },
+     "category": {
+      "type": "string",
+      "enum": [
+       "FEATURE_REQUEST",
+       "BUG_REPORT",
+       "HELP",
+       "ETC"
+      ]
+     },
+     "title": {
+      "type": "string"
+     },
+     "content": {
+      "type": "string"
+     },
+     "replyEmail": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "PENDING",
+       "ANSWERED"
+      ]
+     },
+     "createdAt": {
+      "format": "date-time",
+      "type": "string"
+     },
+     "answeredAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "replies": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminInquiryReplyItemDto"
+      }
+     }
+    },
+    "required": [
+     "id",
+     "userId",
+     "nickname",
+     "category",
+     "title",
+     "content",
+     "replyEmail",
+     "status",
+     "createdAt",
+     "answeredAt",
+     "replies"
+    ]
+   },
+   "AdminInquiryDetailResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminInquiryDetailDto"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "AdminInquiryListItemDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "userId": {
+      "type": "number"
+     },
+     "nickname": {
+      "type": "string",
+      "nullable": true
+     },
+     "category": {
+      "type": "string",
+      "enum": [
+       "FEATURE_REQUEST",
+       "BUG_REPORT",
+       "HELP",
+       "ETC"
+      ]
+     },
+     "title": {
+      "type": "string"
+     },
+     "replyEmail": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "PENDING",
+       "ANSWERED"
+      ]
+     },
+     "createdAt": {
+      "format": "date-time",
+      "type": "string"
+     },
+     "answeredAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     }
+    },
+    "required": [
+     "id",
+     "userId",
+     "nickname",
+     "category",
+     "title",
+     "replyEmail",
+     "status",
+     "createdAt",
+     "answeredAt"
+    ]
+   },
+   "AdminInquiryListResponseDto": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminInquiryListItemDto"
+      }
+     },
+     "total": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "items",
+     "total"
+    ]
+   },
+   "AdminInquiryReplyDto": {
+    "type": "object",
+    "properties": {
+     "content": {
+      "type": "string",
+      "description": "답변 본문 (이메일로 발송됨)"
+     }
+    },
+    "required": [
+     "content"
+    ]
+   },
+   "AdminInquiryReplyItemDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "adminId": {
+      "type": "number"
+     },
+     "adminName": {
+      "type": "string",
+      "nullable": true
+     },
+     "content": {
+      "type": "string"
+     },
+     "emailSentAt": {
+      "format": "date-time",
+      "type": "string"
+     },
+     "createdAt": {
+      "format": "date-time",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "adminId",
+     "adminName",
+     "content",
+     "emailSentAt",
+     "createdAt"
+    ]
+   },
+   "AdminLoginDto": {
+    "type": "object",
+    "properties": {
+     "email": {
+      "type": "string",
+      "example": "admin@trackareer.test"
+     },
+     "password": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "email",
+     "password"
+    ]
+   },
+   "AdminLoginResponseDto": {
+    "type": "object",
+    "properties": {
+     "accessToken": {
+      "type": "string"
+     },
+     "refreshToken": {
+      "type": "string"
+     },
+     "admin": {
+      "$ref": "#/components/schemas/AdminSummaryDto"
+     }
+    },
+    "required": [
+     "accessToken",
+     "refreshToken",
+     "admin"
+    ]
+   },
+   "AdminLogoutDto": {
+    "type": "object",
+    "properties": {
+     "refreshToken": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "refreshToken"
+    ]
+   },
+   "AdminMarketingConsentDto": {
+    "type": "object",
+    "properties": {
+     "consentType": {
+      "type": "string",
+      "enum": [
+       "PRIVACY_MARKETING",
+       "MARKETING_NOTIFICATION"
+      ]
+     },
+     "consented": {
+      "type": "boolean"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "SIGNUP",
+       "NOTIFICATION_SETTING",
+       "ADMIN"
+      ]
+     },
+     "createdAt": {
+      "format": "date-time",
+      "type": "string"
+     }
+    },
+    "required": [
+     "consentType",
+     "consented",
+     "source",
+     "createdAt"
+    ]
+   },
+   "AdminMarketingConsentRateDto": {
+    "type": "object",
+    "properties": {
+     "consented": {
+      "type": "number",
+      "description": "마케팅 수신 동의(marketingNotiConsent=true) ACTIVE 회원 수. 현재 스냅샷 — from/to 무시"
+     },
+     "total": {
+      "type": "number",
+      "description": "현재 ACTIVE 회원 수 (분모, soft-delete 제외). 현재 스냅샷 — from/to 무시"
+     },
+     "rate": {
+      "type": "number",
+      "description": "consented / total (0~1, 소수 4자리). 현재 스냅샷 — from/to 무시"
+     }
+    },
+    "required": [
+     "consented",
+     "total",
+     "rate"
+    ]
+   },
+   "AdminNotificationReadDto": {
+    "type": "object",
+    "properties": {
+     "read": {
+      "type": "number",
+      "description": "읽음(isRead=true) 알림 수"
+     },
+     "total": {
+      "type": "number",
+      "description": "기간 내 발송 알림 수 (분모)"
+     },
+     "rate": {
+      "type": "number",
+      "description": "read / total (0~1, 소수 4자리)"
+     }
+    },
+    "required": [
+     "read",
+     "total",
+     "rate"
+    ]
+   },
+   "AdminPlatformPointDto": {
+    "type": "object",
+    "properties": {
+     "platform": {
+      "type": "string",
+      "enum": [
+       "ANDROID",
+       "IOS"
+      ],
+      "description": "디바이스 플랫폼"
+     },
+     "count": {
+      "type": "number",
+      "description": "유저당 최근활동기기(lastActiveAt 최신) 1개 기준 카운트. 현재 스냅샷 — from/to 무시"
+     }
+    },
+    "required": [
+     "platform",
+     "count"
+    ]
+   },
+   "AdminPostingConversionDto": {
+    "type": "object",
+    "properties": {
+     "applied": {
+      "type": "number",
+      "description": "지원 완료(APPLIED) 공고 수"
+     },
+     "total": {
+      "type": "number",
+      "description": "기간 내 등록 공고 수 (분모)"
+     },
+     "rate": {
+      "type": "number",
+      "description": "applied / total (0~1, 소수 4자리)"
+     }
+    },
+    "required": [
+     "applied",
+     "total",
+     "rate"
+    ]
+   },
+   "AdminPostingLeadTimeDto": {
+    "type": "object",
+    "properties": {
+     "avgHours": {
+      "type": "number",
+      "nullable": true,
+      "description": "등록→지원 평균 소요시간(시간). APPLIED & appliedAt 존재 행의 AVG(appliedAt-createdAt). 표본 0이면 null"
+     },
+     "sampleSize": {
+      "type": "number",
+      "description": "평균 산정에 쓰인 표본 수 (APPLIED & appliedAt 존재)"
+     }
+    },
+    "required": [
+     "avgHours",
+     "sampleSize"
+    ]
+   },
+   "AdminPostingRegistrationDto": {
+    "type": "object",
+    "properties": {
+     "scraped": {
+      "type": "number",
+      "description": "스크래퍼 등록 수"
+     },
+     "manual": {
+      "type": "number",
+      "description": "수동 등록 수"
+     },
+     "scrapedRatio": {
+      "type": "number",
+      "description": "scraped / (scraped+manual) (0~1, 소수 4자리). source NULL 행 제외"
+     }
+    },
+    "required": [
+     "scraped",
+     "manual",
+     "scrapedRatio"
+    ]
+   },
+   "AdminRefreshDto": {
+    "type": "object",
+    "properties": {
+     "refreshToken": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "refreshToken"
+    ]
+   },
+   "AdminResetPasswordResponseDto": {
+    "type": "object",
+    "properties": {
+     "tempPassword": {
+      "type": "string",
+      "description": "1회성 임시 비밀번호(평문). 이후 재조회 불가."
+     }
+    },
+    "required": [
+     "tempPassword"
+    ]
+   },
+   "AdminRestoreItemDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "email": {
+      "type": "string"
+     },
+     "nickname": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "ACTIVE",
+       "PENDING_DELETION"
+      ]
+     }
+    },
+    "required": [
+     "id",
+     "email",
+     "nickname",
+     "status"
+    ]
+   },
+   "AdminRestoreResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminRestoreItemDto"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "AdminSignupPointDto": {
+    "type": "object",
+    "properties": {
+     "date": {
+      "type": "string",
+      "description": "KST 일자 (YYYY-MM-DD)"
+     },
+     "count": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "date",
+     "count"
+    ]
+   },
+   "AdminSignupProviderPointDto": {
+    "type": "object",
+    "properties": {
+     "date": {
+      "type": "string",
+      "description": "KST 일자 (YYYY-MM-DD)"
+     },
+     "provider": {
+      "type": "string",
+      "enum": [
+       "KAKAO",
+       "APPLE"
+      ]
+     },
+     "count": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "date",
+     "provider",
+     "count"
+    ]
+   },
+   "AdminSignupsDto": {
+    "type": "object",
+    "properties": {
+     "total": {
+      "type": "number",
+      "description": "기간 내 가입 수 합계"
+     },
+     "series": {
+      "description": "KST 일별 가입 수",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminSignupPointDto"
+      }
+     },
+     "providerSeries": {
+      "description": "KST 일별×가입 유형 가입 수 — sparse(가입 0인 날·유형 조합은 행 없음, zero-fill은 클라이언트 책임). date asc·provider asc 정렬",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminSignupProviderPointDto"
+      }
+     }
+    },
+    "required": [
+     "total",
+     "series",
+     "providerSeries"
+    ]
+   },
+   "AdminStatsActiveUsersDto": {
+    "type": "object",
+    "properties": {
+     "dau": {
+      "description": "일별 DAU series (기간: activity_log.activeDate). ⚠ survivorship: 탈퇴 유저 활동기록 CASCADE 삭제로 과거 추이 축소 가능",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminDauPointDto"
+      }
+     },
+     "wau": {
+      "type": "number",
+      "description": "WAU — 오늘 기준 최근 7일 활성 유저 수 (현재 스칼라, from/to 무시)"
+     },
+     "mau": {
+      "type": "number",
+      "description": "MAU — 오늘 기준 최근 30일 활성 유저 수 (현재 스칼라, from/to 무시)"
+     }
+    },
+    "required": [
+     "dau",
+     "wau",
+     "mau"
+    ]
+   },
+   "AdminStatsActiveUsersResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminStatsActiveUsersDto"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "AdminStatsEngagementDto": {
+    "type": "object",
+    "properties": {
+     "notificationRead": {
+      "description": "알림 읽음률 (기간: notification.createdAt KST)",
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/AdminNotificationReadDto"
+       }
+      ]
+     }
+    },
+    "required": [
+     "notificationRead"
+    ]
+   },
+   "AdminStatsEngagementResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminStatsEngagementDto"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "AdminStatsMembersDto": {
+    "type": "object",
+    "properties": {
+     "withdrawalReasons": {
+      "description": "탈퇴 사유 분포 (기간: withdrawal_reason.createdAt KST)",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminWithdrawalReasonPointDto"
+      }
+     },
+     "marketingConsent": {
+      "$ref": "#/components/schemas/AdminMarketingConsentRateDto"
+     },
+     "platforms": {
+      "description": "플랫폼 분포 (현재 스냅샷 — from/to 무시)",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminPlatformPointDto"
+      }
+     }
+    },
+    "required": [
+     "withdrawalReasons",
+     "marketingConsent",
+     "platforms"
+    ]
+   },
+   "AdminStatsMembersResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminStatsMembersDto"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "AdminStatsPostingsDto": {
+    "type": "object",
+    "properties": {
+     "conversion": {
+      "description": "지원 전환율 (기간: job_posting.createdAt KST). ⚠ survivorship: 탈퇴 유저 공고는 CASCADE 삭제되어 과거 집계가 축소될 수 있음",
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/AdminPostingConversionDto"
+       }
+      ]
+     },
+     "leadTime": {
+      "description": "등록→지원 소요시간 (기간: createdAt KST). ⚠ survivorship 동일",
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/AdminPostingLeadTimeDto"
+       }
+      ]
+     }
+    },
+    "required": [
+     "conversion",
+     "leadTime"
+    ]
+   },
+   "AdminStatsPostingsResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminStatsPostingsDto"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "AdminStatsSummaryDto": {
+    "type": "object",
+    "properties": {
+     "pendingInquiries": {
+      "type": "number",
+      "description": "미답변(PENDING) 문의 수 (현재 스냅샷)"
+     },
+     "signups": {
+      "$ref": "#/components/schemas/AdminSignupsDto"
+     },
+     "activationRate": {
+      "$ref": "#/components/schemas/AdminActivationRateDto"
+     },
+     "postingRegistration": {
+      "$ref": "#/components/schemas/AdminPostingRegistrationDto"
+     },
+     "atRisk": {
+      "$ref": "#/components/schemas/AdminAtRiskDto"
+     }
+    },
+    "required": [
+     "pendingInquiries",
+     "signups",
+     "activationRate",
+     "postingRegistration",
+     "atRisk"
+    ]
+   },
+   "AdminStatsSummaryResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminStatsSummaryDto"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "AdminStatsTrendsResponseDto": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/TrendPointDto"
+      }
+     }
+    },
+    "required": [
+     "items"
+    ]
+   },
+   "AdminSummaryDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "name": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string",
+      "enum": [
+       "SUPER_ADMIN",
+       "ADMIN"
+      ]
+     },
+     "mustChangePassword": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "role",
+     "mustChangePassword"
+    ]
+   },
+   "AdminUserDetailDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "email": {
+      "type": "string"
+     },
+     "nickname": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "ACTIVE",
+       "PENDING_DELETION"
+      ]
+     },
+     "provider": {
+      "type": "string",
+      "enum": [
+       "KAKAO",
+       "APPLE"
+      ],
+      "description": "가입 유형(소셜 로그인)"
+     },
+     "role": {
+      "type": "string",
+      "enum": [
+       "USER",
+       "ADMIN"
+      ]
+     },
+     "deletionRequestedAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "createdAt": {
+      "format": "date-time",
+      "type": "string"
+     },
+     "hasEverRegisteredPosting": {
+      "type": "boolean"
+     },
+     "isInternal": {
+      "type": "boolean",
+      "description": "내부 계정(팀원·QA). true면 통계 집계에서 제외된다 — 토글 현재값"
+     },
+     "marketingNotiConsent": {
+      "type": "boolean"
+     },
+     "marketingNotiConsentChangedAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "terms": {
+      "nullable": true,
+      "type": "object",
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/AdminUserTermsDto"
+       }
+      ]
+     },
+     "marketingConsentHistory": {
+      "$ref": "#/components/schemas/AdminUserMarketingConsentsDto"
+     },
+     "postings": {
+      "$ref": "#/components/schemas/AdminUserPostingsDto"
+     },
+     "inquiries": {
+      "$ref": "#/components/schemas/AdminUserInquiriesDto"
+     },
+     "devices": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminUserDeviceDto"
+      }
+     },
+     "withdrawalReasons": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminWithdrawalReasonDto"
+      }
+     }
+    },
+    "required": [
+     "id",
+     "email",
+     "nickname",
+     "status",
+     "provider",
+     "role",
+     "deletionRequestedAt",
+     "createdAt",
+     "hasEverRegisteredPosting",
+     "isInternal",
+     "marketingNotiConsent",
+     "marketingNotiConsentChangedAt",
+     "terms",
+     "marketingConsentHistory",
+     "postings",
+     "inquiries",
+     "devices",
+     "withdrawalReasons"
+    ]
+   },
+   "AdminUserDetailResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminUserDetailDto"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "AdminUserDeviceDto": {
+    "type": "object",
+    "properties": {
+     "platform": {
+      "type": "string",
+      "enum": [
+       "ANDROID",
+       "IOS"
+      ]
+     },
+     "lastActiveAt": {
+      "format": "date-time",
+      "type": "string"
+     }
+    },
+    "required": [
+     "platform",
+     "lastActiveAt"
+    ]
+   },
+   "AdminUserInquiriesDto": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminUserInquiryDto"
+      }
+     },
+     "total": {
+      "type": "number",
+      "description": "전체 건수(items는 최근 100건 상한)"
+     }
+    },
+    "required": [
+     "items",
+     "total"
+    ]
+   },
+   "AdminUserInquiryDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "category": {
+      "type": "string",
+      "enum": [
+       "FEATURE_REQUEST",
+       "BUG_REPORT",
+       "HELP",
+       "ETC"
+      ]
+     },
+     "title": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "PENDING",
+       "ANSWERED"
+      ]
+     },
+     "createdAt": {
+      "format": "date-time",
+      "type": "string"
+     },
+     "answeredAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     }
+    },
+    "required": [
+     "id",
+     "category",
+     "title",
+     "status",
+     "createdAt",
+     "answeredAt"
+    ]
+   },
+   "AdminUserInternalItemDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "email": {
+      "type": "string"
+     },
+     "nickname": {
+      "type": "string"
+     },
+     "isInternal": {
+      "type": "boolean",
+      "description": "적용된 값"
+     }
+    },
+    "required": [
+     "id",
+     "email",
+     "nickname",
+     "isInternal"
+    ]
+   },
+   "AdminUserInternalResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/AdminUserInternalItemDto"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "AdminUserListItemDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "email": {
+      "type": "string",
+      "description": "마스킹됨 (로컬파트 앞 2자)"
+     },
+     "nickname": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "ACTIVE",
+       "PENDING_DELETION"
+      ]
+     },
+     "provider": {
+      "type": "string",
+      "enum": [
+       "KAKAO",
+       "APPLE"
+      ],
+      "description": "가입 유형(소셜 로그인)"
+     },
+     "createdAt": {
+      "format": "date-time",
+      "type": "string"
+     },
+     "postingCount": {
+      "type": "number"
+     },
+     "marketingNotiConsent": {
+      "type": "boolean"
+     },
+     "hasEverRegisteredPosting": {
+      "type": "boolean"
+     },
+     "isInternal": {
+      "type": "boolean",
+      "description": "내부 계정(팀원·QA). true면 통계 집계에서 제외된다 — 배지 표시용"
+     }
+    },
+    "required": [
+     "id",
+     "email",
+     "nickname",
+     "status",
+     "provider",
+     "createdAt",
+     "postingCount",
+     "marketingNotiConsent",
+     "hasEverRegisteredPosting",
+     "isInternal"
+    ]
+   },
+   "AdminUserListResponseDto": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminUserListItemDto"
+      }
+     },
+     "total": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "items",
+     "total"
+    ]
+   },
+   "AdminUserMarketingConsentsDto": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminMarketingConsentDto"
+      }
+     },
+     "total": {
+      "type": "number",
+      "description": "전체 건수(items는 최근 100건 상한)"
+     }
+    },
+    "required": [
+     "items",
+     "total"
+    ]
+   },
+   "AdminUserPostingDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "company": {
+      "type": "string"
+     },
+     "position": {
+      "type": "string"
+     },
+     "deadline": {
+      "type": "string",
+      "nullable": true
+     },
+     "applicationStatus": {
+      "type": "string",
+      "enum": [
+       "NOT_APPLIED",
+       "APPLIED"
+      ]
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "SCRAPED",
+       "MANUAL"
+      ],
+      "nullable": true
+     },
+     "closedOnHire": {
+      "type": "boolean"
+     },
+     "appliedAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "createdAt": {
+      "format": "date-time",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "company",
+     "position",
+     "deadline",
+     "applicationStatus",
+     "source",
+     "closedOnHire",
+     "appliedAt",
+     "createdAt"
+    ]
+   },
+   "AdminUserPostingsDto": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminUserPostingDto"
+      }
+     },
+     "total": {
+      "type": "number",
+      "description": "전체 건수(items는 최근 100건 상한)"
+     }
+    },
+    "required": [
+     "items",
+     "total"
+    ]
+   },
+   "AdminUserTermsDto": {
+    "type": "object",
+    "properties": {
+     "termsOfServiceAgreed": {
+      "type": "boolean"
+     },
+     "privacyPolicyAgreed": {
+      "type": "boolean"
+     },
+     "privacyMarketingAgreed": {
+      "type": "boolean"
+     },
+     "marketingNotificationAgreed": {
+      "type": "boolean"
+     },
+     "termsVersion": {
+      "type": "string",
+      "nullable": true
+     },
+     "agreedAt": {
+      "format": "date-time",
+      "type": "string"
+     }
+    },
+    "required": [
+     "termsOfServiceAgreed",
+     "privacyPolicyAgreed",
+     "privacyMarketingAgreed",
+     "marketingNotificationAgreed",
+     "termsVersion",
+     "agreedAt"
+    ]
+   },
+   "AdminWithdrawalReasonDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "etcText": {
+      "type": "string",
+      "nullable": true
+     },
+     "createdAt": {
+      "format": "date-time",
+      "type": "string"
+     },
+     "reasonTypes": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "JOB_SUCCESS",
+        "FEATURES_LACKING",
+        "COMPLEX_OR_INCONVENIENT",
+        "NOT_HELPFUL",
+        "STAGE_MISMATCH",
+        "NOTIFICATION_BURDEN",
+        "USING_OTHER_SERVICE",
+        "ETC"
+       ]
+      }
+     }
+    },
+    "required": [
+     "id",
+     "etcText",
+     "createdAt",
+     "reasonTypes"
+    ]
+   },
+   "AdminWithdrawalReasonPointDto": {
+    "type": "object",
+    "properties": {
+     "reasonType": {
+      "type": "string",
+      "enum": [
+       "JOB_SUCCESS",
+       "FEATURES_LACKING",
+       "COMPLEX_OR_INCONVENIENT",
+       "NOT_HELPFUL",
+       "STAGE_MISMATCH",
+       "NOTIFICATION_BURDEN",
+       "USING_OTHER_SERVICE",
+       "ETC"
+      ],
+      "description": "탈퇴 사유 유형"
+     },
+     "count": {
+      "type": "number",
+      "description": "해당 사유 선택 건수 (item 단위 — 탈퇴 1건이 복수 사유 선택 가능)"
+     }
+    },
+    "required": [
+     "reasonType",
+     "count"
+    ]
+   },
+   "ChangeAdminRoleDto": {
+    "type": "object",
+    "properties": {
+     "role": {
+      "type": "string",
+      "enum": [
+       "SUPER_ADMIN",
+       "ADMIN"
+      ]
+     }
+    },
+    "required": [
+     "role"
+    ]
+   },
+   "ChangeAdminStatusDto": {
+    "type": "object",
+    "properties": {
+     "status": {
+      "type": "string",
+      "enum": [
+       "ACTIVE",
+       "INACTIVE"
+      ]
+     }
+    },
+    "required": [
+     "status"
+    ]
+   },
+   "ChangeUserInternalDto": {
+    "type": "object",
+    "properties": {
+     "isInternal": {
+      "type": "boolean",
+      "description": "내부 계정(팀원·QA) 여부. true면 통계 집계에서 제외된다(회원 목록에는 토글로 보인다)."
+     }
+    },
+    "required": [
+     "isInternal"
+    ]
+   },
+   "CreateAdminDto": {
+    "type": "object",
+    "properties": {
+     "email": {
+      "type": "string",
+      "example": "ops@trackareer.test"
+     },
+     "name": {
+      "type": "string",
+      "maxLength": 32
+     },
+     "role": {
+      "type": "string",
+      "enum": [
+       "SUPER_ADMIN",
+       "ADMIN"
+      ]
+     }
+    },
+    "required": [
+     "email",
+     "name",
+     "role"
+    ]
+   },
+   "Object": {
+    "type": "object",
+    "properties": {}
+   },
+   "PushCampaignItemDto": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "number"
+     },
+     "adminId": {
+      "type": "number",
+      "nullable": true,
+      "description": "발송 관리자 id (계정 삭제 시 null)"
+     },
+     "title": {
+      "type": "string",
+      "description": "실제 발송 제목 (MARKETING은 (광고) 포함)"
+     },
+     "body": {
+      "type": "string",
+      "description": "실제 발송 본문 (MARKETING은 수신거부 안내 포함)"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "NOTICE",
+       "MARKETING"
+      ]
+     },
+     "targetCount": {
+      "type": "number",
+      "description": "대상 토큰 수(발송 시도). 정상 발송 시 successCount+failCount와 일치, 전체 예외(FAILED) 시 failCount=targetCount"
+     },
+     "successCount": {
+      "type": "number",
+      "description": "FCM 전송 접수 성공 수 (≠ 단말 도달)"
+     },
+     "failCount": {
+      "type": "number",
+      "description": "FCM 전송 실패 수"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "SENDING",
+       "SENT",
+       "FAILED"
+      ]
+     },
+     "sentAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true,
+      "description": "발송 종료 시각 (미종료면 null)"
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time"
+     }
+    },
+    "required": [
+     "id",
+     "adminId",
+     "title",
+     "body",
+     "kind",
+     "targetCount",
+     "successCount",
+     "failCount",
+     "status",
+     "sentAt",
+     "createdAt"
+    ]
+   },
+   "PushCampaignListResponseDto": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/PushCampaignItemDto"
+      }
+     },
+     "total": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "items",
+     "total"
+    ]
+   },
+   "PushPreviewResponseDto": {
+    "type": "object",
+    "properties": {
+     "targetTokenCount": {
+      "type": "number",
+      "description": "대상 디바이스 토큰 수 (발송·집계 기준)"
+     },
+     "targetUserCount": {
+      "type": "number",
+      "description": "대상 고유 유저 수 (운영자 직관용)"
+     },
+     "idempotencyKey": {
+      "type": "string",
+      "description": "서버가 KST날짜·원문(kind·title·body)으로 계산한 멱등키"
+     }
+    },
+    "required": [
+     "targetTokenCount",
+     "targetUserCount",
+     "idempotencyKey"
+    ]
+   },
+   "SendPushDto": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "푸시 제목"
+     },
+     "body": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "푸시 본문"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "NOTICE",
+       "MARKETING"
+      ],
+      "description": "NOTICE(공지) | MARKETING(광고 — 야간 차단·(광고) 표기·수신거부 안내)"
+     }
+    },
+    "required": [
+     "title",
+     "body",
+     "kind"
+    ]
+   },
+   "SendPushResponseDto": {
+    "type": "object",
+    "properties": {
+     "item": {
+      "$ref": "#/components/schemas/PushCampaignItemDto"
+     },
+     "duplicate": {
+      "type": "boolean",
+      "description": "동일 내용 재요청으로 기존 캠페인을 반환했는지(재발송 안 함) 여부"
+     }
+    },
+    "required": [
+     "item",
+     "duplicate"
+    ]
+   },
+   "SendPushTestDto": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "푸시 제목"
+     },
+     "body": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "푸시 본문"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "NOTICE",
+       "MARKETING"
+      ],
+      "description": "NOTICE(공지) | MARKETING(광고 — 야간 차단·(광고) 표기·수신거부 안내)"
+     },
+     "userId": {
+      "type": "number",
+      "description": "대상 회원 id (email과 택1)"
+     },
+     "email": {
+      "type": "string",
+      "description": "대상 회원 email (userId와 택1)"
+     }
+    },
+    "required": [
+     "title",
+     "body",
+     "kind"
+    ]
+   },
+   "SendPushTestResponseDto": {
+    "type": "object",
+    "properties": {
+     "userFound": {
+      "type": "boolean",
+      "description": "지정한 회원을 찾았는지 여부"
+     },
+     "resolvedUserId": {
+      "type": "number",
+      "nullable": true,
+      "description": "찾은 회원 id (userFound=true일 때)"
+     },
+     "tokenCount": {
+      "type": "number",
+      "description": "등록된 디바이스 토큰 수 (0이면 results 빈배열)"
+     },
+     "results": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/TokenResultDto"
+      }
+     }
+    },
+    "required": [
+     "userFound",
+     "tokenCount",
+     "results"
+    ]
+   },
+   "TokenResultDto": {
+    "type": "object",
+    "properties": {
+     "tokenTail": {
+      "type": "string",
+      "description": "토큰 끝 6자(진단 식별용, full token 미노출)"
+     },
+     "platform": {
+      "type": "string",
+      "enum": [
+       "ANDROID",
+       "IOS"
+      ]
+     },
+     "success": {
+      "type": "boolean",
+      "description": "FCM 전송 접수 성공 여부(≠ 단말 도달)"
+     },
+     "messageId": {
+      "type": "string",
+      "nullable": true,
+      "description": "FCM 메시지 id (성공 시)"
+     },
+     "errorCode": {
+      "type": "string",
+      "nullable": true,
+      "description": "FCM 에러 코드 원문 (실패 시, 예: messaging/mismatched-credential)"
+     },
+     "errorMessage": {
+      "type": "string",
+      "nullable": true,
+      "description": "FCM 에러 메시지 원문 (실패 시)"
+     },
+     "interpretation": {
+      "type": "string",
+      "nullable": true,
+      "description": "errorCode의 한국어 진단 해석 (매핑 없으면 fallback 문구)"
+     },
+     "disabled": {
+      "type": "boolean",
+      "nullable": true,
+      "description": "FCM 비활성(no-op)이라 실제 발송이 일어나지 않았음"
+     }
+    },
+    "required": [
+     "tokenTail",
+     "platform",
+     "success"
+    ]
+   },
+   "TrendPointDto": {
+    "type": "object",
+    "properties": {
+     "period": {
+      "type": "string",
+      "description": "버킷 키 (week=IYYY-IW / month=YYYY-MM)"
+     },
+     "lastDate": {
+      "type": "string",
+      "nullable": true,
+      "description": "버킷 내 채택된 말일 statDate (YYYY-MM-DD, MAX statDate). 데이터 없으면 null"
+     },
+     "daysWithData": {
+      "type": "number",
+      "description": "버킷 내 실제 적재 일수 (신뢰도·결측 가시화)"
+     },
+     "newUsers": {
+      "type": "number"
+     },
+     "newPostings": {
+      "type": "number"
+     },
+     "newPostingsApplied": {
+      "type": "number",
+      "description": "당일 전환율 분자"
+     },
+     "newInquiries": {
+      "type": "number"
+     },
+     "newWithdrawals": {
+      "type": "number"
+     },
+     "notificationsSent": {
+      "type": "number"
+     },
+     "notificationsRead": {
+      "type": "number",
+      "description": "읽음률 분자"
+     },
+     "newPostingsScraped": {
+      "type": "number",
+      "description": "자동등록비율 분자 (extra SCRAPED 합)"
+     },
+     "newPostingsManual": {
+      "type": "number",
+      "description": "자동등록비율 분모 구성 (extra MANUAL 합)"
+     },
+     "totalUsers": {
+      "type": "number",
+      "nullable": true
+     },
+     "activeUsers": {
+      "type": "number",
+      "nullable": true,
+      "description": "활성화율·동의율 분모"
+     },
+     "pendingDeletionUsers": {
+      "type": "number",
+      "nullable": true
+     },
+     "registeredEverUsers": {
+      "type": "number",
+      "nullable": true,
+      "description": "활성화율 분자"
+     },
+     "marketingConsentedUsers": {
+      "type": "number",
+      "nullable": true,
+      "description": "동의율 분자"
+     },
+     "reachableUsers": {
+      "type": "number",
+      "nullable": true
+     },
+     "totalPostings": {
+      "type": "number",
+      "nullable": true
+     },
+     "overduePostings": {
+      "type": "number",
+      "nullable": true,
+      "description": "버킷 평균(소수 1자리)"
+     },
+     "deadlineSoonPostings": {
+      "type": "number",
+      "nullable": true,
+      "description": "버킷 평균(소수 1자리)"
+     },
+     "pendingInquiries": {
+      "type": "number",
+      "nullable": true,
+      "description": "버킷 평균(소수 1자리)"
+     }
+    },
+    "required": [
+     "period",
+     "lastDate",
+     "daysWithData",
+     "newUsers",
+     "newPostings",
+     "newPostingsApplied",
+     "newInquiries",
+     "newWithdrawals",
+     "notificationsSent",
+     "notificationsRead",
+     "newPostingsScraped",
+     "newPostingsManual",
+     "totalUsers",
+     "activeUsers",
+     "pendingDeletionUsers",
+     "registeredEverUsers",
+     "marketingConsentedUsers",
+     "reachableUsers",
+     "totalPostings",
+     "overduePostings",
+     "deadlineSoonPostings",
+     "pendingInquiries"
+    ]
+   }
+  },
+  "securitySchemes": {
+   "bearer": {
+    "scheme": "bearer",
+    "bearerFormat": "JWT",
+    "type": "http"
+   }
+  }
+ }
+}
