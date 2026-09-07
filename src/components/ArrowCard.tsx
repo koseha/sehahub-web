@@ -13,7 +13,7 @@ export default function ArrowCard({ entry, pill }: Props) {
   const badges = isProject(entry) ? entry.data.badges : undefined
   const pinned = isProject(entry) ? entry.data.pinned : undefined
   return (
-    <a href={`/${entry.collection}/${entry.slug}`} class="group card-link">
+    <a href={`/${entry.collection}/${entry.slug}/`} class="group card-link">
       <div class="w-full group-hover:text-black group-hover:dark:text-white blend">
         <div class="flex flex-wrap items-center gap-2">
           {pinned &&

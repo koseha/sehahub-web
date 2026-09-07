@@ -37,7 +37,7 @@ images:
 
 - 백엔드 아키텍처·인프라 구축
 - 모바일 앱 API 백엔드 (trackareer-server)
-- OpenAPI 문서화 — [관리자 API 스냅샷](/trackareer/api)
+- OpenAPI 문서화 — [관리자 API 스냅샷](/trackareer/api/)
 - 관리자 페이지 전체(기획~구현)
 
 ## 핵심 도전·결정

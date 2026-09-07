@@ -5,7 +5,7 @@ date: "2026-04-17"
 period: "2026.04 ~ 진행 중 · App Store 첫 출시 2026.07"
 team: "개인 프로젝트 (1인)"
 storeUrl: "https://apps.apple.com/app/apple-store/id6786492719?pt=129113064&ct=sehahub-project&mt=8"
-releasesUrl: "/notmine/releases"
+releasesUrl: "/notmine/releases/"
 badges:
 - MOBILE
 draft: false

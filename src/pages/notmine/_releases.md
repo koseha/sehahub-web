@@ -49,4 +49,4 @@
 
 ---
 
-[App Store에서 받기](https://apps.apple.com/app/apple-store/id6786492719?pt=129113064&ct=sehahub-releases&mt=8) · [지원 페이지](/notmine/support)
+[App Store에서 받기](https://apps.apple.com/app/apple-store/id6786492719?pt=129113064&ct=sehahub-releases&mt=8) · [지원 페이지](/notmine/support/)

@@ -7,6 +7,7 @@ import solidJs from "@astrojs/solid-js"
 // https://astro.build/config
 export default defineConfig({
   site: "https://sehahub.info",
+  trailingSlash: "always",
   integrations: [
     mdx(),
     sitemap({ filter: (page) => !page.endsWith("/blog/") && !page.endsWith("/search/") }),

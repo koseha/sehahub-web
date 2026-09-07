@@ -25,7 +25,7 @@ const next = items[(index + 1) % items.length]
   </article>
   {items.length > 1 && (
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <a href={`/${prev.collection}/${prev.slug}`} class="group card-link">
+    <a href={`/${prev.collection}/${prev.slug}/`} class="group card-link">
       <div class="order-2 w-full h-full group-hover:text-black group-hover:dark:text-white blend">
         <div class="flex flex-wrap gap-2">
           <div class="text-sm uppercase">
@@ -38,7 +38,7 @@ const next = items[(index + 1) % items.length]
       </div>
       <ArrowIcon class="order-1 rotate-180" />
     </a>
-    <a href={`/${next.collection}/${next.slug}`} class="group card-link">
+    <a href={`/${next.collection}/${next.slug}/`} class="group card-link">
       <div class="w-full h-full text-right group-hover:text-black group-hover:dark:text-white blend">
         <div class="text-sm uppercase">
           Next
