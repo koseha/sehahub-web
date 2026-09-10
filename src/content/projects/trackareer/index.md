@@ -18,6 +18,8 @@ tags:
 - React
 - Refine
 - TypeScript
+- Docker
+- Google Cloud
 demos:
 - url: "https://trackareer-admin.sehahub.info"
   label: "라이브 데모"
@@ -87,10 +89,6 @@ images:
     </div>
   </div>
 </div>
-
-## 스택
-
-NestJS · TypeORM · PostgreSQL · Supabase · React · Refine · TypeScript
 
 ## 라이브 데모
 

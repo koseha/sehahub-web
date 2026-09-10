@@ -92,10 +92,6 @@ images:
 - 버린 대안: 식비 교통 같은 소비 카테고리 · 차트 · 예산 대비 분석
 - 트레이드오프: 등록할 때마다 늘어난 입력 부담 ↔ "통장에 얼마 있어야 하나"에 대한 즉답
 
-## 스택
-
-Flutter · Supabase · Riverpod
-
 ## 문의
 
 앱 관련 문의: [sehahub.info@gmail.com](mailto:sehahub.info@gmail.com)

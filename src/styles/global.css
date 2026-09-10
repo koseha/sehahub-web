@@ -93,7 +93,7 @@ article {
 }
 
 .pill {
-  @apply text-xs uppercase py-0.5 px-2 rounded;
+  @apply text-xs py-0.5 px-2 rounded;
 }
 
 .pill-muted {
