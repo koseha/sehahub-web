@@ -76,6 +76,6 @@
 
 위에서 답을 찾지 못했다면 아래 이메일로 문의해 주세요. 확인 후 답변드리겠습니다.
 
-- 이메일: **sehahub.info@gmail.com**
-- English support: sehahub.info@gmail.com
+- 이메일: **contact@sehahub.info**
+- English support: contact@sehahub.info
 - 문의 시 앱 버전과 사용 중인 기기를 함께 적어주시면 더 빠르게 도와드릴 수 있습니다.

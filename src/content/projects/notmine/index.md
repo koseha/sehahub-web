@@ -94,4 +94,4 @@ images:
 
 ## 문의
 
-앱 관련 문의: [sehahub.info@gmail.com](mailto:sehahub.info@gmail.com)
+앱 관련 문의: [contact@sehahub.info](mailto:contact@sehahub.info)
