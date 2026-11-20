@@ -1,34 +1,76 @@
 ---
-import { getSortedEntries, pinnedFirst } from "@lib/content";
-import PageLayout from "@layouts/PageLayout.astro";
-import TopLayout from "@layouts/TopLayout.astro";
-import BottomLayout from "@layouts/BottomLayout.astro";
-import ProjectCard from "@components/ProjectCard.astro";
-import { PROJECTS } from "@consts";
+// Projects — 기간이 있던 작업 · 실험(2026-11-20 대표 「일단 전반적으로 진행해봐」).
+// 제품(홈)은 코랄 받침이 있는 입체 물건 · 프로젝트는 받침 없는 납작한 화면 카드 — 모양으로 위계를 나눈다.
+// 카드에는 그림 · 기간 · 제목만(itid.co.kr Portfolio 칸 형식) · 쪽 설명 줄은 두지 않는다(그룹 지식 §2).
+import { Image } from "astro:assets"
+import { getSortedEntries, pinnedFirst } from "@lib/content"
+import PageLayout from "@layouts/PageLayout.astro"
+import { PROJECTS } from "@consts"
 
-// 필터·검색 아일랜드 제거 — 정적 렌더. 정렬은 기존 헬퍼 그대로(pinned 상단 고정)
-// 제품(product: true · 내돈아님)은 Products 라 여기서 뺀다(2026-11-20 대표)
-const projects = pinnedFirst(await getSortedEntries("projects")).filter((p) => !p.data.product);
+// 제품(product: true · 내돈아님)은 Products 라 여기서 뺀다
+const projects = pinnedFirst(await getSortedEntries("projects")).filter((p) => !p.data.product)
 ---
 
-<!-- 쪽 아래 설명 줄은 두지 않는다(대표 11/20 「시키지 않은 문구」 · 그룹 지식 §2) -->
 <PageLayout title={PROJECTS.TITLE} description={PROJECTS.DESCRIPTION}>
-  <TopLayout>
-    <div class="animate">
-      <h1 class="text-3xl font-semibold text-black mt-2">
-        {PROJECTS.TITLE}
-      </h1>
-    </div>
-  </TopLayout>
-  <BottomLayout>
-    <div class="animate">
-      <ul class="flex flex-col gap-6">
-        {projects.map((project, i) => (
+  <section class="pj">
+    <h1 class="pj-title">Projects</h1>
+    <ul class="pj-grid">
+      {projects.map((p, i) => {
+        const cover = p.data.images?.[0]
+        return (
           <li>
-            <ProjectCard entry={project} index={i} />
+            <a href={`/projects/${p.slug}/`} class="pj-card" data-reveal style={`--d:${i * 120}ms`}>
+              <span class="pj-shot">
+                {cover && (
+                  <Image
+                    src={cover.src}
+                    alt={cover.caption}
+                    widths={[560, 1120]}
+                    sizes="(min-width: 1000px) 520px, calc(100vw - 32px)"
+                    loading={i < 2 ? "eager" : "lazy"}
+                  />
+                )}
+              </span>
+              <span class="pj-meta">{p.data.period}</span>
+              <span class="pj-name">{p.data.title}</span>
+            </a>
           </li>
-        ))}
-      </ul>
-    </div>
-  </BottomLayout>
+        )
+      })}
+    </ul>
+  </section>
+
+  <style>
+    .pj { max-width: 1120px; margin: 0 auto; padding: 140px clamp(16px, 4vw, 40px) 120px; }
+    .pj-title { font-weight: 950; font-size: clamp(52px, 9vw, 120px); letter-spacing: -0.045em; line-height: .95; }
+    .pj-grid { margin-top: clamp(40px, 7vw, 80px); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 64px 40px; }
+    .pj-card { display: block; }
+    .pj-shot {
+      display: block; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 18px; background: #f2f3f5;
+      box-shadow: 0 0 0 1px var(--line), 0 22px 44px -30px rgba(22, 24, 29, .45);
+      transition: transform .6s var(--spring), box-shadow .4s ease;
+    }
+    .pj-shot :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: top; transition: transform .9s cubic-bezier(.2, .7, .2, 1); }
+    .pj-card:hover .pj-shot { transform: translateY(-8px) rotate(-.6deg); box-shadow: 0 0 0 1px var(--line), 0 34px 60px -30px rgba(22, 24, 29, .5); }
+    .pj-card:hover .pj-shot :global(img) { transform: scale(1.03); }
+    .pj-meta { display: block; margin-top: 20px; font-size: 14px; color: var(--muted); }
+    .pj-name { display: block; margin-top: 4px; font-size: clamp(22px, 2.4vw, 28px); font-weight: 800; letter-spacing: -0.02em; transition: color .2s; }
+    .pj-card:hover .pj-name, .pj-card:focus-visible .pj-name { color: var(--a); }
+
+    /* 화면에 들어오면 한 장씩 올라온다 */
+    [data-reveal] { opacity: 0; transform: translateY(56px); }
+    [data-reveal].is-in { opacity: 1; transform: none; transition: transform 1100ms var(--spring) var(--d), opacity .45s ease var(--d); }
+    @media (prefers-reduced-motion: reduce) {
+      [data-reveal] { opacity: 1; transform: none; }
+      .pj-shot, .pj-shot :global(img) { transition: none; }
+    }
+  </style>
+
+  <script>
+    const els = document.querySelectorAll<HTMLElement>("[data-reveal]")
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add("is-in"); io.unobserve(e.target) }
+    }, { threshold: 0.2 })
+    els.forEach((el) => io.observe(el))
+  </script>
 </PageLayout>

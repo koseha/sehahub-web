@@ -1,11 +1,10 @@
 ---
 import Container from "@components/Container.astro"
-// ProjectCard 가 이 size 에서 배너 폭을 유도한다. 여기서 바꾸면 그쪽이 따라온다.
-import { BOTTOM_CONTAINER_SIZE } from "@lib/layout"
+// 방침 · 지원 · seha · trackareer API 쪽의 본문 폭. (옛 ProjectCard 가 이 폭에서 배너를 유도하던 lib/layout 은 2026-11-20 개편으로 지웠다)
 ---
 
 <div class="flex-1 py-5">
-  <Container size={BOTTOM_CONTAINER_SIZE}>
+  <Container size="md">
     <slot/>
   </Container>
 </div>
