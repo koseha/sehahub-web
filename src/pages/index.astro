@@ -4,12 +4,15 @@
 // 옛 디자인(PageLayout · 행성 · 별)은 쓰지 않는다. 다른 쪽은 아직 옛 틀 그대로다(시안 범위 = 홈).
 import { Image } from "astro:assets"
 import notmineIcon from "../assets/products/notmine-icon.png"
+import repyepIcon from "../assets/products/repyep-icon.png"
 
 const WORD = "sehahub".split("")
 
-// 제품이 늘면 여기에 더한다 — 하나일 때는 크게 가운데, 여럿이면 줄을 이룬다
+// 제품이 늘면 여기에 더한다 — 하나일 때는 크게 가운데, 여럿이면 줄을 이룬다(크기는 개수로 정함)
+// 운동해 넵 = 대표 11/20 「운동해넵도 넣어봐」 · 아이콘 = 코드 repo AppIcon(TestFlight 빌드 · 팀 기록상 초안) · 제품 사이트(/repyep/)는 팀 몫이라 아직 지원 쪽으로
 const products = [
   { name: "내돈아님", icon: notmineIcon, href: "/projects/notmine/" },
+  { name: "운동해 넵", icon: repyepIcon, href: "/repyep/support/" },
 ]
 
 const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS --depth)
@@ -50,7 +53,7 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
     <!-- 제품 — 아이콘을 두께 있는 물건으로. 화면에 들어오면 떨어져 놓이고, 포인터 쪽으로 기울고, 가만두면 둥실거린다 -->
     <section class="shelf" aria-label="Products">
       <p class="label">Products</p>
-      <ul class={`objs ${products.length === 1 ? "is-solo" : ""}`}>
+      <ul class={`objs ${products.length === 1 ? "is-solo" : products.length === 2 ? "is-duo" : ""}`}>
         {products.map((p, i) => (
           <li>
             <a href={p.href} class="obj" data-obj style={`--d:${i * 120}ms`}>
@@ -145,6 +148,7 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
     .objs { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(48px, 8vw, 120px); }
     .obj { --size: 200px; --depth: calc(var(--size) * .075); display: flex; flex-direction: column; align-items: center; gap: calc(44px + var(--depth)); cursor: pointer; outline: none; }
     .is-solo .obj { --size: clamp(220px, 30vw, 320px); }
+    .is-duo .obj { --size: clamp(200px, 22vw, 280px); }
     .obj-drop { position: relative; display: block; width: var(--size); height: var(--size); opacity: 0; transform: translateY(-60vh) rotate(-14deg); }
     .obj.is-in .obj-drop { opacity: 1; transform: none; transition: transform 1400ms var(--spring) var(--d), opacity 200ms linear var(--d); }
     .obj-float { position: absolute; inset: 0; display: block; perspective: 900px; will-change: transform; }
@@ -197,12 +201,13 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
       document.addEventListener("pointerleave", () => { active = false })
 
       const letters = [...document.querySelectorAll<HTMLElement>("[data-ch]")].map((el) => ({ el, y: 0, r: 0 }))
-      const items = objs.map((o) => ({
+      // 아이콘마다 들림(lift)과 둥실 박자(phase)를 따로 둔다 — 함께 쓰면 하나만 올려도 다 들썩이고 다 같은 박자로 뜬다
+      const items = objs.map((o, i) => ({
         o,
         float: o.querySelector<HTMLElement>("[data-float]")!,
         tilt: o.querySelector<HTMLElement>("[data-tilt]")!,
         floor: o.querySelector<HTMLElement>("[data-floor]")!,
-        rx: 0, ry: 0, hover: 0,
+        rx: 0, ry: 0, hover: 0, lift: 0, phase: i * 1.9,
       }))
       items.forEach((it) => {
         it.o.addEventListener("pointerenter", () => { it.hover = 1 })
@@ -210,7 +215,6 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
       })
 
       const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-      let lift = 0
 
       const frame = (t: number) => {
         // 글자 — 포인터 가까이 있는 글자만 들썩
@@ -242,8 +246,8 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
           // 옆면이 오른쪽 아래에 고정이라 기울기는 작게 — 크게 돌리면 반대쪽에서 납작함이 드러난다
           it.rx = lerp(it.rx, -ty * 11, 0.08)
           it.ry = lerp(it.ry, tx * 13, 0.08)
-          lift = lerp(lift, it.hover * 18, 0.12)
-          const bob = Math.sin(t / 1100) * 9 - lift
+          it.lift = lerp(it.lift, it.hover * 18, 0.12)
+          const bob = Math.sin(t / 1100 + it.phase) * 9 - it.lift
           it.float.style.transform = `translateY(${bob.toFixed(2)}px)`
           it.tilt.style.transform = `rotateX(${it.rx.toFixed(2)}deg) rotateY(${it.ry.toFixed(2)}deg)`
           // 높이 뜰수록 그림자는 작고 옅게
