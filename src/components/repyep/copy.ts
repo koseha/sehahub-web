@@ -22,10 +22,10 @@ const ko = {
   name: "운동해 넵",
   heroTop: "운동해",
   heroBottom: "넵",
-  one: "운동 기록과 그 뒤 몸의 반응을 같이 적는 아이폰 일지예요.",
+  one: "운동 기록과 그 뒤 몸의 반응을 같이 적는 iPhone 일지예요.",
   nav: {
     support: "지원 · 문의",
-    privacy: "개인정보처리방침",
+    privacy: "개인정보 처리방침",
     other: "English",
     otherLang: "en",
     otherHref: "/repyep/en/",
@@ -131,7 +131,7 @@ const ko = {
     },
     settings: {
       title: "설정",
-      health: "애플 건강",
+      health: "건강 앱",
       healthRows: ["운동을 건강 앱에 저장", "체중을 건강 앱에 저장"],
       healthHelp:
         "끝낸 운동(근력 운동 · 시작과 끝 시각)과 적은 체중만 건강 앱에 써요. 건강 앱의 자료는 읽지 않아요. 켜기 전 기록은 쓰지 않고, 여기서 고치거나 지우면 이 앱이 쓴 것도 따라 바뀌어요.",

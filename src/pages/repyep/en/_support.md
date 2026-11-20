@@ -43,7 +43,7 @@ In **Settings › Apple Health**, turn on Save Workouts to Health and Save Body 
 
 - RepYep adds only finished workouts (as strength training, with start and end time) and the body weight you log. It never reads your Health data.
 - Records from before you turn this on aren't added. Edits or deletions in RepYep carry over to what RepYep saved.
-- If nothing is saved, turn it on in the **Settings app › Privacy & Security › Health › RepYep**.
+- If nothing is saved, turn it on in **Settings › Privacy & Security › Health › RepYep**.
 
 ### How does the free period work?
 

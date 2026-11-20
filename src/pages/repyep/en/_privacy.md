@@ -38,7 +38,7 @@ RepYep is an iPhone journal for your workouts and how your body feels afterward.
 - It never reads your Health data and doesn't ask for read access.
 - Records from before you turn it on aren't added. Edits or deletions in RepYep carry over to what RepYep saved.
 - What's saved is managed by the Health app. It doesn't come to us.
-- To stop, turn the switch off in the app, or in the Settings app › Privacy & Security › Health › RepYep. Data already saved stays in the Health app, where you can delete it.
+- To stop, turn the switch off in the app, or in Settings › Privacy & Security › Health › RepYep. Data already saved stays in the Health app, where you can delete it.
 
 ## 4. Export and import
 
