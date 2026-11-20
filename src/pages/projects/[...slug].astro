@@ -1,7 +1,7 @@
 ---
 // 프로젝트 상세(2026-11-20 새 틀) — 머리(돌아가기 · 제목 · 기간 · 팀 · 한 줄 · 링크 · 스택) → 스크린샷 줄 → 본문 → 다음 프로젝트.
 // 본문(핵심 도전 · 결정 · 구조 도식)은 예전에 정한 글이라 내용은 그대로 두고 겉모습만 바꿨다.
-// 제품(product: true · 내돈아님)도 팀 제품 사이트가 서기 전까지 이 쪽을 쓴다 — 돌아가기는 홈 Products · 다음 프로젝트는 없음.
+// 제품은 여기 없다 — 각 팀 제품 사이트(/notmine/ · /repyep/) · 옛 /projects/notmine/ 은 /notmine/ 으로 넘긴다(astro.config).
 import { type CollectionEntry, getCollection } from "astro:content"
 import { Image } from "astro:assets"
 import PageLayout from "@layouts/PageLayout.astro"
@@ -14,13 +14,13 @@ export async function getStaticPaths() {
 
 type Props = CollectionEntry<"projects">
 const entry = Astro.props
-const { title, summary, period, team, tags, demos = [], storeUrl, releasesUrl, repoUrl, images = [], product } = entry.data
+const { title, summary, period, team, tags, demos = [], storeUrl, releasesUrl, repoUrl, images = [] } = entry.data
 const { Content } = await entry.render()
 
-const back = product ? { href: "/#products", label: "Products" } : { href: "/projects/", label: "Projects" }
+const back = { href: "/projects/", label: "Projects" }
 
-// 다음 프로젝트 — 제품은 고리에 넣지 않는다
-const ring = product ? [] : (await getSortedEntries("projects")).filter((p) => !p.data.product)
+// 다음 프로젝트
+const ring = await getSortedEntries("projects")
 const at = ring.findIndex((p) => p.slug === entry.slug)
 const next = ring.length > 1 ? ring[(at + 1) % ring.length] : null
 

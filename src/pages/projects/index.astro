@@ -7,8 +7,8 @@ import { getSortedEntries, pinnedFirst } from "@lib/content"
 import PageLayout from "@layouts/PageLayout.astro"
 import { PROJECTS } from "@consts"
 
-// 제품(product: true · 내돈아님)은 Products 라 여기서 뺀다
-const projects = pinnedFirst(await getSortedEntries("projects")).filter((p) => !p.data.product)
+// 제품(내돈아님 · 운동해 넵)은 여기 없다 — 홈 Products · 각 팀 제품 사이트(/notmine/ · /repyep/)
+const projects = pinnedFirst(await getSortedEntries("projects"))
 ---
 
 <PageLayout title={PROJECTS.TITLE} description={PROJECTS.DESCRIPTION}>

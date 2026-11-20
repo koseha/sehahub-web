@@ -32,8 +32,6 @@ const projects = defineCollection({
       tags: z.array(z.string()),
       draft: z.boolean().optional(),
       pinned: z.boolean().optional(), // 목록·메인 상단 고정 (정렬 토글 무관)
-      // 제품(2026-11-20 대표 Products / Projects 나눔) — Projects 목록 · 이전/다음에서 빠지고 상세 주소만 남는다(팀 제품 사이트가 서기 전까지)
-      product: z.boolean().optional(),
       // 라이브 데모 링크 — 트랙이 여럿이면 여러 개(버튼 라벨은 데이터가 든다)
       demos: z.array(z.object({ url: z.string(), label: z.string() })).optional(),
       storeUrl: z.string().optional(), // 앱 스토어 링크 — 스토어 URL은 demos가 아니라 이 필드에 (라벨 규약)
