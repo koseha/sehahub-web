@@ -12,7 +12,7 @@ const products = [
   { name: "내돈아님", icon: notmineIcon, href: "/projects/notmine/" },
 ]
 
-const SLABS = 14 // 아이콘 두께 = 겹 수 × 1.6px
+const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS --depth)
 ---
 
 <!doctype html>
@@ -143,7 +143,7 @@ const SLABS = 14 // 아이콘 두께 = 겹 수 × 1.6px
     .shelf { min-height: 100svh; padding: 12vh clamp(16px, 4vw, 40px) 16vh; display: flex; flex-direction: column; align-items: center; }
     .label { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--a); margin-bottom: 9vh; }
     .objs { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(48px, 8vw, 120px); }
-    .obj { --size: 200px; display: flex; flex-direction: column; align-items: center; gap: 34px; cursor: pointer; outline: none; }
+    .obj { --size: 200px; --depth: calc(var(--size) * .075); display: flex; flex-direction: column; align-items: center; gap: calc(44px + var(--depth)); cursor: pointer; outline: none; }
     .is-solo .obj { --size: clamp(220px, 30vw, 320px); }
     .obj-drop { position: relative; display: block; width: var(--size); height: var(--size); opacity: 0; transform: translateY(-60vh) rotate(-14deg); }
     .obj.is-in .obj-drop { opacity: 1; transform: none; transition: transform 1400ms var(--spring) var(--d), opacity 200ms linear var(--d); }
@@ -151,11 +151,12 @@ const SLABS = 14 // 아이콘 두께 = 겹 수 × 1.6px
     .obj-tilt { position: absolute; inset: 0; display: block; transform-style: preserve-3d; will-change: transform; transition: scale .25s var(--spring); }
     .obj:active .obj-tilt { scale: .94; transition-duration: .08s; }
     .slab, .face, .gloss { position: absolute; inset: 0; border-radius: 22.4%; }
-    /* 두께 = sehahub 바탕 — 포인트 한 색 · 뒤로 갈수록 어둡게(제품이 늘어도 모두 같은 바탕 위에 놓인다) */
-    .slab { transform: translateZ(calc(var(--k) * -1.6px)); background: color-mix(in oklab, var(--a), #000 calc(var(--k) * 1.2%)); }
+    /* 두께 = sehahub 바탕 — 포인트 한 색으로 확실하게(대표 11/20 「얇아서 눈만 아프고. 주려면 확실하게」).
+       글자 옆면과 같은 방향(오른쪽 아래)으로 늘 보이게 겹을 민다 · 뒤로 갈수록 같은 색을 조금씩 어둡게 */
+    .slab { transform: translate3d(calc(var(--k) * var(--depth) / 16), calc(var(--k) * var(--depth) / 16), calc(var(--k) * -0.4px)); background: color-mix(in oklab, var(--a), #000 calc(var(--k) * 0.9%)); }
     .face { width: 100%; height: 100%; object-fit: cover; transform: translateZ(0.5px); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06); }
     .gloss { transform: translateZ(1px); background: linear-gradient(135deg, rgba(255, 255, 255, .55) 0%, rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, .06) 100%); pointer-events: none; }
-    .floor { position: absolute; left: 12%; right: 12%; bottom: -26px; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--a) 30%, transparent), transparent); will-change: transform, opacity; }
+    .floor { position: absolute; left: calc(12% + var(--depth)); right: calc(12% - var(--depth)); bottom: calc(-26px - var(--depth)); height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(22, 24, 29, .22), transparent); will-change: transform, opacity; }
     .obj-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; opacity: 0; transform: translateY(8px); }
     .obj.is-in .obj-name { opacity: 1; transform: none; transition: opacity .5s ease calc(var(--d) + 700ms), transform .5s ease calc(var(--d) + 700ms); }
     .obj:focus-visible .obj-name { text-decoration: underline; text-underline-offset: 4px; }
@@ -238,8 +239,9 @@ const SLABS = 14 // 아이콘 두께 = 겹 수 × 1.6px
             tx = Math.sin(t / 2300) * 0.45 + s * 0.6
             ty = Math.sin(t / 1900) * 0.35 - s * 0.4
           }
-          it.rx = lerp(it.rx, -ty * 22, 0.08)
-          it.ry = lerp(it.ry, tx * 26, 0.08)
+          // 옆면이 오른쪽 아래에 고정이라 기울기는 작게 — 크게 돌리면 반대쪽에서 납작함이 드러난다
+          it.rx = lerp(it.rx, -ty * 11, 0.08)
+          it.ry = lerp(it.ry, tx * 13, 0.08)
           lift = lerp(lift, it.hover * 18, 0.12)
           const bob = Math.sin(t / 1100) * 9 - lift
           it.float.style.transform = `translateY(${bob.toFixed(2)}px)`
