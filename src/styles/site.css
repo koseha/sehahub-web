@@ -1,0 +1,201 @@
+/* sehahub.info 새 틀(2026-11-20) — 흰 바탕 · 먹색 글자 · 포인트 = 코랄 한 색.
+   옛 global.css(행성 · 별 · 다크 모드 · 등장 애니메이션)를 갈음한다. 홈만의 움직임은 홈 파일에 있다. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @font-face {
+    font-family: "Wanted Sans Variable";
+    /* 한글 포함 빌드(v1.0.3) 서브셋 · SIL OFL 1.1(public/fonts/WantedSans-OFL.txt) */
+    src: url("/fonts/WantedSansVariable-KR.woff2") format("woff2");
+    font-weight: 400 1000;
+    font-style: normal;
+    font-display: swap;
+  }
+}
+
+:root {
+  /* 베이지 배경은 쓰지 않는다(대표 11/20) */
+  --bg: #ffffff;
+  --ink: #16181d;
+  --muted: #6b6f78;
+  --line: rgba(22, 24, 29, 0.1);
+  /* 포인트 = 한 색 「주황색 + 미세한 분홍색」(대표 11/20 · 코랄 계열 · 확정 전) */
+  --a: #ff6b4a;
+  /* 튕김 — CSS linear() 로 만든 스프링(라이브러리 없음) */
+  --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1.004 83.8%, 1);
+}
+
+html {
+  color-scheme: light;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Wanted Sans Variable", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+main {
+  flex: 1;
+}
+
+/* 머리 — 홈에서는 첫 화면을 지나야 이름이 나타나고, 다른 쪽에서는 늘 보인다 */
+.bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 14px clamp(16px, 4vw, 40px);
+  transition: background 0.3s;
+}
+.bar.is-past {
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.bar-mark {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  font-size: 18px;
+  margin-right: auto;
+  transition: opacity 0.3s, transform 0.3s;
+}
+.bar.is-home:not(.is-past) .bar-mark {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+.bar-link {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 999px;
+  transition: color 0.2s, background 0.2s;
+}
+.bar-link:hover,
+.bar-link[aria-current="page"] {
+  color: var(--a);
+}
+.bar-mail {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  transition: background 0.2s, color 0.2s;
+}
+.bar-mail:hover {
+  background: color-mix(in srgb, var(--a) 14%, transparent);
+  color: var(--a);
+}
+.bar-mail svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* 바닥 */
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 28px clamp(16px, 4vw, 40px);
+  font-size: 14px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+.foot-mark {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.foot a:hover {
+  color: var(--a);
+}
+
+/* 글 쪽(방침 · 지원 · 프로젝트 상세) — 움직임 없이 읽기 쉽게 */
+article {
+  @apply prose max-w-full pb-12;
+  --tw-prose-body: #2c2f36;
+  --tw-prose-headings: var(--ink);
+  --tw-prose-links: var(--ink);
+  --tw-prose-bold: var(--ink);
+  --tw-prose-bullets: var(--a);
+  --tw-prose-counters: var(--muted);
+  --tw-prose-hr: var(--line);
+  --tw-prose-th-borders: rgba(22, 24, 29, 0.2);
+  --tw-prose-td-borders: var(--line);
+}
+article a:hover {
+  color: var(--a);
+}
+
+.page-heading {
+  @apply font-semibold;
+  color: var(--ink);
+}
+
+/* 옛 쪽이 쓰던 등장 클래스 — 스크립트를 뺐으므로 그대로 보이게 둔다 */
+.animate {
+  opacity: 1;
+}
+
+.blend {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.pill {
+  @apply text-xs py-0.5 px-2 rounded;
+}
+
+.pill-muted {
+  @apply bg-black/5 text-black/75;
+}
+
+.pill-outline {
+  @apply font-medium border border-black/40 text-black;
+}
+
+.card-link {
+  @apply p-4 gap-3 flex items-center border rounded-lg hover:bg-black/5 border-black/15 blend;
+}
+
+/* 흐름 도식 — 프로젝트 상세의 구조 블록. 마크다운 안에서 `not-prose` 와 함께 쓴다 */
+.flow-box {
+  @apply my-8 rounded border border-black/15 p-5 text-sm;
+}
+
+.flow-label {
+  @apply mb-2 text-xs uppercase tracking-wide opacity-60;
+}
+
+.flow-row {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.flow-node {
+  @apply inline-flex items-center rounded border border-black/20 px-2.5 py-1;
+}
+
+.flow-node-end {
+  @apply font-medium text-black;
+}
+
+.flow-arrow {
+  @apply opacity-40;
+}
+
+.flow-note {
+  @apply opacity-70;
+}

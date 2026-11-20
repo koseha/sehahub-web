@@ -1,68 +1,16 @@
-import type { Site, Page, Links, Socials } from "@types"
+import type { Site, Page } from "@types"
 
-// Global
+// Global — 설명은 쪽에 보이지 않고 검색 · 공유 미리보기에만 쓰인다. 시키지 않은 문구를 넣지 않는다(2026-11-20 · 그룹 지식 §2)
 export const SITE: Site = {
   TITLE: "sehahub",
-  DESCRIPTION: "백엔드·인프라와 관리자 백오피스를 직접 구축하는 개발자 새하(seha)의 포트폴리오. 라이브 데모나 App Store에서 확인 가능합니다.",
+  DESCRIPTION: "sehahub가 만든 앱.",
   AUTHOR: "seha",
 }
 
-// Work Page
-export const WORK: Page = {
-  TITLE: "Work",
-  DESCRIPTION: "지나온 경력을 정리합니다.",
-}
-
-// Blog Page
-export const BLOG: Page = {
-  TITLE: "Blog",
-  DESCRIPTION: "생각은 덜어내고, 배운 것은 선명하게 기록합니다.",
-}
-
-// Projects Page
+// Projects Page — 기간이 있던 작업 · 실험(Products 는 홈)
 export const PROJECTS: Page = {
   TITLE: "Projects",
-  DESCRIPTION: "생각을 코드로 옮긴 결과물. 라이브 데모나 App Store에서 확인 가능합니다.",
+  DESCRIPTION: "sehahub의 지난 프로젝트.",
 }
 
-// Search Page
-export const SEARCH: Page = {
-  TITLE: "Search",
-  DESCRIPTION: "글과 작업물을 키워드로 검색합니다.",
-}
-
-// Links
-export const LINKS: Links = [
-  {
-    TEXT: "Home",
-    HREF: "/",
-  },
-  {
-    TEXT: "Projects",
-    HREF: "/projects/",
-  },
-  {
-    TEXT: "Blog",
-    HREF: "/blog/",
-  },
-  {
-    TEXT: "Work",
-    HREF: "/work/",
-  },
-]
-
-// Socials
-export const SOCIALS: Socials = [
-  {
-    NAME: "Email",
-    ICON: "email",
-    TEXT: "contact@sehahub.info",
-    HREF: "mailto:contact@sehahub.info",
-  },
-  {
-    NAME: "GitHub",
-    ICON: "github",
-    TEXT: "koseha",
-    HREF: "https://github.com/koseha",
-  },
-]
+// 2026-11-20 개편 — Blog · Search · Work(→ /seha/) 쪽과 옛 머리 메뉴 · 바닥 링크 상수(LINKS · SOCIALS)를 뺐다

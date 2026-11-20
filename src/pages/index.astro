@@ -1,8 +1,10 @@
 ---
 // 홈 시안(2026-11-20 · 대표 「그래」) — sehahub = 만드는 곳의 입구. 기준 레퍼런스 = notboring.software 의 결(만들어 내놓는 앱이 손에 잡히는 물건처럼 움직인다).
 // 🔴 문구를 넣지 않는다(대표 11/20 「메인에 텍스트 그냥 지워라」) — 이름 · 앱 아이콘 · 연락처만.
-// 옛 디자인(PageLayout · 행성 · 별)은 쓰지 않는다. 다른 쪽은 아직 옛 틀 그대로다(시안 범위 = 홈).
+// 대표 「그래 괜찮네」(11/20) 뒤 공용 틀(PageLayout · site.css)로 옮겼다 — 머리 · 바닥 · 색 변수는 거기, 여기는 홈만의 움직임.
 import { Image } from "astro:assets"
+import PageLayout from "@layouts/PageLayout.astro"
+import { SITE } from "@consts"
 import notmineIcon from "../assets/products/notmine-icon.png"
 import repyepIcon from "../assets/products/repyep-icon.png"
 
@@ -18,24 +20,7 @@ const products = [
 const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS --depth)
 ---
 
-<!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>sehahub</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta name="robots" content="noindex" />
-</head>
-<body>
-  <header class="bar" data-bar>
-    <a href="/" class="bar-mark" aria-label="sehahub">sehahub</a>
-    <a href="mailto:contact@sehahub.info" class="bar-mail" aria-label="contact@sehahub.info">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h18v11H3z M3 6.5l9 7 9-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-    </a>
-  </header>
-
-  <main>
+<PageLayout title="sehahub" description={SITE.DESCRIPTION} home>
     <!-- 첫 화면 — 글자가 떨어져 튕기며 자리를 잡고, 포인터가 다가가면 들썩인다 -->
     <section class="hero">
       <h1 class="word" aria-label="sehahub">
@@ -51,7 +36,7 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
     </section>
 
     <!-- 제품 — 아이콘을 두께 있는 물건으로. 화면에 들어오면 떨어져 놓이고, 포인터 쪽으로 기울고, 가만두면 둥실거린다 -->
-    <section class="shelf" aria-label="Products">
+    <section class="shelf" id="products" aria-label="Products">
       <p class="label">Products</p>
       <ul class={`objs ${products.length === 1 ? "is-solo" : products.length === 2 ? "is-duo" : ""}`}>
         {products.map((p, i) => (
@@ -75,45 +60,9 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
         ))}
       </ul>
     </section>
-  </main>
-
-  <footer class="foot">
-    <span class="foot-mark">sehahub</span>
-    <a href="mailto:contact@sehahub.info">contact@sehahub.info</a>
-  </footer>
 
   <style is:global>
-    @font-face {
-      font-family: "Wanted Sans Variable";
-      src: url("/fonts/WantedSansVariable-KR.woff2") format("woff2");
-      font-weight: 400 1000;
-      font-display: swap;
-    }
-    :root {
-      /* 베이지 배경은 쓰지 않는다(대표 11/20 「요즘 ai 구현물들이 다 배경색을 베이지로」) — 흰 바탕 · 먹색 글자 */
-      --bg: #ffffff;
-      --ink: #16181d;
-      --muted: #6b6f78;
-      /* 포인트 = 한 색 「주황색 + 미세한 분홍색」(대표 11/20 · 분홍기 도는 주황 = 코랄 계열) — 옆면 · 두께 · 표시에만.
-         입체 명암은 다른 색을 섞지 않고 같은 색을 어둡게만 한다 */
-      --a: #ff6b4a;
-      /* 튕김 — CSS linear() 로 만든 스프링(라이브러리 없음) */
-      --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1.004 83.8%, 1);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
-    body { font-family: "Wanted Sans Variable", system-ui, sans-serif; overflow-x: hidden; }
-    a { color: inherit; text-decoration: none; }
-    ul { list-style: none; }
-
-    /* 머리 — 첫 화면을 지나면 작은 이름이 나타난다 */
-    .bar { position: fixed; inset: 0 0 auto 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; padding: 18px clamp(16px, 4vw, 40px); transition: background .3s; }
-    .bar.is-past { background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-    .bar-mark { font-weight: 900; letter-spacing: -0.03em; font-size: 18px; opacity: 0; transform: translateY(-6px); transition: opacity .3s, transform .3s; }
-    .bar.is-past .bar-mark { opacity: 1; transform: none; }
-    .bar-mail { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 999px; transition: background .2s; }
-    .bar-mail:hover { background: color-mix(in srgb, var(--a) 14%, transparent); color: var(--a); }
-    .bar-mail svg { width: 22px; height: 22px; }
+    /* 홈만의 움직임 — 색 변수 · 스프링 · 머리 · 바닥은 src/styles/site.css */
 
     /* 첫 화면 */
     .hero { min-height: 100svh; display: grid; place-items: center; position: relative; }
@@ -181,12 +130,6 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
   <script>
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     const finePointer = window.matchMedia("(pointer: fine)").matches
-
-    // 머리 — 첫 화면을 지나면 이름을 보인다
-    const bar = document.querySelector<HTMLElement>("[data-bar]")
-    const onScroll = () => bar?.classList.toggle("is-past", window.scrollY > window.innerHeight * 0.6)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    onScroll()
 
     // 제품 — 화면에 들어오면 떨어뜨린다
     const objs = [...document.querySelectorAll<HTMLElement>("[data-obj]")]
@@ -260,5 +203,4 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
       requestAnimationFrame(frame)
     }
   </script>
-</body>
-</html>
+</PageLayout>

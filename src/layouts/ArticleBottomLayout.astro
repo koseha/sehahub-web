@@ -13,7 +13,9 @@ const { collection } = entry
 const { Content } = await entry.render()
 
 // Get the next and prev entries (modulo to wrap index)
-const items = await getSortedEntries(collection)
+// 제품(product: true)은 프로젝트 이전/다음 고리에서 뺀다 — 제품 쪽에서는 고리를 아예 그리지 않는다
+const isProduct = "product" in entry.data && Boolean(entry.data.product)
+const items = isProduct ? [] : (await getSortedEntries(collection)).filter((x) => !("product" in x.data && x.data.product))
 const index = items.findIndex(x => x.slug === entry.slug)
 const prev = items[(index - 1 + items.length) % items.length]
 const next = items[(index + 1) % items.length]

@@ -13,6 +13,8 @@ type Props = {
 const { entry } = Astro.props
 const { collection, data, body } = entry
 const { title, summary, date } = data
+// 제품(product: true)은 Projects 목록에 없다 — 「목록으로」는 홈의 Products 로 보낸다
+const backHref = isProject(entry) && entry.data.product ? "/#products" : `/${collection}/`
 
 const demos = isProject(entry) ? entry.data.demos ?? [] : []
 const storeUrl = isProject(entry) ? entry.data.storeUrl : null
@@ -44,7 +46,7 @@ const shotSizes = (m: ImageMetadata) =>
 ---
 
 <div>
-  <a href={`/${collection}/`} class="group w-fit p-1.5 gap-1.5 text-sm flex items-center border rounded hover:bg-black/5 hover:dark:bg-white/10 border-black/15 dark:border-white/20 transition-colors duration-300 ease-in-out">
+  <a href={backHref} class="group w-fit p-1.5 gap-1.5 text-sm flex items-center border rounded hover:bg-black/5 hover:dark:bg-white/10 border-black/15 dark:border-white/20 transition-colors duration-300 ease-in-out">
     <ArrowIcon direction="left" />
     <div class="w-full group-hover:text-black group-hover:dark:text-white transition-colors duration-300 ease-in-out">
       목록으로

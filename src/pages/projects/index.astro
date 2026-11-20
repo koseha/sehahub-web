@@ -7,18 +7,17 @@ import ProjectCard from "@components/ProjectCard.astro";
 import { PROJECTS } from "@consts";
 
 // 필터·검색 아일랜드 제거 — 정적 렌더. 정렬은 기존 헬퍼 그대로(pinned 상단 고정)
-const projects = pinnedFirst(await getSortedEntries("projects"));
+// 제품(product: true · 내돈아님)은 Products 라 여기서 뺀다(2026-11-20 대표)
+const projects = pinnedFirst(await getSortedEntries("projects")).filter((p) => !p.data.product);
 ---
 
+<!-- 쪽 아래 설명 줄은 두지 않는다(대표 11/20 「시키지 않은 문구」 · 그룹 지식 §2) -->
 <PageLayout title={PROJECTS.TITLE} description={PROJECTS.DESCRIPTION}>
   <TopLayout>
     <div class="animate">
-      <h1 class="text-3xl font-semibold text-black dark:text-white mt-2">
+      <h1 class="text-3xl font-semibold text-black mt-2">
         {PROJECTS.TITLE}
       </h1>
-      <div class="mt-1">
-        {PROJECTS.DESCRIPTION}
-      </div>
     </div>
   </TopLayout>
   <BottomLayout>
