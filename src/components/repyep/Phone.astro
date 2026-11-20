@@ -1,0 +1,705 @@
+---
+// 휴대폰 한 대 — 스크롤 단계(data-step)에 따라 화면이 바뀐다. 화면은 앱 코드의 D Hard Edge 값(App/Sources/Design ·
+// DColor · DMetrics · DTypography · DIcon · CheckinIcons)으로 다시 그린 것이다. 그림은 꾸밈이라 화면 읽기에서 뺀다(aria-hidden).
+// 🔴 숫자 · 날짜 · 루틴 이름은 모두 지어낸 예시(대표 실제 기록 · 몸 수치 · 결과지 금지 · 팀 AGENTS.md).
+import type { Copy } from "./copy"
+
+type Props = { t: Copy }
+const { t } = Astro.props
+const u = t.ui
+
+// 아이콘 — 24 격자 · 선 2 · 끝 각짐(DIcon · CheckinIcons 좌표 그대로)
+const ICON: Record<string, string> = {
+  today: '<circle cx="12" cy="12" r="4"/><path d="M12 3V4.5M12 19.5V21M3 12H4.5M19.5 12H21M5.6 5.6L6.7 6.7M17.3 17.3L18.4 18.4M5.6 18.4L6.7 17.3M17.3 6.7L18.4 5.6"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10H21M8 3V6M16 3V6"/>',
+  history: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
+  settings: '<path d="M3 8H10M18 8H21M3 16H6M14 16H21"/><circle cx="14" cy="8" r="3"/><circle cx="10" cy="16" r="3"/>',
+  plus: '<path d="M12 4V20M4 12H20"/>',
+  minus: '<path d="M4 12H20"/>',
+  forward: '<path d="M9 5L16 12L9 19"/>',
+  back: '<path d="M15 5L8 12L15 19"/>',
+  lower: '<path d="M5 6L12 13L19 6M5 18H19"/>',
+  expand: '<path d="M5 9L12 16L19 9"/>',
+  check: '<path d="M5 12.5L10 17.5L19 7"/>',
+  timer: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M9 2.5H15M12 3V6"/>',
+  sunny: '<circle cx="12" cy="12" r="4"/><path d="M12 3V4.5M12 19.5V21M3 12H4.5M19.5 12H21M5.6 5.6L6.7 6.7M17.3 17.3L18.4 18.4M5.6 18.4L6.7 17.3M17.3 6.7L18.4 5.6"/>',
+  partly: '<path d="M8.82 12.76C8.36 12.56 7.96 12.26 7.65 11.86C7.34 11.47 7.13 11.01 7.05 10.52C6.96 10.03 7 9.52 7.16 9.05C7.31 8.57 7.59 8.15 7.95 7.81C8.32 7.47 8.76 7.22 9.25 7.1C9.73 6.97 10.24 6.97 10.72 7.09C11.21 7.21 11.65 7.45 12.02 7.79C12.39 8.12 12.67 8.55 12.83 9.02M5.76 14.24L5.05 14.95M4 10H3M5.76 5.76L5.05 5.05M10 4V3M14.24 5.76L14.95 5.05M12.5 20H19C19.49 20 19.96 19.82 20.33 19.49C20.7 19.17 20.93 18.72 20.99 18.23C21.04 17.74 20.92 17.25 20.63 16.85C20.35 16.45 19.93 16.17 19.46 16.05C19.53 15.6 19.51 15.13 19.4 14.68C19.3 14.23 19.1 13.81 18.83 13.43C18.56 13.06 18.21 12.74 17.82 12.5C17.42 12.26 16.99 12.1 16.53 12.03C16.07 11.96 15.6 11.98 15.15 12.1C14.71 12.21 14.28 12.41 13.91 12.68C13.54 12.96 13.23 13.31 12.99 13.7C12.76 14.1 12.6 14.54 12.54 15C11.87 15 11.24 15.25 10.76 15.72C10.53 15.95 10.34 16.22 10.21 16.53C10.09 16.83 10.02 17.15 10.02 17.48C10.02 17.81 10.08 18.14 10.2 18.44C10.32 18.74 10.51 19.02 10.74 19.25C11.2 19.73 11.84 20 12.5 20Z"/>',
+  cloudy: '<path d="M7 18H16.5C17.38 18 18.24 17.66 18.88 17.06C19.53 16.46 19.93 15.63 19.99 14.75C20.05 13.87 19.78 12.99 19.23 12.31C18.67 11.62 17.88 11.16 17 11.04C17 10.34 16.86 9.64 16.58 9C16.3 8.36 15.89 7.78 15.37 7.31C14.86 6.84 14.24 6.48 13.58 6.26C12.91 6.04 12.21 5.96 11.51 6.03C10.82 6.09 10.14 6.31 9.53 6.65C8.92 7 8.39 7.47 7.98 8.03C7.56 8.6 7.27 9.24 7.12 9.92C6.97 10.61 6.96 11.32 7.1 12C6.7 11.99 6.3 12.05 5.93 12.19C5.56 12.33 5.22 12.55 4.93 12.82C4.64 13.1 4.41 13.43 4.25 13.79C4.09 14.16 4 14.55 3.99 14.95C3.99 15.35 4.06 15.74 4.21 16.12C4.36 16.49 4.58 16.82 4.86 17.11C5.14 17.39 5.47 17.62 5.84 17.77C6.21 17.92 6.6 18 7 18Z"/>',
+  rain: '<path d="M7 14H16.5C16.91 14 17.33 13.91 17.71 13.75C18.09 13.58 18.43 13.34 18.71 13.03C18.99 12.73 19.2 12.36 19.34 11.97C19.47 11.58 19.52 11.16 19.49 10.75C19.46 10.34 19.34 9.93 19.14 9.57C18.94 9.2 18.67 8.88 18.34 8.63C18.01 8.38 17.63 8.19 17.23 8.09C16.83 7.99 16.41 7.97 16 8.04C16.01 7.41 15.88 6.78 15.62 6.2C15.37 5.61 14.99 5.09 14.52 4.67C14.05 4.24 13.5 3.92 12.89 3.72C12.29 3.53 11.65 3.46 11.02 3.53C10.38 3.6 9.77 3.8 9.23 4.12C8.68 4.44 8.21 4.87 7.84 5.39C7.47 5.91 7.21 6.5 7.09 7.12C6.96 7.74 6.97 8.38 7.11 9C6.78 8.99 6.45 9.04 6.13 9.15C5.82 9.27 5.53 9.44 5.29 9.67C5.04 9.9 4.85 10.17 4.71 10.48C4.57 10.78 4.5 11.11 4.49 11.44C4.48 11.78 4.54 12.11 4.67 12.42C4.79 12.73 4.97 13.01 5.21 13.25C5.44 13.49 5.72 13.68 6.03 13.81C6.34 13.94 6.67 14 7 14ZM8.5 17L5.5 20M13.5 17L10.5 20M18.5 17L15.5 20"/>',
+  snow: '<path d="M12 3V21M3 12H21M8.5 4L12 7.5L15.5 4M8.5 20L12 16.5L15.5 20M4 8.5L7.5 12L4 15.5M20 8.5L16.5 12L20 15.5"/>',
+}
+const icon = (name: string, size = 24, cls = "") =>
+  `<svg class="ic ${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">${ICON[name]}</svg>`
+
+const TAB_ICONS = ["today", "calendar", "history", "settings"]
+const WEATHER = ["sunny", "partly", "cloudy", "rain", "snow"]
+
+// ── 지어낸 예시 기록(2026년 11월 · 오늘 = 18일 수요일 · 11월 1일 = 일요일) ──
+const R = u.routines
+type Kind = "push" | "pull" | "legs"
+const worked: Record<number, Kind> = { 2: "push", 3: "pull", 4: "legs", 6: "push", 7: "pull", 9: "push", 10: "pull", 11: "legs", 13: "push", 14: "pull", 16: "legs", 17: "push" }
+const planned: Record<number, Kind> = { 19: "pull", 20: "legs", 21: "push", 23: "pull", 24: "legs" }
+// 체크인 답 — 그날 가장 높은 단계(0 = 없음)
+const painDay: Record<number, number> = { 3: 1, 4: 1, 5: 2, 7: 1, 8: 0, 10: 1, 11: 1, 12: 0, 14: 2, 15: 1, 17: 0, 18: 1 }
+const TODAY = 18
+
+// 히스토리 2주 = 9일 ~ 22일
+const histDays = Array.from({ length: 14 }, (_, i) => 9 + i)
+const chestVolume: Record<number, number> = { 9: 4950, 13: 5400, 17: 5820 }
+const chestPain: Record<number, number> = { 10: 1, 14: 2, 18: 1 }
+const VMAX = 6200
+const fmt = (n: number) => n.toLocaleString("en-US")
+const trained: Record<Kind, number[]> = { push: [0, 1, 3], pull: [2, 4, 5, 6, 7], legs: [8] }
+// 전체 부위 칸의 통증(부위 번호 → 날 → 단계)
+const partPain: Record<number, Record<number, number>> = {
+  0: { 10: 1, 14: 2, 18: 1 },
+  1: { 10: 0, 14: 1, 18: 0 },
+  2: { 11: 0, 15: 1 },
+  3: { 10: 1, 14: 1, 18: 2 },
+  4: { 11: 1, 15: 0 },
+  5: { 11: 0, 15: 0 },
+  6: { 11: 2, 15: 1 },
+  7: { 11: 1, 15: 0 },
+  8: { 12: 1, 17: 0 },
+}
+const partTrained = (p: number, d: number) => {
+  const k = worked[d]
+  return k ? trained[k].includes(p) : false
+}
+
+// 캘린더 = 11월 1일(일) ~ 30일(월) · 5줄
+const calCells: (number | null)[] = [...Array.from({ length: 30 }, (_, i) => i + 1), null, null, null, null, null]
+const PAIN_H = [8, 6, 11, 16]
+---
+
+<div class="phone" data-phone data-step="log" aria-hidden="true" lang={t.lang}>
+  <span class="btn-side b1"></span><span class="btn-side b2"></span><span class="btn-side b3"></span><span class="btn-side b4"></span>
+  <div class="glass">
+    <div class="island"></div>
+
+    <!-- 운동 중 — 하는 종목 판 + 휴식 판 -->
+    <section class="scr s-workout">
+      <div class="status"><span class="clock">9:41</span><span class="sys"></span></div>
+      <div class="wk-top">
+        <span class="ink" set:html={icon("lower")} />
+        <b class="t-bodyb">{R.push}</b>
+        <span class="n22" data-elapsed="2538">42:18</span>
+        <span class="t-cap sub nowrap">{u.workout.started}</span>
+        <span class="grow"></span>
+        <span class="tbtn">{u.workout.reorder}</span>
+      </div>
+      <div class="wk-list">
+        <div class="panel rowcard">
+          <span class="ink" set:html={icon("check")} />
+          <b class="t-bodyb">{u.workout.done.name}</b>
+          <span class="grow"></span>
+          <span class="n14 sub">{u.workout.done.progress}</span>
+          <span class="ink" set:html={icon("expand")} />
+        </div>
+        <div class="panel ex">
+          <div class="ex-head">
+            <h4 class="t-card">{u.workout.active.name}</h4>
+            <span class="n14 sub"><span class="pre">2/4</span><span class="post">3/4</span></span>
+          </div>
+          <span class="tbtn sm"><Fragment set:html={icon("timer", 20)} />{u.workout.active.rest}</span>
+          <div class="cols t-small sub">
+            {u.workout.columns.map((c) => <span>{c}</span>)}
+          </div>
+          {[
+            [26, 12, "done"],
+            [26, 10, "done"],
+            [26, 10, "now"],
+            [24, 12, "later"],
+          ].map(([kg, reps, state], i) => (
+            <>
+              <div class="band" />
+              <div class={`setrow is-${state}`}>
+                <span class="n22">{i + 1}</span>
+                <span class="field n22">{kg}</span>
+                <span class="field n22">{reps}</span>
+                <span class="chk" set:html={icon("check")} />
+              </div>
+            </>
+          ))}
+          <div class="band" />
+          <div class="ex-foot">
+            <span class="tbtn"><Fragment set:html={icon("minus")} />{u.workout.removeSet}</span>
+            <span class="tbtn"><Fragment set:html={icon("plus")} />{u.workout.addSet}</span>
+          </div>
+        </div>
+        {u.workout.upcoming.map((x, i) => (
+          <div class="panel rowcard">
+            <span class="n14 sub">{i + 3}</span>
+            <b class="t-bodyb">{x.name}</b>
+            <span class="grow"></span>
+            <span class="t-cap sub">{x.sets}</span>
+            <span class="ink" set:html={icon("expand")} />
+          </div>
+        ))}
+        <span class="dbtn primary wide finish">{u.workout.finish}</span>
+      </div>
+      <div class="restp">
+        <span class="grab"></span>
+        <div class="rest-head">
+          <b class="t-card">{u.rest.title}</b>
+          <span class="tbtn ink"><Fragment set:html={icon("lower")} />{u.rest.collapse}</span>
+        </div>
+        <div class="rest-count" data-count="rest">1:30</div>
+        <p class="t-bodyb rest-next">{u.rest.next}</p>
+        <div class="rest-btns">
+          <span class="dbtn">−15</span><span class="dbtn">+15</span><span class="dbtn">{u.rest.skip}</span>
+        </div>
+      </div>
+      <span class="home"></span>
+    </section>
+
+    <!-- 잠금 화면 — 휴식 Live Activity 카드(RestLiveActivityWidget 잠금화면 카드) -->
+    <section class="scr s-lock">
+      <div class="status light"><span class="clock">9:41</span><span class="sys"></span></div>
+      <p class="lock-date">{u.date}</p>
+      <p class="lock-time">9:41</p>
+      <div class="la">
+        <div class="la-top">
+          <div>
+            <b class="t-card">{u.lock.title}</b>
+            <p class="t-cap sub">{R.push} · <span data-elapsed="2585">43:05</span></p>
+          </div>
+          <span class="la-num" data-count="lock">1:12</span>
+        </div>
+        <div class="la-btns">
+          <span class="dbtn sm">{u.lock.skip}</span>
+          <span class="dbtn sm primary">{u.lock.setDone}</span>
+        </div>
+      </div>
+      <span class="lock-round l"></span><span class="lock-round r"></span>
+      <span class="home light"></span>
+    </section>
+
+    <!-- 오늘 — 체크인 -->
+    <section class="scr s-today">
+      <div class="status"><span class="clock">9:41</span><span class="sys"></span></div>
+      <div class="scr-title"><h3 class="t-screen">{u.today.title}</h3><span class="t-cap sub">{u.date}</span></div>
+      <div class="panel ci">
+        <div class="ci-head"><b class="t-card">{u.today.checkin}</b><span class="t-cap sub">{u.today.sub}</span></div>
+        {u.today.parts.map((name, p) => (
+          <div class={`ci-row pick-${["p1", "p0", "p2"][p]}`}>
+            <b class="t-bodyb ci-name">{name}</b>
+            <div class="seg">
+              {u.today.pain.map((label, lv) => (
+                <span class={`cell lv${lv}`} style={`--d:${p * 260}ms`}>
+                  <i class={`mark m${lv}`} style={`--h:${PAIN_H[lv]}px`}></i>
+                  <span>{label}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+        <div class="band wide" />
+        <div class="ci-row">
+          <b class="t-bodyb ci-name">{u.today.sleep}</b>
+          <div class="seg txt sleep">
+            {u.today.sleepOptions.map((label) => <span class="cell"><span>{label}</span></span>)}
+          </div>
+        </div>
+        <div class="ci-row">
+          <b class="t-bodyb ci-name">{u.today.weather}</b>
+          <div class="seg txt weather">
+            {u.today.weatherOptions.map((label, i) => (
+              <span class="cell"><Fragment set:html={icon(WEATHER[i], 18)} /><span>{label}</span></span>
+            ))}
+          </div>
+        </div>
+        <div class="ci-foot">
+          <span class="tbtn"><Fragment set:html={icon("plus")} />{u.today.addPart}</span>
+          <span class="tbtn">{u.today.allFine}</span>
+        </div>
+        <span class="dbtn primary wide">{u.today.confirm}</span>
+      </div>
+      <h4 class="t-panel sec-title">{u.today.workout}</h4>
+      <div class="panel stroked choose">
+        <div><b class="t-card">{u.today.choose}</b><p class="t-cap sub">{u.today.chooseSub}</p></div>
+        <span class="ink" set:html={icon("forward")} />
+      </div>
+      <nav class="tabbar">{u.tabs.map((n, i) => <span class={i === 0 ? "tab on" : "tab"}><Fragment set:html={icon(TAB_ICONS[i])} /><small>{n}</small></span>)}</nav>
+      <span class="home"></span>
+    </section>
+
+    <!-- 히스토리 — 부위 칩 -->
+    <section class="scr s-history">
+      <div class="status"><span class="clock">9:41</span><span class="sys"></span></div>
+      <div class="scr-title"><h3 class="t-screen">{u.history.title}</h3></div>
+      <div class="chips">{u.history.chips.map((c, i) => <span class={i === 0 ? "chip on" : "chip"}>{c}</span>)}</div>
+      <div class="panel hist">
+        <div class="hist-head">
+          <b class="t-card">{u.history.part}</b>
+          <span class="today-chip">{u.history.today}</span>
+          <span class="grow"></span>
+          <span class="period on">{u.history.periods[0]}</span><span class="period">{u.history.periods[1]}</span>
+        </div>
+        <div class="graph">
+          <div class="g-label"><b class="t-capb">{u.history.work}</b><span class="t-small sub">{u.history.volume}</span></div>
+          <div class="g-plot bars">
+            {histDays.map((d, i) => (
+              <span class={d === TODAY ? "col is-today" : "col"}>
+                {chestVolume[d] && (
+                  <span class="bar" style={`--v:${chestVolume[d] / VMAX}; --i:${i}`}><em class="n11">{fmt(chestVolume[d])}</em></span>
+                )}
+                {planned[d] === "push" && <span class="bar plan" style={`--v:${5400 / VMAX}; --i:${i}`}></span>}
+              </span>
+            ))}
+          </div>
+          <div class="g-label"><b class="t-capb">{u.history.pain}</b><span class="t-small sub lv-names">{u.history.levels.map((l) => <span>{l}</span>)}</span></div>
+          <div class="g-plot pains">
+            {histDays.map((d, i) => (
+              <span class={d === TODAY ? "col is-today" : "col"}>
+                {chestPain[d] !== undefined && <i class={`mark m${chestPain[d]} rise`} style={`--h:${PAIN_H[chestPain[d]]}px; --i:${i}`}></i>}
+              </span>
+            ))}
+          </div>
+          <div class="g-label"></div>
+          <div class="g-plot axis">
+            {histDays.map((d) => (
+              <span class={d === TODAY ? "col day is-today" : d > TODAY ? "col day later" : "col day"}>
+                <small>{u.history.weekdays[(d - 1) % 7]}</small><b class="n12">{d}</b>
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+      <p class="t-capb sub all-title">{u.history.all}</p>
+      <div class="allparts">
+        {u.history.allParts.map((name, p) => (
+          <div class={p === 0 ? "ap-row is-picked" : "ap-row"}>
+            <span class="ap-name">{name}</span>
+            <span class="ap-days">
+              {histDays.map((d) => (
+                <span class={d === TODAY ? "ap-cell is-today" : "ap-cell"}>
+                  {partTrained(p, d) && <i class="ap-work"></i>}
+                  {partPain[p]?.[d] !== undefined && <i class={`ap-pain a${partPain[p][d]}`}></i>}
+                </span>
+              ))}
+            </span>
+          </div>
+        ))}
+      </div>
+      <nav class="tabbar">{u.tabs.map((n, i) => <span class={i === 2 ? "tab on" : "tab"}><Fragment set:html={icon(TAB_ICONS[i])} /><small>{n}</small></span>)}</nav>
+      <span class="home"></span>
+    </section>
+
+    <!-- 캘린더 -->
+    <section class="scr s-calendar">
+      <div class="status"><span class="clock">9:41</span><span class="sys"></span></div>
+      <div class="scr-title"><h3 class="t-screen">{u.calendar.title}</h3></div>
+      <div class="panel cal">
+        <div class="cal-head">
+          <b class="t-card">{u.calendar.month}</b><span class="grow"></span>
+          <span class="ink" set:html={icon("back")} /><span class="ink" set:html={icon("forward")} />
+        </div>
+        <div class="cal-grid wd">{u.calendar.weekdays.map((w) => <span class="t-small sub">{w}</span>)}</div>
+        <div class="cal-grid days">
+          {calCells.map((d, i) =>
+            d === null ? (
+              <span class="cday empty"></span>
+            ) : (
+              <span
+                class:list={["cday", { worked: worked[d], planned: planned[d], today: d === TODAY }]}
+                style={`--i:${i}`}
+              >
+                <b class="n12 dnum">{d}</b>
+                {(worked[d] || planned[d]) && <span class="rname">{R[(worked[d] || planned[d]) as Kind]}</span>}
+                {painDay[d] !== undefined && (
+                  <span class="pbar">
+                    {[1, 2, 3].map((k) => (
+                      <i class={k <= painDay[d] ? `on l${painDay[d]}` : ""}></i>
+                    ))}
+                  </span>
+                )}
+              </span>
+            ),
+          )}
+        </div>
+        <div class="legend t-small">
+          <span><i class="lg-work"></i>{u.calendar.legendWorkout}</span>
+          <span><i class="lg-plan"></i>{u.calendar.legendPlan}</span>
+          <span><i class="lg-pain"></i>{u.calendar.legendPain}</span>
+        </div>
+      </div>
+      <nav class="tabbar">{u.tabs.map((n, i) => <span class={i === 1 ? "tab on" : "tab"}><Fragment set:html={icon(TAB_ICONS[i])} /><small>{n}</small></span>)}</nav>
+      <span class="home"></span>
+    </section>
+
+    <!-- 설정 — 애플 건강 · 기록 -->
+    <section class="scr s-settings">
+      <div class="status"><span class="clock">9:41</span><span class="sys"></span></div>
+      <div class="scr-title"><h3 class="t-screen">{u.settings.title}</h3></div>
+      <p class="t-capb sub grp">{u.settings.health}</p>
+      <div class="panel set-panel">
+        {u.settings.healthRows.map((title, i) => (
+          <>
+            {i > 0 && <div class="band" />}
+            <div class="sw-row"><b class="t-bodyb">{title}</b><span class="sw" style={`--d:${200 + i * 380}ms`}><i></i></span></div>
+          </>
+        ))}
+        <p class="t-cap sub help">{u.settings.healthHelp}</p>
+      </div>
+      <p class="t-capb sub grp">{u.settings.records}</p>
+      <div class="panel set-panel">
+        {u.settings.recordRows.map((r, i) => (
+          <>
+            {i > 0 && <div class="band" />}
+            <div class="nav-row">
+              <div><b class="t-bodyb">{r.title}</b>{r.sub && <p class="t-cap sub">{r.sub}</p>}</div>
+              <span class="ink" set:html={icon("forward")} />
+            </div>
+          </>
+        ))}
+      </div>
+      <nav class="tabbar">{u.tabs.map((n, i) => <span class={i === 3 ? "tab on" : "tab"}><Fragment set:html={icon(TAB_ICONS[i])} /><small>{n}</small></span>)}</nav>
+      <span class="home"></span>
+    </section>
+  </div>
+</div>
+
+<style>
+  /* 앱 토큰(DColor) — 밝은 모드 하나뿐(앱에 어두운 모드 없음) */
+  .phone {
+    --bg: #f0f2f6;
+    --surface: #fff;
+    --field: #f0f2f6;
+    --ink: #111;
+    --sub: #54565a;
+    --prefill: #6a6c70;
+    --accent: #2e4bff;
+    --hl: #ffd23f;
+    --tint: #abb7ff;
+    --p1: #ffd23f;
+    --p2: #ff9f0a;
+    --p3: #c26a00;
+    --none: #6a6c70;
+    --band: #dbdde1;
+    --enter: cubic-bezier(0.2, 0, 0, 1);
+    --exit: cubic-bezier(0.4, 0, 1, 1);
+    /* 휴식 판 오름 = 스프링 질량 1 · 400 · 28(DMotion.restRise) */
+    --rise: linear(0, 0.057, 0.191, 0.356, 0.523, 0.672, 0.796, 0.891, 0.959, 1.004, 1.031, 1.043, 1.046, 1.043, 1.036, 1.029, 1.021, 1.014, 1.009, 1.005, 1);
+    --kr: "Wanted Sans Variable", "Wanted Sans", system-ui, sans-serif;
+    --num: "RepYep Num", var(--kr);
+
+    position: relative;
+    width: 426px;
+    height: 898px;
+    padding: 12px;
+    border-radius: 66px;
+    background: var(--ink);
+    font-family: var(--kr);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-synthesis: none;
+  }
+  .btn-side { position: absolute; width: 5px; background: var(--ink); border-radius: 2px; }
+  .b1 { left: -4px; top: 190px; height: 34px; }
+  .b2 { left: -4px; top: 250px; height: 64px; }
+  .b3 { left: -4px; top: 330px; height: 64px; }
+  .b4 { right: -4px; top: 280px; height: 100px; }
+  .glass { position: relative; width: 402px; height: 874px; border-radius: 54px; overflow: hidden; background: var(--bg); isolation: isolate; }
+  .island { position: absolute; z-index: 20; top: 11px; left: 50%; width: 126px; height: 37px; margin-left: -63px; border-radius: 20px; background: #000; }
+
+  /* 글자 스타일(DTypography) */
+  .t-screen { font-size: 26px; line-height: 32px; font-weight: 800; letter-spacing: -0.26px; margin: 0; }
+  .t-panel { font-size: 22px; line-height: 28px; font-weight: 800; letter-spacing: -0.22px; margin: 0; }
+  .t-card { font-size: 20px; line-height: 26px; font-weight: 800; letter-spacing: -0.2px; margin: 0; }
+  .t-bodyb { font-size: 16px; line-height: 24px; font-weight: 700; }
+  .t-cap { font-size: 14px; line-height: 20px; font-weight: 500; margin: 0; }
+  .t-capb { font-size: 14px; line-height: 20px; font-weight: 700; margin: 0; }
+  .t-small { font-size: 12px; line-height: 14px; font-weight: 600; }
+  .n22 { font-family: var(--num); font-size: 22px; line-height: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .n14 { font-family: var(--num); font-size: 14px; line-height: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .n12 { font-family: var(--num); font-size: 12px; line-height: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .n11 { font-family: var(--num); font-size: 11px; line-height: 13px; font-weight: 600; font-style: normal; font-variant-numeric: tabular-nums; }
+  .sub { color: var(--sub); }
+  .ink { color: var(--ink); display: inline-flex; }
+  .grow { flex: 1; }
+  .nowrap { white-space: nowrap; }
+  .phone :global(.ic) { flex: none; display: block; }
+
+  /* 화면 틀 */
+  .scr {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(14px);
+    transition: opacity 0.22s var(--exit), transform 0.22s var(--exit), visibility 0s linear 0.22s;
+  }
+  .phone[data-step="log"] .s-workout,
+  .phone[data-step="rest"] .s-workout,
+  .phone[data-step="beep"] .s-workout,
+  .phone[data-step="lock"] .s-lock,
+  .phone[data-step="checkin"] .s-today,
+  .phone[data-step="daily"] .s-today,
+  .phone[data-step="history"] .s-history,
+  .phone[data-step="calendar"] .s-calendar,
+  .phone[data-step="local"] .s-settings {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity 0.28s var(--enter), transform 0.28s var(--enter), visibility 0s;
+  }
+  .status { position: absolute; top: 0; left: 0; right: 0; height: 54px; z-index: 15; display: flex; align-items: center; justify-content: space-between; padding: 4px 34px 0 52px; }
+  .status .clock { font-family: var(--num); font-size: 17px; font-weight: 600; }
+  .status .sys { width: 72px; height: 13px; background:
+      linear-gradient(var(--ink), var(--ink)) 0 9px / 3px 4px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 5px 6px / 3px 7px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 10px 3px / 3px 10px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 15px 0 / 3px 13px no-repeat,
+      linear-gradient(var(--ink), var(--ink)) 46px 1px / 22px 11px no-repeat;
+    border-radius: 2px; }
+  .status.light .clock { color: #fff; }
+  .status.light .sys { filter: invert(1); }
+  .home { position: absolute; z-index: 16; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--ink); }
+  .home.light { background: #fff; }
+  .scr-title { position: absolute; top: 62px; left: 16px; right: 16px; display: flex; align-items: baseline; justify-content: space-between; }
+
+  .panel { background: var(--surface); border-radius: 12px; }
+  .panel.stroked { border: 2px solid var(--ink); }
+  .band { height: 2px; background: var(--band); }
+  .tbtn { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-size: 16px; line-height: 22px; font-weight: 700; white-space: nowrap; }
+  .tbtn.sm { font-size: 14px; }
+  .tbtn.ink { color: var(--ink); }
+  .dbtn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 56px; padding: 0 18px; border-radius: 10px;
+    background: var(--surface); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+    font-size: 16px; font-weight: 700; white-space: nowrap;
+  }
+  .dbtn.sm { height: 44px; }
+  .dbtn.primary { background: var(--accent); color: #fff; }
+  .dbtn.wide { display: flex; height: 48px; margin-top: 14px; }
+
+  /* 탭 막대(피그마 97:189 · 아래 38 · 높이 72) */
+  .tabbar {
+    position: absolute; z-index: 12; left: 16px; right: 16px; bottom: 38px; height: 72px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px;
+    background: var(--surface); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 4px 4px 0 var(--ink);
+  }
+  .tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 10px; border: 2px solid transparent; }
+  .tab small { font-size: 12px; line-height: 14px; font-weight: 600; }
+  .tab.on { background: var(--hl); border-color: var(--ink); }
+
+  /* ── 운동 중 ── */
+  .wk-top { position: absolute; top: 58px; left: 16px; right: 16px; height: 44px; display: flex; align-items: center; gap: 8px; }
+  .wk-list { position: absolute; top: 108px; left: 16px; right: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .rowcard { display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 16px; }
+  .rowcard b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ex { padding: 16px 16px 8px; }
+  .ex-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .ex .tbtn.sm { margin: 6px 0 2px -2px; }
+  .cols { display: grid; grid-template-columns: 36px 1fr 1fr 76px; gap: 8px; padding: 8px 0 4px; }
+  .cols span { text-align: center; }
+  .cols span:first-child { text-align: left; }
+  .setrow { display: grid; grid-template-columns: 36px 1fr 1fr 76px; gap: 8px; align-items: center; height: 64px; }
+  .field { height: 48px; display: grid; place-items: center; border-radius: 8px; background: var(--field); }
+  .setrow.is-now .field, .setrow.is-later .field { color: var(--prefill); }
+  .chk {
+    width: 76px; height: 48px; display: grid; place-items: center; border-radius: 10px;
+    border: 2px solid var(--ink); background: var(--surface); color: var(--prefill); box-shadow: 3px 3px 0 var(--ink);
+  }
+  .setrow.is-done .chk { background: var(--accent); color: #fff; box-shadow: none; transform: translate(3px, 3px); }
+  .ex-foot { display: flex; justify-content: space-between; padding: 10px 2px 4px; }
+  .dbtn.finish { margin-top: 4px; }
+  .pre, .post { display: inline; }
+  .post { display: none; }
+
+  /* 세트 체크 → 휴식(rest · beep 단계) — 체크 도장 0.16 · 1.35배(DMotion.stamp) */
+  .phone[data-step="rest"] .setrow.is-now .chk,
+  .phone[data-step="beep"] .setrow.is-now .chk { background: var(--accent); color: #fff; box-shadow: none; transform: translate(3px, 3px); transition: background 0.08s, box-shadow 0.08s, transform 0.08s; }
+  .phone[data-step="rest"] .setrow.is-now .chk :global(svg) { animation: stamp 0.16s var(--enter) both; }
+  .phone[data-step="rest"] .setrow.is-now .field,
+  .phone[data-step="beep"] .setrow.is-now .field { color: var(--ink); }
+  .phone[data-step="rest"] .pre, .phone[data-step="beep"] .pre { display: none; }
+  .phone[data-step="rest"] .post, .phone[data-step="beep"] .post { display: inline; }
+  @keyframes stamp { from { transform: scale(1.35); } to { transform: none; } }
+
+  .restp {
+    position: absolute; z-index: 14; left: 0; right: 0; bottom: 0;
+    padding: 8px 16px 58px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+    background: var(--hl); border: 2px solid var(--ink); border-bottom: 0; border-radius: 20px 20px 0 0;
+    transform: translateY(105%);
+    transition: transform 0.22s var(--exit);
+  }
+  .phone[data-step="rest"] .restp,
+  .phone[data-step="beep"] .restp { transform: none; transition: transform 0.37s var(--rise) 0.18s; }
+  .grab { width: 40px; height: 4px; border-radius: 2px; background: var(--ink); }
+  .rest-head { align-self: stretch; display: flex; align-items: center; justify-content: space-between; height: 32px; }
+  .rest-count { font-family: var(--num); font-weight: 800; font-size: 108px; line-height: 108px; letter-spacing: -4.3px; font-variant-numeric: tabular-nums; transform-origin: 50% 60%; }
+  .rest-count.pop { animation: pop 0.6s both; }
+  /* 남은 3 · 2 · 1초 = 1.22배까지 0.12 감속 → 스프링 520 · 24 로 1배(DMotion.countPop) */
+  @keyframes pop {
+    0% { transform: scale(1); animation-timing-function: cubic-bezier(0.2, 0, 0, 1); }
+    20% { transform: scale(1.22); animation-timing-function: linear; }
+    38% { transform: scale(0.99); }
+    52% { transform: scale(0.975); }
+    75% { transform: scale(1.003); }
+    100% { transform: scale(1); }
+  }
+  .rest-next { margin: -4px 0 0; text-align: center; }
+  .rest-btns { align-self: stretch; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-right: 3px; }
+
+  /* ── 잠금 화면 ── */
+  .s-lock { background: linear-gradient(170deg, #2a2e37 0%, #14161b 55%, #0b0c0f 100%); color: #fff; }
+  .lock-date { position: absolute; top: 84px; left: 0; right: 0; text-align: center; margin: 0; font-size: 19px; font-weight: 600; opacity: 0.9; }
+  .lock-time { position: absolute; top: 104px; left: 0; right: 0; text-align: center; margin: 0; font-family: var(--num); font-size: 104px; line-height: 1; font-weight: 600; letter-spacing: -2px; }
+  .la {
+    position: absolute; left: 12px; right: 12px; bottom: 132px; padding: 16px; border-radius: 24px;
+    background: var(--hl); color: var(--ink);
+    transform: translateY(28px); opacity: 0; transition: transform 0.22s var(--exit), opacity 0.22s var(--exit);
+  }
+  .phone[data-step="lock"] .la { transform: none; opacity: 1; transition: transform 0.37s var(--rise) 0.2s, opacity 0.18s var(--enter) 0.2s; }
+  .la-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .la-top p { margin-top: 2px; }
+  .la-num { font-family: var(--num); font-size: 48px; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .la-btns { display: flex; justify-content: space-between; margin-top: 12px; padding: 0 3px 3px 0; }
+  .lock-round { position: absolute; bottom: 52px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); }
+  .lock-round.l { left: 46px; }
+  .lock-round.r { right: 46px; }
+
+  /* ── 오늘 · 체크인 ── */
+  .ci { position: absolute; top: 112px; left: 16px; right: 16px; padding: 16px; }
+  .ci-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+  .ci-row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; align-items: center; margin-top: 10px; }
+  .ci-name { line-height: 20px; }
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .seg .cell { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; padding: 6px 2px; font-size: 14px; line-height: 16px; font-weight: 600; text-align: center; }
+  .seg .cell + .cell { box-shadow: inset 1.5px 0 0 var(--ink); }
+  .seg.txt .cell { min-height: 44px; font-size: 13px; }
+  .seg.weather .cell { font-size: 12px; gap: 1px; }
+  .phone[lang="en"] .seg .cell { font-size: 12px; }
+  .phone[lang="en"] .seg.txt .cell { font-size: 11.5px; line-height: 14px; }
+  .band.wide { margin: 14px 0 4px; }
+  .ci-foot { display: flex; justify-content: space-between; margin-top: 14px; }
+
+  /* 통증 상자(PainMark) — 자리 14 × 16 바닥 맞춤 · 없음 = 빈 네모 8 · 단계 = 14 × 6 / 11 / 16 */
+  .mark { display: block; width: 14px; height: 16px; position: relative; flex: none; }
+  .mark::after { content: ""; position: absolute; left: 0; bottom: 0; width: 14px; height: var(--h); border: 1.5px solid var(--ink); border-radius: 2px; box-sizing: border-box; }
+  .mark.m0::after { left: 3px; width: 8px; height: 8px; border-color: var(--none); border-radius: 0; }
+  .mark.m1::after { background: var(--p1); }
+  .mark.m2::after { background: var(--p2); }
+  .mark.m3::after { background: var(--p3); }
+
+  /* 고름 — 단계 색으로 칠함(없음 = 먹 반전) · 고른 칸의 상자는 흰 면이 납작 → 제 높이(0.18 감속 · 넘침 없음) */
+  .cell { transition: background 0s; }
+  .phone[data-step="checkin"] .pick-p1 .lv1, .phone[data-step="daily"] .pick-p1 .lv1,
+  .phone[data-step="checkin"] .pick-p0 .lv0, .phone[data-step="daily"] .pick-p0 .lv0,
+  .phone[data-step="checkin"] .pick-p2 .lv2, .phone[data-step="daily"] .pick-p2 .lv2 { --picked: 1; }
+  .seg .cell[class*="lv"] { background: var(--surface); }
+  .phone[data-step="checkin"] .pick-p1 .lv1, .phone[data-step="daily"] .pick-p1 .lv1 { background: var(--p1); }
+  .phone[data-step="checkin"] .pick-p2 .lv2, .phone[data-step="daily"] .pick-p2 .lv2 { background: var(--p2); }
+  .phone[data-step="checkin"] .pick-p0 .lv0, .phone[data-step="daily"] .pick-p0 .lv0 { background: var(--ink); color: #fff; }
+  .phone[data-step="checkin"] .cell[class*="lv"] { transition: background 0.08s var(--enter) calc(var(--d) + 0.45s), color 0.08s var(--enter) calc(var(--d) + 0.45s); }
+  .phone[data-step="checkin"] .pick-p0 .lv0 .mark::after,
+  .phone[data-step="daily"] .pick-p0 .lv0 .mark::after { border-color: #fff; }
+  .phone[data-step="checkin"] .pick-p1 .lv1 .mark::after, .phone[data-step="daily"] .pick-p1 .lv1 .mark::after,
+  .phone[data-step="checkin"] .pick-p2 .lv2 .mark::after, .phone[data-step="daily"] .pick-p2 .lv2 .mark::after { background: var(--surface); }
+  .phone[data-step="checkin"] .pick-p1 .lv1 .mark::after,
+  .phone[data-step="checkin"] .pick-p2 .lv2 .mark::after { animation: fill 0.18s cubic-bezier(0.2, 0, 0, 1) calc(var(--d) + 0.45s) both; }
+  @keyframes fill { from { height: 3px; } to { height: var(--h); } }
+
+  .phone[data-step="daily"] .sleep .cell:nth-child(2),
+  .phone[data-step="daily"] .weather .cell:nth-child(1) { background: var(--ink); color: #fff; transition: background 0.08s 0.45s, color 0.08s 0.45s; }
+  .phone[data-step="daily"] .weather .cell:nth-child(1) { transition-delay: 0.8s; }
+
+  .sec-title { position: absolute; top: 614px; left: 16px; }
+  .choose { position: absolute; top: 652px; left: 16px; right: 16px; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; }
+
+  /* ── 히스토리 ── */
+  .chips { position: absolute; top: 108px; left: 16px; display: flex; gap: 8px; }
+  .chip { height: 40px; padding: 0 16px; display: grid; place-items: center; border-radius: 8px; border: 2px solid var(--ink); background: var(--surface); box-shadow: 2px 2px 0 var(--ink); font-size: 14px; font-weight: 600; }
+  .chip.on { background: var(--ink); color: #fff; box-shadow: none; transform: translate(2px, 2px); }
+  .hist { position: absolute; top: 166px; left: 16px; right: 16px; padding: 16px; }
+  .hist-head { display: flex; align-items: center; gap: 8px; }
+  .today-chip { height: 28px; padding: 0 8px; display: grid; place-items: center; border-radius: 8px; background: var(--p1); font-size: 14px; font-weight: 600; }
+  .period { font-size: 14px; font-weight: 700; color: var(--sub); padding: 4px 6px; }
+  .period.on { color: var(--ink); box-shadow: inset 0 -2px 0 var(--ink); }
+  .graph { display: grid; grid-template-columns: 62px 1fr; margin-top: 14px; }
+  .g-label { display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 4px; }
+  .g-plot { display: grid; grid-template-columns: repeat(14, 1fr); position: relative; }
+  .col { position: relative; display: flex; align-items: flex-end; justify-content: center; }
+  .col.is-today { background: rgba(219, 221, 225, 0.7); }
+  .bars { height: 96px; border-bottom: 2px solid var(--ink); }
+  .bar { position: relative; width: 11px; height: calc(var(--v) * 72px); background: var(--accent); transform-origin: bottom; }
+  .bar em { position: absolute; z-index: 2; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%); white-space: nowrap; }
+  .bar.plan { background: none; border: 1.5px dashed var(--accent); }
+  .pains { height: 52px; align-items: start; }
+  .pains .col { align-items: flex-start; padding-top: 6px; }
+  .lv-names { display: flex; flex-direction: column; gap: 1px; font-size: 10px; line-height: 11px; }
+  .axis { padding-top: 6px; }
+  .day { flex-direction: column; align-items: center; gap: 1px; padding: 2px 0; }
+  .day small { font-size: 10px; line-height: 12px; color: var(--sub); font-weight: 600; }
+  .day.later { opacity: 0.4; }
+  .day.is-today { background: var(--ink); color: #fff; border-radius: 4px; }
+  .day.is-today small { color: #fff; }
+  .phone[data-step="history"] .bar { animation: barUp 0.28s var(--enter) calc(var(--i) * 30ms + 0.3s) both; }
+  .phone[data-step="history"] .rise::after { animation: fill 0.18s var(--enter) calc(var(--i) * 30ms + 0.55s) both; }
+  @keyframes barUp { from { transform: scaleY(0); } to { transform: none; } }
+  .all-title { position: absolute; top: 440px; left: 16px; }
+  .allparts { position: absolute; top: 468px; left: 16px; right: 16px; }
+  .ap-row { display: grid; grid-template-columns: 110px 1fr; align-items: center; height: 27px; }
+  .ap-row:nth-child(odd) { background: rgba(255, 255, 255, 0.55); }
+  .ap-name { font-size: 13px; font-weight: 600; padding-left: 6px; white-space: nowrap; }
+  .ap-row.is-picked .ap-name { background: var(--ink); color: #fff; border-radius: 4px; margin-right: 8px; }
+  .ap-days { display: grid; grid-template-columns: repeat(14, 1fr); height: 100%; }
+  .ap-cell { position: relative; display: grid; place-items: center; }
+  .ap-cell.is-today { background: rgba(219, 221, 225, 0.7); }
+  .ap-work { position: absolute; inset: 0 3px; background: var(--tint); }
+  .ap-pain { position: relative; width: 10px; height: 6px; border: 1.5px solid var(--ink); border-radius: 1px; box-sizing: border-box; }
+  .ap-pain.a0 { width: 6px; height: 6px; border-color: var(--none); border-radius: 0; }
+  .ap-pain.a1 { background: var(--p1); }
+  .ap-pain.a2 { background: var(--p2); height: 9px; }
+
+  /* ── 캘린더 ── */
+  .cal { position: absolute; top: 112px; left: 16px; right: 16px; padding: 16px 12px; }
+  .cal-head { display: flex; align-items: center; gap: 16px; padding: 0 4px 10px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-grid.wd span { text-align: center; padding-bottom: 6px; }
+  .cday { position: relative; height: 70px; border-radius: 6px; padding: 4px 4px 0; display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; }
+  .cday.worked { background: var(--tint); }
+  .cday.planned { border: 1.5px dashed var(--accent); }
+  .cday .dnum { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; }
+  .cday.today .dnum { background: var(--ink); color: #fff; }
+  .rname { white-space: nowrap; overflow: hidden; line-height: 14px; }
+  .pbar { display: flex; gap: 2px; margin-top: auto; padding-bottom: 6px; }
+  .pbar i { width: 10px; height: 6px; border-radius: 1px; background: var(--band); }
+  .pbar i.on { border: 1.5px solid var(--ink); box-sizing: border-box; }
+  .pbar i.on.l1 { background: var(--p1); }
+  .pbar i.on.l2 { background: var(--p2); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 14px 4px 0; color: var(--sub); }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .lg-work { width: 12px; height: 12px; background: var(--tint); }
+  .lg-plan { width: 12px; height: 12px; border: 1.5px dashed var(--accent); box-sizing: border-box; }
+  .lg-pain { width: 14px; height: 6px; border: 1.5px solid var(--ink); background: var(--p1); box-sizing: border-box; }
+  .phone[data-step="calendar"] .cday.worked,
+  .phone[data-step="calendar"] .cday.planned { animation: cellIn 0.22s var(--enter) calc(var(--i) * 14ms + 0.25s) both; }
+  @keyframes cellIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: none; } }
+
+  /* ── 설정 ── */
+  .s-settings .grp { margin: 0 0 8px; }
+  .s-settings .scr-title + .grp { margin-top: 110px; }
+  .s-settings .grp, .s-settings .set-panel { position: relative; left: 16px; width: 370px; }
+  .set-panel { padding: 4px 16px 12px; margin-bottom: 20px; }
+  .sw-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; }
+  .sw { position: relative; flex: none; width: 54px; height: 34px; border-radius: 8px; border: 2px solid var(--ink); background: var(--surface); box-shadow: 2px 2px 0 var(--ink); box-sizing: border-box; }
+  .sw i { position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 4px; border: 2px solid var(--ink); background: var(--surface); box-sizing: border-box; }
+  .phone[data-step="local"] .sw { background: var(--accent); box-shadow: none; transition: background 0.12s ease-out var(--d), box-shadow 0.12s ease-out var(--d); }
+  .phone[data-step="local"] .sw i { transform: translateX(20px); transition: transform 0.12s ease-out var(--d); }
+  .help { margin: 4px 0 2px; }
+  .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 64px; padding: 8px 0; }
+  .nav-row p { margin-top: 2px; }
+
+  /* 움직임 줄이기 — 바뀌는 것은 그대로 바뀌고, 움직임만 멈춘다 */
+  @media (prefers-reduced-motion: reduce) {
+    .phone *,
+    .phone *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+</style>

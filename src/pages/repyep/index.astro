@@ -1,0 +1,10 @@
+---
+// 운동해 넵 제품 사이트(팀 repyep · 11/20) — 방침 · 지원(./privacy · ./support)은 그대로 두고 이 쪽만 더함
+import RepYepLayout from "@layouts/RepYepLayout.astro"
+import RepYepPage from "@components/repyep/RepYepPage.astro"
+import { copy } from "@components/repyep/copy"
+---
+
+<RepYepLayout title={copy.ko.name} description={copy.ko.one} lang="ko">
+  <RepYepPage lang="ko" />
+</RepYepLayout>

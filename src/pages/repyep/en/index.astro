@@ -1,0 +1,10 @@
+---
+// RepYep product site, English (team repyep · 11/20) — privacy · support pages in this folder are unchanged
+import RepYepLayout from "@layouts/RepYepLayout.astro"
+import RepYepPage from "@components/repyep/RepYepPage.astro"
+import { copy } from "@components/repyep/copy"
+---
+
+<RepYepLayout title={copy.en.name} description={copy.en.one} lang="en">
+  <RepYepPage lang="en" />
+</RepYepLayout>

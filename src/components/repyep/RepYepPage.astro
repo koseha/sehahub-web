@@ -1,0 +1,551 @@
+---
+// 운동해 넵 소개 쪽 — 첫 화면(앱 아이콘처럼 검정 위 · 노랑 아래) → 스크롤에 맞춰 휴대폰 화면이 바뀌는 둘러보기 → 의료 안내 · 지원 · 방침.
+// 글은 copy.ts(정해진 문장만) · 화면은 Phone.astro. 3D 는 이 쪽 안에서만(둘러보기에 들어올 때 누운 폰이 일어섬).
+// 움직임 줄이기면 기울기 · 등장 · 튐을 끄고 화면만 바로 바뀐다.
+import { Image } from "astro:assets"
+import appIcon from "@assets/repyep/app-icon.png"
+import Phone from "./Phone.astro"
+import { copy, type Lang } from "./copy"
+
+type Props = { lang: Lang }
+const { lang } = Astro.props
+const t = copy[lang]
+const home = lang === "ko" ? "/repyep/" : "/repyep/en/"
+---
+
+<header class="top" data-top>
+  <a class="brand" href={home}>
+    <Image src={appIcon} alt="" width={64} height={64} class="brand-icon" />
+    <span>{t.name}</span>
+  </a>
+  <nav class="top-nav">
+    <a href={t.nav.supportHref}>{t.nav.support}</a>
+    <a href={t.nav.otherHref} lang={t.nav.otherLang} hreflang={t.nav.otherLang}>{t.nav.other}</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero" data-hero>
+    <span class="half half-top" aria-hidden="true"></span>
+    <span class="half half-bottom" aria-hidden="true"></span>
+    <h1 class="word"><span>{t.heroTop}</span> <span>{t.heroBottom}</span></h1>
+    <p class="one">{t.one}</p>
+    <span class="hint" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="28" height="28"><path d="M5 9L12 16L19 9" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" /></svg>
+    </span>
+  </section>
+
+  <section class="tour" data-tour>
+    <div class="stage" data-stage>
+      <div class="fit" data-fit>
+        <Phone t={t} />
+      </div>
+    </div>
+    <ol class="steps">
+      {t.steps.map((s, i) => (
+        <li class={i === 0 ? "step is-active" : "step"} data-step={s.id}>
+          <div class="card">
+            {s.section && <h2 class="sec">{s.section}</h2>}
+            {s.lines.map((line) => <p>{line}</p>)}
+          </div>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="end">
+    <p class="medical">{t.medical}</p>
+    <div class="links">
+      <a class="dbtn" href={t.nav.supportHref}>{t.nav.support}</a>
+      <a class="dbtn" href={t.nav.privacyHref}>{t.nav.privacy}</a>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <a href="/" class="foot-mark">sehahub</a>
+  <a href="mailto:contact@sehahub.info">contact@sehahub.info</a>
+</footer>
+
+<style>
+  :global(:root) {
+    --ink: #111;
+    --hl: #ffd23f;
+    --bg: #f0f2f6;
+    --sub: #54565a;
+    --pad: clamp(16px, 5vw, 72px);
+    --enter: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  /* 머리 — 첫 화면 검정 위에서는 흰 글자 · 지나면 흰 판 + 먹선 */
+  .top {
+    position: fixed;
+    z-index: 30;
+    inset: 0 0 auto 0;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 var(--pad);
+    color: #fff;
+    border-bottom: 2px solid transparent;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .top.is-solid {
+    background: #fff;
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: auto;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+  }
+  .brand :global(.brand-icon) {
+    width: 30px;
+    height: 30px;
+    border-radius: 22.37%;
+    box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.35);
+  }
+  .top.is-solid .brand :global(.brand-icon) {
+    box-shadow: 0 0 0 1.5px var(--ink);
+  }
+  .top-nav {
+    display: flex;
+    gap: 4px;
+  }
+  .top-nav a {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .top-nav a:hover {
+    background: var(--hl);
+    color: var(--ink);
+  }
+
+  /* 첫 화면 — 앱 아이콘(위 검정 · 아래 노랑)을 화면 크기로. 이름 글자는 경계에서 색이 바뀐다 */
+  .hero {
+    position: relative;
+    height: 100svh;
+    min-height: 520px;
+    overflow: hidden;
+    background: var(--hl);
+  }
+  .half {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 50%;
+  }
+  .half-top {
+    top: 0;
+    background: var(--ink);
+    animation: fromTop 0.28s var(--enter) both;
+  }
+  .half-bottom {
+    bottom: 0;
+    background: var(--hl);
+    animation: fromBottom 0.28s var(--enter) both;
+  }
+  @keyframes fromTop {
+    from {
+      transform: translateY(-100%);
+    }
+  }
+  @keyframes fromBottom {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  .word {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 var(--pad);
+    font-size: clamp(96px, 25vw, 300px);
+    line-height: 0.9;
+    font-weight: 900;
+    letter-spacing: -0.045em;
+    background: linear-gradient(#fff 0 50%, var(--ink) 50% 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: wipe 0.42s var(--enter) 0.22s both;
+  }
+  .word span {
+    display: block;
+    height: 0.9em;
+  }
+  @keyframes wipe {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  .one {
+    position: absolute;
+    left: var(--pad);
+    right: var(--pad);
+    bottom: clamp(28px, 7svh, 64px);
+    max-width: 26em;
+    font-size: clamp(17px, 2vw, 22px);
+    line-height: 1.5;
+    font-weight: 700;
+    color: var(--ink);
+    animation: fadeUp 0.28s var(--enter) 0.55s both;
+  }
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+  .hint {
+    position: absolute;
+    right: var(--pad);
+    bottom: clamp(28px, 7svh, 64px);
+    color: var(--ink);
+    animation: bob 1.6s ease-in-out 1.2s infinite both;
+  }
+  @keyframes bob {
+    0%,
+    100% {
+      transform: translateY(-3px);
+    }
+    50% {
+      transform: translateY(5px);
+    }
+  }
+
+  /* 둘러보기 — 휴대폰이 붙어 있고 글 카드가 지나간다 */
+  .tour {
+    --stage-h: 60svh;
+    position: relative;
+    background: var(--bg);
+    padding-bottom: 8svh;
+  }
+  .stage {
+    position: sticky;
+    z-index: 1;
+    top: 56px;
+    height: var(--stage-h);
+    display: grid;
+    place-items: center;
+  }
+  .fit {
+    --s: 0.5;
+    --tilt: 0;
+    width: calc(426px * var(--s));
+    height: calc(898px * var(--s));
+    transform: perspective(1600px) rotateX(calc(var(--tilt) * 24deg)) rotateZ(calc(var(--tilt) * -8deg)) translateY(calc(var(--tilt) * 48px));
+    transform-origin: 50% 80%;
+  }
+  .fit :global(.phone) {
+    transform: scale(var(--s));
+    transform-origin: 0 0;
+    box-shadow:
+      14px 14px 0 0 var(--hl),
+      14px 14px 0 3px var(--ink);
+  }
+  .steps {
+    position: relative;
+    z-index: 2;
+    list-style: none;
+    padding: 0 16px;
+    margin-top: calc(-1 * var(--stage-h));
+  }
+  .step {
+    min-height: 100svh;
+    display: flex;
+    align-items: flex-end;
+    padding-bottom: 4svh;
+    pointer-events: none;
+  }
+  .card {
+    pointer-events: auto;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 18px 20px 20px;
+    background: #fff;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .sec {
+    display: inline-block;
+    margin-bottom: 12px;
+    padding: 3px 10px;
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 800;
+    background: var(--hl);
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+  }
+  .card p {
+    font-size: 16.5px;
+    line-height: 1.55;
+    font-weight: 600;
+  }
+  .card p + p {
+    margin-top: 8px;
+  }
+
+  @media (min-width: 960px) {
+    .tour {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      column-gap: 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--pad) 10svh;
+    }
+    .stage {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: start;
+      top: 0;
+      height: 100svh;
+      padding-top: 56px;
+    }
+    .steps {
+      grid-column: 1;
+      grid-row: 1;
+      margin-top: 0;
+      padding: 0;
+    }
+    .step {
+      align-items: center;
+      padding-bottom: 0;
+    }
+    .card {
+      margin: 0;
+      padding: 24px 28px 26px;
+      transition: opacity 0.2s;
+    }
+    .step:not(.is-active) .card {
+      opacity: 0.38;
+    }
+    .card p {
+      font-size: 20px;
+    }
+  }
+  /* 둘러보기 바탕을 첫 화면 아래 전체 폭으로 */
+  @media (min-width: 960px) {
+    main {
+      background: var(--bg);
+    }
+  }
+
+  /* 끝 — 의료 안내 · 지원 · 방침 */
+  .end {
+    background: var(--bg);
+    padding: 12svh var(--pad) 14svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    text-align: center;
+  }
+  .medical {
+    max-width: 34em;
+    font-size: 15px;
+    line-height: 1.6;
+    font-weight: 600;
+    color: var(--sub);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+  }
+  .dbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 22px;
+    font-size: 16px;
+    font-weight: 700;
+    background: #fff;
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    box-shadow: 3px 3px 0 var(--ink);
+    transition: transform 0.08s, box-shadow 0.08s, background 0.12s;
+  }
+  .dbtn:hover {
+    background: var(--hl);
+  }
+  .dbtn:active {
+    transform: translate(3px, 3px);
+    box-shadow: none;
+  }
+  .dbtn:focus-visible,
+  .top a:focus-visible,
+  .foot a:focus-visible {
+    outline: 3px solid #2e4bff;
+    outline-offset: 3px;
+  }
+
+  .foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 26px var(--pad);
+    background: var(--ink);
+    color: #fff;
+    font-size: 14px;
+  }
+  .foot-mark {
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    font-size: 16px;
+  }
+  .foot a:hover {
+    color: var(--hl);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .half-top,
+    .half-bottom,
+    .word,
+    .one,
+    .hint {
+      animation: none;
+    }
+    .fit {
+      transform: none;
+    }
+    .card,
+    .top,
+    .dbtn {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  // 스크롤 둘러보기 — 지금 단계를 폰에 알리고(data-step) · 폰 크기를 자리에 맞추고 · 들어올 때 누운 폰을 세운다 · 휴식 숫자를 센다
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)")
+  const wide = window.matchMedia("(min-width: 960px)")
+  const top = document.querySelector<HTMLElement>("[data-top]")
+  const hero = document.querySelector<HTMLElement>("[data-hero]")
+  const tour = document.querySelector<HTMLElement>("[data-tour]")
+  const stage = document.querySelector<HTMLElement>("[data-stage]")
+  const fit = document.querySelector<HTMLElement>("[data-fit]")
+  const phone = document.querySelector<HTMLElement>("[data-phone]")
+  const steps = Array.from(document.querySelectorAll<HTMLElement>(".step[data-step]"))
+
+  if (top && hero && tour && stage && fit && phone && steps.length) {
+    const fitPhone = () => {
+      const box = stage.getBoundingClientRect()
+      const availH = wide.matches ? window.innerHeight - 56 - 72 : box.height - 28
+      const availW = (wide.matches ? box.width : window.innerWidth) - 48
+      const s = Math.max(0.3, Math.min(availH / 898, availW / 426, 0.86))
+      fit.style.setProperty("--s", s.toFixed(4))
+    }
+
+    let current = ""
+    const setStep = (id: string) => {
+      if (id === current) return
+      current = id
+      phone.dataset.step = id
+      steps.forEach((el) => el.classList.toggle("is-active", el.dataset.step === id))
+      onStepChange(id)
+    }
+
+    const update = () => {
+      top.classList.toggle("is-solid", window.scrollY > hero.offsetHeight * 0.5 - 28)
+      // 휴대폰 = 카드가 화면 아래로 들어오기 시작하면(폰 아래 칸) 그 단계
+      const line = window.innerHeight * (wide.matches ? 0.55 : 0.92)
+      let id = steps[0].dataset.step ?? "log"
+      for (const el of steps) {
+        const card = el.firstElementChild as HTMLElement
+        if (card.getBoundingClientRect().top < line) id = el.dataset.step ?? id
+      }
+      setStep(id)
+      const tourTop = tour.getBoundingClientRect().top
+      const tilt = reduce.matches ? 0 : 1 - Math.min(1, Math.max(0, (window.innerHeight - tourTop) / (window.innerHeight * 0.9)))
+      fit.style.setProperty("--tilt", tilt.toFixed(3))
+    }
+
+    // 숫자 — 휴식 남은 시간(rest 1:30 · beep 0:05 → 3 · 2 · 1 튐 · lock 1:12) · 운동 경과
+    const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`
+    const restEl = phone.querySelector<HTMLElement>('[data-count="rest"]')
+    const lockEl = phone.querySelector<HTMLElement>('[data-count="lock"]')
+    const elapsedEls = Array.from(phone.querySelectorAll<HTMLElement>("[data-elapsed]"))
+    let remain = 90
+    let hold = 0
+
+    function onStepChange(id: string) {
+      hold = 0
+      if (id === "rest") remain = 90
+      if (id === "beep") remain = 5
+      if (id === "lock") remain = 72
+      render()
+    }
+    const render = () => {
+      if (restEl) restEl.textContent = mmss(current === "beep" || current === "rest" ? remain : 90)
+      if (lockEl) lockEl.textContent = mmss(current === "lock" ? remain : 72)
+    }
+    const pop = () => {
+      if (!restEl || reduce.matches) return
+      restEl.classList.remove("pop")
+      void restEl.offsetWidth
+      restEl.classList.add("pop")
+    }
+    let visible = false
+    const tick = () => {
+      if (!visible || document.hidden) return
+      elapsedEls.forEach((el) => {
+        const sec = Number(el.dataset.elapsed) + 1
+        el.dataset.elapsed = String(sec)
+        el.textContent = mmss(sec)
+      })
+      if (current !== "rest" && current !== "beep" && current !== "lock") return
+      if (hold > 0) {
+        hold -= 1
+        if (hold === 0) remain = current === "beep" ? 5 : current === "rest" ? 90 : 72
+      } else if (remain > 0) {
+        remain -= 1
+        if (current === "beep" && remain >= 1 && remain <= 3) pop()
+        if (remain === 0) hold = 2
+      }
+      render()
+    }
+    new IntersectionObserver(([entry]) => (visible = entry.isIntersecting)).observe(tour)
+    window.setInterval(tick, 1000)
+
+    let queued = false
+    const onScroll = () => {
+      if (queued) return
+      queued = true
+      requestAnimationFrame(() => {
+        queued = false
+        update()
+      })
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    window.addEventListener("resize", () => {
+      fitPhone()
+      update()
+    })
+    reduce.addEventListener("change", update)
+    fitPhone()
+    update()
+  }
+</script>
