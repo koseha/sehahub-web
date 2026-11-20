@@ -179,6 +179,12 @@ const ogImage = new URL(og.src, Astro.site)
     border-radius: 12px;
     font-size: 14px;
   }
+  /* 손가락으로 누르는 기기 — 머리 버튼도 44 */
+  @media (pointer: coarse) {
+    .nm-get-sm {
+      height: 44px;
+    }
+  }
 
   .nm-foot {
     display: flex;
