@@ -2,6 +2,8 @@
   "name": "sehahub-web",
   "compatibility_date": "2026-06-26",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    // 없는 주소면 dist/404.html 을 404 로 보여 준다(2026-11-20 · 없으면 빈 404)
+    "not_found_handling": "404-page"
   }
 }
