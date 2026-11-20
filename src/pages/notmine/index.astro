@@ -1,0 +1,681 @@
+---
+// 내돈아님 소개 사이트(2026-11-20 · 내돈아님 팀) — 앱 하나를 한 쪽에서 깊게. 스크롤에 맞춰 손 안의 휴대폰 화면이 바뀐다.
+// 🔴 글은 이미 게시된 것만 — 이름 · 첫 줄 = App Store 2.0.1 이름 · 설명 첫 줄 · 장마다 제목 · 보조 = 라이브 스토어 스크린샷 보드 7장 글 그대로
+//    (팀 산출물/T034-v2.0.1-무료묶음/스토어스크린샷-v2.0.1 · 2026-11-20 iTunes lookup 으로 라이브 확인). 새 구호 · 소개 문단을 넣지 않는다(그룹 지식 §2).
+// 🔴 공개된 판(v2.0.1)까지만. 화면 = 앱 repo store/screenshots-v2.0.1/appstore-6.9(합성 데이터 · 스토어 보드 안 화면과 같음).
+//    src/content/projects/notmine 의 글 · 그림은 쓰지 않는다(그림은 모두 src/assets/notmine).
+// 움직임 = 아이콘 취소선 긋기 · 휴대폰이 기울어 있다가 첫 장에서 바로 선다(이 쪽 안의 3D) · 장마다 화면이 바뀐다. 라이브러리 없음 · 움직임 줄이기면 모두 멈춘다.
+// 배치 — 큰 화면: 왼쪽 글이 스크롤되고 오른쪽 휴대폰이 붙어 있다.
+//        작은 화면: 휴대폰과 그 아래 글 칸이 한 덩어리로 붙고(.pin) 글은 제자리에서 바뀐다. 스크롤 거리는 빈 칸(.track)이 낸다.
+import { Image } from "astro:assets"
+import NotmineLayout from "@layouts/NotmineLayout.astro"
+import Logo from "@components/notmine/Logo.astro"
+import { STORE_URL } from "@components/notmine/links"
+import home from "../../assets/notmine/01_home.png"
+import recurring from "../../assets/notmine/02_recurring.png"
+import notify from "../../assets/notmine/03_notify_prompt.png"
+import monthly from "../../assets/notmine/04_monthly.png"
+import card from "../../assets/notmine/05_card_detail.png"
+import quick from "../../assets/notmine/06_quick_entry.png"
+import receipt from "../../assets/notmine/07_receipt.png"
+
+// 스토어 보드 순서 · 글 그대로(제목 윗줄 / 아랫줄 · 보조 두 줄)
+const STEPS = [
+  { t1: "월급 들어오면", t2: "얼마 남겨둬야 할까?", sub: ["다음 월급까지 통장에서 나갈 돈을", "납부일과 함께 먼저 보여줘요"], img: home, alt: "앱 화면 — 홈" },
+  { t1: "매달 나가는 돈은", t2: "한 번만 등록", sub: ["월세·관리비·구독료는 반복으로 등록해 두면", "다음 달에 다시 넣지 않아요"], img: recurring, alt: "앱 화면 — 반복 지출 현황" },
+  { t1: "납부일 전날", t2: "미리 알려드려요", sub: ["알림을 켜면 하루 전 저녁 8시에", "통장에서 나갈 지출을 알려드려요"], img: notify, alt: "앱 화면 — 지출 전날 알림 권유" },
+  { t1: "낸 지출은", t2: "체크하면 끝", sub: ["남은 예정 금액에서 바로 빠져요", "결제는 하지 않고 앱 안의 기록만 바꿔요"], img: monthly, alt: "앱 화면 — 월별" },
+  { t1: "카드마다", t2: "이번 달 쓴 돈", sub: ["예정 지출까지 더한 합계도 미리 봐요", "카드 번호나 카드사 로그인은 받지 않아요"], img: card, alt: "앱 화면 — 카드 상세" },
+  { t1: "자주 쓰는 품목은", t2: "탭 한 번으로 기록", sub: ["품목을 한 번 누르면 오늘 날짜로 저장돼요", "다른 날 쓴 돈은 직접 입력에서 날짜를 바꿔요"], img: quick, alt: "앱 화면 — 기록하기" },
+  { t1: "영수증을 찍으면", t2: "금액·날짜가 채워져요", sub: ["금액·이름·날짜를 확인하고 저장하면 돼요", "사진은 기기 안에서만 읽어요 · iOS 16 이상"], img: receipt, alt: "앱 화면 — 영수증으로 채운 기록하기" },
+]
+
+const SLABS = 12 // 휴대폰 두께를 이루는 겹 수
+// 겹 색 = #2c3440 을 뒤로 갈수록 2.5% 씩 어둡게 — 빌드 때 계산한다(color-mix 가 없는 옛 사파리에서도 두께가 보이게)
+const slabColor = (k: number) =>
+  "#" + [0x2c, 0x34, 0x40].map((c) => Math.round(c * (1 - k * 0.025)).toString(16).padStart(2, "0")).join("")
+const TITLE = "내돈아님 - 고정지출 납부일 알림" // App Store 이름(2.0.1)
+const DESCRIPTION =
+  "월세와 구독료처럼 나갈 돈을 미리 등록하고 다음 월급까지 남겨 둘 금액을 확인하세요. 카드마다 이번 달 쓴 돈을 모아 보고 영수증을 찍어 빠르게 기록해요. 알림을 켜면 월급일과 지출 전날에 알려드려요." // App Store 프로모션(2.0.1)
+---
+
+<NotmineLayout title={TITLE} description={DESCRIPTION}>
+  <section class="story" data-story>
+    <div class="pin">
+      <!-- 손 안의 휴대폰 -->
+      <div class="stage" data-stage>
+        <div class="rise">
+          <div class="device" data-device>
+            {Array.from({ length: SLABS }).map((_, k) => <span class="slab" style={`--k:${k + 1};background:${slabColor(k + 1)}`} aria-hidden="true"></span>)}
+            <div class="screen">
+              {STEPS.map((s, i) => (
+                <Image
+                  src={s.img}
+                  alt={s.alt}
+                  widths={[440, 880]}
+                  sizes="(min-width: 900px) 360px, 240px"
+                  loading={i === 0 ? "eager" : "lazy"}
+                  class:list={["shot", { "is-on": i === 0 }]}
+                  data-shot={i}
+                  aria-hidden={i === 0 ? undefined : "true"}
+                />
+              ))}
+              <div class="status" aria-hidden="true">
+                <span>9:41</span>
+                <svg viewBox="0 0 66 12" class="status-icons">
+                  <rect x="0" y="8" width="3" height="4" rx="1"></rect>
+                  <rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect>
+                  <rect x="10" y="3" width="3" height="9" rx="1"></rect>
+                  <rect x="15" y="0.5" width="3" height="11.5" rx="1"></rect>
+                  <path d="M30.5 3.2a9 9 0 0 1 11 0l-1.3 1.5a7 7 0 0 0-8.4 0zM32.6 5.7a5.6 5.6 0 0 1 6.8 0l-1.3 1.5a3.6 3.6 0 0 0-4.2 0zM34.7 8.2a2.2 2.2 0 0 1 2.6 0L36 9.8z"></path>
+                  <rect x="45.5" y="1" width="18" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".4"></rect>
+                  <rect x="47.5" y="3" width="14" height="6" rx="1.6"></rect>
+                  <rect x="64.3" y="4.2" width="1.4" height="3.6" rx=".7" opacity=".4"></rect>
+                </svg>
+              </div>
+              <span class="island" aria-hidden="true"></span>
+            </div>
+          </div>
+          <span class="floor" aria-hidden="true"></span>
+        </div>
+        <p class="note">화면 속 금액은 예시예요</p>
+      </div>
+
+      <div class="steps">
+        <div class="step step-hero is-on" data-step>
+          <div class="hero-head">
+            <Logo size="var(--logo)" draw />
+            <h1 class="name">내돈아님</h1>
+          </div>
+          <p class="lede">다음 월급까지 나갈 돈부터 확인하세요.</p>
+          <a href={STORE_URL} class="nm-get">App Store에서 받기</a>
+        </div>
+        {STEPS.map((s) => (
+          <div class="step" data-step>
+            <h2 class="title">
+              <span class="t1">{s.t1}</span>
+              <span class="t2">{s.t2}</span>
+            </h2>
+            <p class="sub">
+              {s.sub.map((line) => <span>{line}</span>)}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- 작은 화면의 스크롤 거리(장마다 한 칸) — 내용 없음 -->
+    <div class="track" aria-hidden="true">
+      {STEPS.map(() => <span class="mark" data-mark></span>)}
+    </div>
+  </section>
+
+  <section class="end" data-end>
+    <Logo size="88px" draw class="end-logo" />
+    <p class="end-name">내돈아님</p>
+    <a href={STORE_URL} class="nm-get">App Store에서 받기</a>
+  </section>
+</NotmineLayout>
+
+<style>
+  /* ── 큰 화면(900 이상) — 왼쪽 글이 지나가고 오른쪽 휴대폰이 붙어 있다 ── */
+  .story {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 var(--gut);
+    column-gap: clamp(24px, 4vw, 64px);
+    --logo: clamp(72px, 9vw, 104px);
+  }
+  .pin {
+    display: contents;
+  }
+  .track {
+    display: none;
+  }
+  .steps {
+    grid-column: 1;
+    grid-row: 1;
+    padding-bottom: 24vh; /* 마지막 장이 가운데에 와도 휴대폰이 붙어 있게 */
+  }
+  .stage {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .step {
+    min-height: 60vh;
+    min-height: 60svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    transition: opacity 0.45s ease;
+  }
+  .step-hero {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding-top: 60px;
+  }
+  :global(.nm-js) .step:not(.is-on) {
+    opacity: 0.2;
+  }
+  /* 흐려진 첫 장 버튼이 꺼진 버튼처럼 보이지 않게 — 첫 장이 아니면 버튼은 감춘다(머리에 같은 버튼이 늘 있다) */
+  :global(.nm-js) .step-hero:not(.is-on) .nm-get {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .hero-head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 28px;
+  }
+  .step-hero :global(.nm-logo),
+  .end :global(.nm-logo) {
+    box-shadow:
+      inset 0 0 0 1px rgba(25, 31, 40, 0.06),
+      0 1px 2px rgba(25, 31, 40, 0.06),
+      0 10px 28px rgba(25, 31, 40, 0.1);
+  }
+  .name {
+    font-size: clamp(44px, 5.6vw, 76px);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1.05;
+    white-space: nowrap;
+  }
+  .lede {
+    margin-top: 16px;
+    font-size: clamp(18px, 1.6vw, 22px);
+    font-weight: 500;
+    color: var(--ink2);
+    letter-spacing: -0.015em;
+  }
+  .step-hero .nm-get {
+    margin-top: 36px;
+    transition: opacity 0.3s ease, transform 0.15s ease, background 0.2s;
+  }
+
+  /* 장 제목 — 스토어 보드와 같은 문법(윗줄 흐림 = 주제 · 아랫줄 진함 = 답) */
+  .title {
+    display: flex;
+    flex-direction: column;
+    font-size: clamp(32px, 4.2vw, 58px);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.16;
+  }
+  .t1 {
+    color: var(--ink3);
+  }
+  .sub {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 22px;
+    font-size: clamp(16px, 1.45vw, 19px);
+    font-weight: 500;
+    line-height: 1.55;
+    color: var(--ink2);
+    letter-spacing: -0.01em;
+  }
+
+  /* ── 휴대폰 ── */
+  .rise {
+    position: relative;
+    perspective: 1700px;
+    animation: nm-rise 1200ms var(--spring) 80ms both;
+  }
+  @keyframes nm-rise {
+    from {
+      opacity: 0;
+      transform: translateY(80px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .device {
+    /* 폭 = 화면 높이에 맞춘다(기기 전체 가로:세로 ≈ 0.477) · 안쪽 치수는 모두 이 폭의 비율(옛 사파리에 없는 컨테이너 단위를 쓰지 않는다) */
+    --w: min(calc(74vh * 0.477), 368px); /* svh 는 아래 @supports 에서 덮는다(var 를 거치는 줄은 앞 줄 대체값이 듣지 않는다) */
+    --t: 1; /* 기울기 1 → 0(첫 장에서 바로 선다) · 스크립트가 바꾼다 */
+    position: relative;
+    width: var(--w);
+    padding: calc(var(--w) * 0.032);
+    border-radius: calc(var(--w) * 0.165);
+    background: var(--ink);
+    transform-style: preserve-3d;
+    transform: rotateX(calc(var(--t) * 14deg)) rotateY(calc(var(--t) * -24deg)) rotateZ(calc(var(--t) * 4deg)) translateY(calc(var(--t) * 2%));
+    will-change: transform;
+  }
+  /* 두께 — 같은 모양을 뒤로 겹쳐 민다 · 뒤로 갈수록 조금씩 어둡게 */
+  .slab {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    transform: translateZ(calc(var(--k) * -1.6px));
+  }
+  .screen {
+    position: relative;
+    aspect-ratio: 1320 / 2868;
+    border-radius: calc(var(--w) * 0.135);
+    overflow: hidden;
+    isolation: isolate;
+    background: #f9fafb;
+    transform: translateZ(0.6px);
+  }
+  /* 화면 넘김 — 같은 자리에서 짧게 겹쳐 바뀐다(움직이며 겹치면 두 화면 글자가 어긋나 보인다) */
+  .shot {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0s linear 0.3s;
+  }
+  .shot.is-on {
+    opacity: 1;
+    z-index: 2;
+    transition: opacity 0.24s ease;
+  }
+  .status {
+    position: absolute;
+    z-index: 3;
+    inset: 0 0 auto 0;
+    height: calc(var(--w) * 0.118);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 calc(var(--w) * 0.07) 0 calc(var(--w) * 0.098);
+    font-size: calc(var(--w) * 0.0365);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .status-icons {
+    width: calc(var(--w) * 0.145);
+    fill: currentColor;
+  }
+  .island {
+    position: absolute;
+    z-index: 4;
+    top: calc(var(--w) * 0.0243);
+    left: 50%;
+    width: calc(var(--w) * 0.267);
+    height: calc(var(--w) * 0.0786);
+    transform: translateX(-50%);
+    border-radius: 99px;
+    background: #000;
+  }
+  .floor {
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    bottom: -30px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(25, 31, 40, 0.2), rgba(25, 31, 40, 0));
+    pointer-events: none;
+  }
+  .note {
+    margin-top: 44px;
+    font-size: 13px;
+    color: var(--ink3);
+  }
+
+  /* ── 끝 ── */
+  .end {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(96px, 16vh, 160px) var(--gut) clamp(96px, 14vh, 140px);
+    text-align: center;
+  }
+  .end-name {
+    margin-top: 22px;
+    margin-bottom: 30px;
+    font-size: clamp(28px, 3vw, 36px);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+  /* 끝 아이콘은 화면에 들어올 때 긋는다 */
+  :global(.nm-js) .end :global(.end-logo.is-draw),
+  :global(.nm-js) .end :global(.end-logo.is-draw .cut) {
+    animation-play-state: paused;
+  }
+  :global(.nm-js) .end.is-in :global(.end-logo.is-draw),
+  :global(.nm-js) .end.is-in :global(.end-logo.is-draw .cut) {
+    animation-play-state: running;
+  }
+
+  /* ── 작은 화면(폭 900 미만 · 높이 481 이상 = 세로로 든 휴대폰 · 태블릿) — 휴대폰과 글 칸이 한 덩어리로 붙고, 글은 제자리에서 바뀐다 ── */
+  @media (max-width: 899px) and (min-height: 481px) {
+    .story {
+      display: block;
+      max-width: none;
+      padding: 60px 0 0;
+      --stage: 60vh;
+      --logo: 60px;
+    }
+    .pin {
+      position: sticky;
+      top: 60px;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 60px);
+      height: calc(100svh - 60px);
+    }
+    .stage {
+      position: relative;
+      top: auto;
+      flex: none;
+      height: var(--stage);
+      padding-top: 12px;
+      justify-content: flex-start;
+    }
+    .device {
+      --w: calc((var(--stage) - 56px) * 0.477);
+    }
+    .note {
+      margin-top: 12px;
+      font-size: 12px;
+    }
+    .floor {
+      display: none;
+    }
+    /* 글 칸 — 휴대폰 아래 남은 자리 · 장들이 같은 자리에 겹쳐 있고 켜진 장만 보인다 */
+    .steps {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      padding: 0;
+    }
+    .step,
+    .step-hero {
+      position: absolute;
+      inset: 0;
+      min-height: 0;
+      padding: 0 max(20px, calc((100% - 560px) / 2));
+      justify-content: center;
+      /* 나가는 글은 빨리 지우고 들어오는 글은 한 박자 늦게 — 두 글이 같은 자리에서 겹쳐 보이지 않게 */
+      transition:
+        opacity 0.14s ease,
+        transform 0.3s ease;
+    }
+    .step.is-on {
+      transition:
+        opacity 0.3s ease 0.12s,
+        transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s;
+    }
+    :global(.nm-js) .step:not(.is-on) {
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+    }
+    :global(.nm-js) .step.is-done:not(.is-on) {
+      transform: translateY(-12px);
+    }
+    .hero-head {
+      flex-direction: row;
+      align-items: center;
+      gap: 14px;
+    }
+    .name {
+      font-size: 40px;
+    }
+    .lede {
+      margin-top: 12px;
+      font-size: 17px;
+    }
+    .step-hero .nm-get {
+      margin-top: 18px;
+      height: 48px;
+    }
+    .title {
+      font-size: clamp(24px, 7.6vw, 34px);
+    }
+    .sub {
+      margin-top: 12px;
+      font-size: 15px;
+    }
+    /* 스크롤 거리 — 장마다 한 칸 · 마지막 장은 반 칸 더 머문다 */
+    .track {
+      display: block;
+      padding-bottom: 21vh;
+      padding-bottom: 21svh;
+    }
+    .mark {
+      display: block;
+      height: 42vh;
+      height: 42svh;
+    }
+    .end {
+      padding-top: 72px;
+    }
+  }
+
+  /* 낮은 화면(사파리 도구막대 · SE) — 휴대폰을 줄여 글 칸을 지킨다 */
+  @media (max-width: 899px) and (min-height: 481px) and (max-height: 720px) {
+    .story {
+      --stage: 54vh;
+      --logo: 48px;
+    }
+    .name {
+      font-size: 32px;
+    }
+    .lede {
+      margin-top: 8px;
+      font-size: 15px;
+    }
+    .step-hero .nm-get {
+      margin-top: 14px;
+      height: 44px;
+    }
+    .title {
+      font-size: clamp(22px, 6.8vw, 28px);
+    }
+    .sub {
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+  }
+
+  /* 가로로 든 휴대폰 · 낮은 창(높이 480 이하) — 큰 화면 배치를 쓰되 머리 아래에 맞춰 줄인다 */
+  @media (max-height: 480px) {
+    .story {
+      --logo: 48px;
+    }
+    .stage {
+      padding-top: 60px;
+    }
+    .device {
+      --w: calc((100vh - 120px) * 0.477);
+    }
+    .note {
+      margin-top: 10px;
+      font-size: 12px;
+    }
+    .floor {
+      display: none;
+    }
+    .step {
+      min-height: 50vh;
+    }
+    .step-hero {
+      min-height: 100vh;
+    }
+    .hero-head {
+      flex-direction: row;
+      align-items: center;
+      gap: 14px;
+    }
+    .name {
+      font-size: 32px;
+    }
+    .lede {
+      margin-top: 8px;
+      font-size: 15px;
+    }
+    .step-hero .nm-get {
+      margin-top: 14px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+    .title {
+      font-size: 26px;
+    }
+    .sub {
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+  }
+
+  /* svh 가 있는 브라우저만 — 휴대폰 크기를 도구막대가 펼쳐진 높이에 맞춘다(없는 옛 사파리는 위의 vh 그대로) */
+  @supports (height: 1svh) {
+    .device {
+      --w: min(calc(74svh * 0.477), 368px);
+    }
+    @media (max-width: 899px) and (min-height: 481px) {
+      .story {
+        --stage: 60svh;
+      }
+      .device {
+        --w: calc((var(--stage) - 56px) * 0.477);
+      }
+    }
+    @media (max-width: 899px) and (min-height: 481px) and (max-height: 720px) {
+      .story {
+        --stage: 54svh;
+      }
+    }
+    @media (max-height: 480px) {
+      .device {
+        --w: calc((100svh - 120px) * 0.477);
+      }
+    }
+  }
+
+  /* ── 움직임 줄이기 — 기울기 · 떠오름 · 화면 넘김 · 글 전환을 모두 끈다 ── */
+  @media (prefers-reduced-motion: reduce) {
+    .rise {
+      animation: none;
+    }
+    .device {
+      --t: 0;
+    }
+    .shot,
+    .shot.is-on,
+    .step,
+    .step-hero,
+    .step.is-on,
+    .step-hero .nm-get {
+      transition: none;
+    }
+    :global(.nm-js) .step:not(.is-on),
+    :global(.nm-js) .step.is-done:not(.is-on) {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  document.documentElement.classList.add("nm-js")
+
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  // 작은 화면 배치 = CSS 의 「폭 900 미만 · 높이 481 이상」과 같은 조건
+  const small = window.matchMedia("(max-width: 899px) and (min-height: 481px)")
+  const device = document.querySelector<HTMLElement>("[data-device]")!
+  const shots = [...document.querySelectorAll<HTMLElement>("[data-shot]")]
+  const steps = [...document.querySelectorAll<HTMLElement>("[data-step]")]
+  const marks = [...document.querySelectorAll<HTMLElement>("[data-mark]")]
+  const heroGet = steps[0]?.querySelector<HTMLElement>(".nm-get")
+  // 장 → 화면(첫 장 = 이름 · 둘째 장 = 홈 · 같은 홈 화면)
+  const shotOf = (i: number) => Math.max(0, i - 1)
+
+  let current = 0
+  const setStep = (i: number) => {
+    if (i === current) return
+    current = i
+    steps.forEach((s, k) => {
+      s.classList.toggle("is-on", k === i)
+      s.classList.toggle("is-done", k < i)
+    })
+    // 첫 장이 꺼지면 그 버튼은 안 보이므로 Tab 에서도 뺀다(머리에 같은 버튼이 있다)
+    if (i === 0) heroGet?.removeAttribute("tabindex")
+    else heroGet?.setAttribute("tabindex", "-1")
+    const on = shotOf(i)
+    shots.forEach((el, k) => {
+      el.classList.toggle("is-on", k === on)
+      if (k === on) el.removeAttribute("aria-hidden")
+      else el.setAttribute("aria-hidden", "true")
+    })
+  }
+
+  // 판정 — 큰 화면: 장의 윗변이 머리 아래 칸의 가운데를 넘으면 그 장 · 작은 화면: 빈 칸이 반 칸 올라오면 다음 장
+  const triggers = () => {
+    if (!small.matches) return { els: steps.slice(1), line: (60 + window.innerHeight) / 2 } // 머리(60) 아래 남은 칸의 가운데
+    const h = marks[0]?.getBoundingClientRect().height || window.innerHeight * 0.42
+    return { els: marks, line: window.innerHeight - h / 2 }
+  }
+
+  let ticking = false
+  const frame = () => {
+    ticking = false
+    const { els, line } = triggers()
+    let idx = 0
+    els.forEach((el, k) => {
+      if (el.getBoundingClientRect().top <= line) idx = k + 1
+    })
+    setStep(idx)
+
+    if (!reduce && els[0]) {
+      // 첫 장이 켜지는 순간 휴대폰이 똑바로 선다
+      const reach = els[0].getBoundingClientRect().top + window.scrollY - line
+      const p = Math.min(1, Math.max(0, window.scrollY / Math.max(1, reach)))
+      const t = 1 - p * p * (3 - 2 * p)
+      device.style.setProperty("--t", t.toFixed(4))
+    }
+  }
+  const request = () => {
+    if (!ticking) {
+      ticking = true
+      requestAnimationFrame(frame)
+    }
+  }
+  window.addEventListener("scroll", request, { passive: true })
+  window.addEventListener("resize", request)
+  frame()
+
+  // 끝 아이콘 — 화면에 들어오면 취소선을 긋는다
+  const end = document.querySelector<HTMLElement>("[data-end]")
+  if (end) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries)
+          if (e.isIntersecting) {
+            end.classList.add("is-in")
+            io.disconnect()
+          }
+      },
+      { threshold: 0.5 },
+    )
+    io.observe(end)
+  }
+</script>
