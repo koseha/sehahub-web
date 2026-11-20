@@ -1,0 +1,35 @@
+---
+// 없는 주소(2026-11-20 개편) — 그전에는 빈 흰 화면(0바이트)이 떴다. 문구 없이 숫자와 돌아갈 길만.
+import PageLayout from "@layouts/PageLayout.astro"
+---
+
+<PageLayout title="404" description="sehahub">
+  <section class="nf">
+    <p class="nf-code" aria-label="404">
+      {"404".split("").map((d, i) => <span style={`--i:${i}`}>{d}</span>)}
+    </p>
+    <div class="nf-links">
+      <a href="/" class="nf-btn is-main">sehahub</a>
+      <a href="/#products" class="nf-btn">Products</a>
+      <a href="/projects/" class="nf-btn">Projects</a>
+    </div>
+  </section>
+
+  <style>
+    .nf { min-height: 78svh; display: grid; place-content: center; justify-items: center; gap: 28px; padding: 120px 16px 60px; }
+    .nf-code { display: flex; font-weight: 950; font-size: clamp(96px, 24vw, 240px); letter-spacing: -0.05em; line-height: 1; user-select: none; }
+    .nf-code span {
+      display: inline-block;
+      /* 홈 글자와 같은 결 — 옆면 = 코랄 한 색 */
+      text-shadow: .008em .008em 0 var(--a), .016em .016em 0 var(--a), .024em .024em 0 color-mix(in oklab, var(--a), #000 6%), .032em .032em 0 color-mix(in oklab, var(--a), #000 12%);
+      animation: nf-drop 1100ms var(--spring) both; animation-delay: calc(120ms + var(--i) * 90ms);
+    }
+    @keyframes nf-drop { from { transform: translateY(-60vh) rotate(-12deg); } to { transform: none; } }
+    .nf-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .nf-btn { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; font-size: 14px; font-weight: 700; border: 1.5px solid var(--ink); transition: color .2s, border-color .2s, background .2s; }
+    .nf-btn:hover { color: var(--a); border-color: var(--a); }
+    .nf-btn.is-main { background: var(--ink); color: #fff; }
+    .nf-btn.is-main:hover { background: var(--a); border-color: var(--a); color: #fff; }
+    @media (prefers-reduced-motion: reduce) { .nf-code span { animation: none; } }
+  </style>
+</PageLayout>

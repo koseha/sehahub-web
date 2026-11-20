@@ -1,6 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="28" fill="#111111" />
-  <text x="64" y="64" dy="0.34em" text-anchor="middle"
+  <!-- 2026-11-20 개편 — 홈의 물건 결: 먹색 판 + 오른쪽 아래 코랄 받침(#ff6b4a) -->
+  <rect x="16" y="16" width="108" height="108" rx="26" fill="#ff6b4a" />
+  <rect x="4" y="4" width="108" height="108" rx="26" fill="#16181d" />
+  <text x="58" y="58" dy="0.34em" text-anchor="middle"
         font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-        font-size="86" font-weight="700" fill="#ffffff">s</text>
+        font-size="84" font-weight="800" fill="#ffffff">s</text>
 </svg>

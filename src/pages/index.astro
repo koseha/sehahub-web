@@ -159,23 +159,53 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
 
       const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
+      // 🔴 위치는 매 프레임 재지 않는다(11/20 · 매 프레임 getBoundingClientRect = 강제 레이아웃 · 휴대폰 배터리).
+      //    움직이지 않는 부모(.ch-drop · .obj-drop)의 쪽 기준 중심을 한 번 재 두고, 크기가 바뀌거나 떨어지기가 끝나면 다시 잰다.
+      const center = (el: Element) => {
+        const b = el.getBoundingClientRect()
+        return { x: b.left + window.scrollX + b.width / 2, y: b.top + window.scrollY + b.height / 2 }
+      }
+      const letterBase = letters.map((L) => L.el.parentElement!)
+      const itemBase = items.map((it) => it.o.querySelector<HTMLElement>(".obj-drop")!)
+      let lc = letterBase.map(center)
+      let ic = itemBase.map(center)
+      const measure = () => { lc = letterBase.map(center); ic = itemBase.map(center) }
+      window.addEventListener("resize", measure, { passive: true })
+      letterBase[letterBase.length - 1]?.addEventListener("animationend", measure)
+      itemBase.forEach((b) => b.addEventListener("transitionend", (e) => { if (e.target === b) measure() }))
+
+      // 보이는 구역만 계산한다
+      let heroOn = true, shelfOn = false
+      const vis = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          if (e.target.classList.contains("hero")) heroOn = e.isIntersecting
+          else shelfOn = e.isIntersecting
+        }
+      })
+      const hero = document.querySelector(".hero"), shelf = document.querySelector(".shelf")
+      if (hero) vis.observe(hero)
+      if (shelf) vis.observe(shelf)
+
       const frame = (t: number) => {
-        // 글자 — 포인터 가까이 있는 글자만 들썩
-        for (const L of letters) {
-          const b = L.el.getBoundingClientRect()
-          const cx = b.left + b.width / 2, cy = b.top + b.height / 2
-          const d = Math.hypot(px - cx, py - cy)
-          const k = active && finePointer ? Math.max(0, 1 - d / 260) : 0
-          L.y = lerp(L.y, -k * 26, 0.14)
-          L.r = lerp(L.r, k * (px < cx ? 6 : -6), 0.14)
-          L.el.style.transform = `translateY(${L.y.toFixed(2)}px) rotate(${L.r.toFixed(2)}deg)`
+        // 글자 — 포인터 가까이 있는 글자만 들썩(첫 화면이 보일 때 · 다 가라앉았고 포인터가 없으면 쓰지 않음)
+        if (heroOn) {
+          letters.forEach((L, i) => {
+            const cx = lc[i].x - window.scrollX, cy = lc[i].y - window.scrollY
+            const d = Math.hypot(px - cx, py - cy)
+            const k = active && finePointer ? Math.max(0, 1 - d / 260) : 0
+            if (k === 0 && Math.abs(L.y) < 0.05 && Math.abs(L.r) < 0.05) {
+              if (L.y !== 0 || L.r !== 0) { L.y = 0; L.r = 0; L.el.style.transform = "" }
+              return
+            }
+            L.y = lerp(L.y, -k * 26, 0.14)
+            L.r = lerp(L.r, k * (px < cx ? 6 : -6), 0.14)
+            L.el.style.transform = `translateY(${L.y.toFixed(2)}px) rotate(${L.r.toFixed(2)}deg)`
+          })
         }
 
-        // 아이콘 — 포인터 쪽으로 기울고 · 가만두면 천천히 흔들리고 · 늘 둥실
-        for (const it of items) {
-          const b = it.float.getBoundingClientRect()
-          if (b.bottom < -200 || b.top > window.innerHeight + 200) continue
-          const cx = b.left + b.width / 2, cy = b.top + b.height / 2
+        // 아이콘 — 포인터 쪽으로 기울고 · 가만두면 천천히 흔들리고 · 늘 둥실(선반이 보일 때만)
+        if (shelfOn) items.forEach((it, i) => {
+          const cx = ic[i].x - window.scrollX, cy = ic[i].y - window.scrollY
           let tx: number, ty: number
           if (active && finePointer) {
             tx = Math.max(-1, Math.min(1, (px - cx) / (window.innerWidth * 0.45)))
@@ -197,7 +227,7 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
           const h = (9 - bob) / 36
           it.floor.style.transform = `scale(${(1.05 - h * 0.35).toFixed(3)})`
           it.floor.style.opacity = (1 - h * 0.55).toFixed(3)
-        }
+        })
         requestAnimationFrame(frame)
       }
       requestAnimationFrame(frame)
