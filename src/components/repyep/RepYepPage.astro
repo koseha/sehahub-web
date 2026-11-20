@@ -5,7 +5,7 @@
 import { Image } from "astro:assets"
 import appIcon from "@assets/repyep/app-icon.png"
 import Phone from "./Phone.astro"
-import { copy, type Lang } from "./copy"
+import { APP_STORE_URL, copy, type Lang } from "./copy"
 
 type Props = { lang: Lang }
 const { lang } = Astro.props
@@ -29,7 +29,10 @@ const home = lang === "ko" ? "/repyep/" : "/repyep/en/"
     <span class="half half-top" aria-hidden="true"></span>
     <span class="half half-bottom" aria-hidden="true"></span>
     <h1 class="word"><span>{t.heroTop}</span> <span>{t.heroBottom}</span></h1>
-    <p class="one">{t.one}</p>
+    <div class="hero-foot">
+      <p class="one">{t.one}</p>
+      {APP_STORE_URL && <a class="store" href={APP_STORE_URL}>App Store</a>}
+    </div>
     <span class="hint" aria-hidden="true">
       <svg viewBox="0 0 24 24" width="28" height="28"><path d="M5 9L12 16L19 9" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" /></svg>
     </span>
@@ -56,6 +59,7 @@ const home = lang === "ko" ? "/repyep/" : "/repyep/en/"
   <section class="end">
     <p class="medical">{t.medical}</p>
     <div class="links">
+      {APP_STORE_URL && <a class="dbtn store" href={APP_STORE_URL}>App Store</a>}
       <a class="dbtn" href={t.nav.supportHref}>{t.nav.support}</a>
       <a class="dbtn" href={t.nav.privacyHref}>{t.nav.privacy}</a>
     </div>
@@ -193,17 +197,50 @@ const home = lang === "ko" ? "/repyep/" : "/repyep/en/"
       clip-path: inset(0 0 0 0);
     }
   }
-  .one {
+  .hero-foot {
     position: absolute;
     left: var(--pad);
-    right: var(--pad);
+    right: calc(var(--pad) + 44px);
     bottom: clamp(28px, 7svh, 64px);
+    animation: fadeUp 0.28s var(--enter) 0.55s both;
+  }
+  .one {
     max-width: 26em;
     font-size: clamp(17px, 2vw, 22px);
     line-height: 1.5;
     font-weight: 700;
     color: var(--ink);
-    animation: fadeUp 0.28s var(--enter) 0.55s both;
+  }
+  /* App Store — 먹 덩어리 단추(먹 면 + 먹 그림자 = 두께) · 주소가 비면 안 그려져 자리도 없다 */
+  .store {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 24px;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #fff;
+    background: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: transform 0.08s, box-shadow 0.08s;
+  }
+  .hero-foot .store {
+    margin-top: 16px;
+  }
+  .store:hover {
+    color: var(--hl);
+  }
+  .store:active {
+    transform: translate(4px, 4px);
+    box-shadow: none;
+  }
+  .store:focus-visible {
+    outline: 3px solid #2e4bff;
+    outline-offset: 3px;
   }
   @keyframes fadeUp {
     from {
@@ -393,6 +430,18 @@ const home = lang === "ko" ? "/repyep/" : "/repyep/en/"
     transform: translate(3px, 3px);
     box-shadow: none;
   }
+  .links .store,
+  .links .store:hover {
+    background: var(--ink);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .links .store:hover {
+    color: var(--hl);
+  }
+  .links .store:active {
+    transform: translate(4px, 4px);
+    box-shadow: none;
+  }
   .dbtn:focus-visible,
   .top a:focus-visible,
   .foot a:focus-visible {
@@ -423,7 +472,7 @@ const home = lang === "ko" ? "/repyep/" : "/repyep/en/"
     .half-top,
     .half-bottom,
     .word,
-    .one,
+    .hero-foot,
     .hint {
       animation: none;
     }
@@ -432,7 +481,8 @@ const home = lang === "ko" ? "/repyep/" : "/repyep/en/"
     }
     .card,
     .top,
-    .dbtn {
+    .dbtn,
+    .store {
       transition: none;
     }
   }

@@ -8,6 +8,9 @@
 
 export type Lang = "ko" | "en"
 
+// App Store 주소 — 출시 뒤 여기 한 곳에만 넣는다(한 · 영 같은 주소). 비어 있으면 「App Store」 단추가 아예 그려지지 않는다(대표 11/20).
+export const APP_STORE_URL: string = ""
+
 export type Step = {
   id: "log" | "rest" | "beep" | "lock" | "checkin" | "daily" | "history" | "calendar" | "local"
   section?: string
