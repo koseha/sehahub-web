@@ -15,6 +15,8 @@ type Props = {
 
 const { title, description } = Astro.props
 const canonicalURL = new URL(Astro.url.pathname, Astro.site)
+const path = Astro.url.pathname
+const here = (href: string) => (path === href ? "page" : undefined)
 const og = await getImage({ src: icon, width: 512, height: 512, format: "png" })
 const fav = await getImage({ src: icon, width: 64, height: 64, format: "png" })
 const touch = await getImage({ src: icon, width: 180, height: 180, format: "png" })
@@ -50,7 +52,7 @@ const ogImage = new URL(og.src, Astro.site)
         <Logo size="28px" />
         <span>내돈아님</span>
       </a>
-      <a href={PAGES.support} class="nm-link">지원</a>
+      <a href={PAGES.support} class="nm-link" aria-current={here(PAGES.support)}>지원</a>
       <a href={STORE_URL} class="nm-get nm-get-sm">App Store에서 받기</a>
     </header>
 
@@ -60,9 +62,9 @@ const ogImage = new URL(og.src, Astro.site)
 
     <footer class="nm-foot">
       <nav class="nm-foot-links" aria-label="내돈아님">
-        <a href={PAGES.support}>지원</a>
-        <a href={PAGES.releases}>업데이트 내역</a>
-        <a href={PAGES.privacy}>개인정보처리방침</a>
+        <a href={PAGES.support} aria-current={here(PAGES.support)}>지원</a>
+        <a href={PAGES.releases} aria-current={here(PAGES.releases)}>업데이트 내역</a>
+        <a href={PAGES.privacy} aria-current={here(PAGES.privacy)}>개인정보처리방침</a>
         <a href={`mailto:${MAIL}`}>{MAIL}</a>
       </nav>
       <a href="/" class="nm-home">sehahub</a>
@@ -87,6 +89,7 @@ const ogImage = new URL(og.src, Astro.site)
     --ink2: #404956;
     --ink3: #616d7c;
     --line: rgba(25, 31, 40, 0.1);
+    --a: #616d7c; /* 공용 글 쪽(article) 스타일이 쓰는 포인트(글머리표 · 링크 올림) — sehahub 코랄 대신 앱 ink3 */
     --gut: clamp(20px, 4vw, 40px);
     /* 머리 · 바닥의 안쪽 선을 본문 틀(최대 1180)과 맞춘다 */
     --edge: max(var(--gut), calc((100% - 1180px) / 2 + var(--gut)));
@@ -139,6 +142,7 @@ const ogImage = new URL(og.src, Astro.site)
       display: none;
     }
   }
+  .nm-link[aria-current="page"],
   .nm-link:hover {
     color: var(--ink);
     background: var(--soft);
@@ -206,7 +210,8 @@ const ogImage = new URL(og.src, Astro.site)
     display: inline-block;
     padding: 10px 0;
   }
-  .nm-foot a:hover {
+  .nm-foot a:hover,
+  .nm-foot a[aria-current="page"] {
     color: var(--ink);
   }
   .nm-home {
