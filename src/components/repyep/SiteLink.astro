@@ -1,0 +1,37 @@
+---
+// 방침 · 지원 네 쪽 → 제품 사이트(/repyep/ · /repyep/en/)로 돌아가는 링크(대표 11/20 「링크 수정은 진행되어야 하는 거야? 그럼 진행시켜」).
+// 공용 틀(PageLayout · TopLayout)은 그대로 두고 쪽 머리(h1 위)에만 넣는다. 글은 앱 아이콘 + 앱 이름뿐.
+import { Image } from "astro:assets"
+import appIcon from "@assets/repyep/app-icon.png"
+import { copy, type Lang } from "./copy"
+
+type Props = { lang: Lang }
+const { lang } = Astro.props
+const href = lang === "ko" ? "/repyep/" : "/repyep/en/"
+---
+
+<a class="site" href={href}>
+  <Image src={appIcon} alt="" width={64} height={64} class="site-icon" />
+  <span>{copy[lang].name}</span>
+</a>
+
+<style>
+  .site {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 15px;
+    font-weight: 700;
+    transition: color 0.2s;
+  }
+  .site:hover {
+    color: var(--a);
+  }
+  .site :global(.site-icon) {
+    width: 28px;
+    height: 28px;
+    border-radius: 22.37%;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+</style>
