@@ -1,0 +1,67 @@
+---
+// 내돈아님 아이콘 — 모양은 앱 repo `app/assets/icon/logo_icon.svg`(앱 아이콘 마스터) 그대로.
+// draw 면 취소선을 긋는다(위 오른쪽 → 아래 왼쪽 · 한 번). 움직임 줄이기면 그어진 채로 둔다.
+type Props = { size?: string; draw?: boolean; class?: string }
+const { size = "32px", draw = false, class: cls } = Astro.props
+---
+
+<span class:list={["nm-logo", { "is-draw": draw }, cls]} style={`--s:${size}`} aria-hidden="true">
+  <svg viewBox="0 0 1024 1024" focusable="false">
+    <rect width="1024" height="1024" fill="#F9FAFB"></rect>
+    <g transform="translate(512 512) scale(1.35) translate(-512 -512)">
+      <path
+        d="M353.66 727.04L458.64 727.04L492.28 548.40L532.30 548.40L565.94 727.04L670.34 727.04L708.62 548.40L774.74 548.40L774.74 485.76L721.96 485.76L760.24 307.12L662.22 307.12L636.4091 460.00L586.1909 460.00L554.92 307.12L469.08 307.12L432.54 485.76L392.52 485.76L362.36 307.12L263.76 307.12L302.04 485.76L249.26 485.76L249.26 548.40L315.38 548.40ZM402.96 548.40L419.78 548.40L412.24 585.52L408.76 585.52M503.88 485.76L510.26 452.12L513.74 452.12L520.12 485.76"
+        fill="#191F28"
+        stroke="#191F28"
+        stroke-width="14"
+        stroke-linejoin="round"></path>
+      <line class="cut" pathLength="100" x1="747.52" y1="266.24" x2="276.48" y2="757.76" stroke="#F9FAFB" stroke-width="112" stroke-linecap="round"></line>
+      <line class="cut" pathLength="100" x1="747.52" y1="266.24" x2="276.48" y2="757.76" stroke="#191F28" stroke-width="78" stroke-linecap="round"></line>
+    </g>
+  </svg>
+</span>
+
+<style>
+  .nm-logo {
+    display: inline-block;
+    flex: none;
+    width: var(--s);
+    height: var(--s);
+    border-radius: 22.4%;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(25, 31, 40, 0.08);
+    line-height: 0;
+  }
+  .nm-logo svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 취소선 긋기 — 굵은 바탕색 틈과 남색 선이 같이 지나가며 ₩ 를 끊는다 */
+  @media (prefers-reduced-motion: no-preference) {
+    .is-draw .cut {
+      stroke-dasharray: 100 200;
+      stroke-dashoffset: 101;
+      animation: nm-cut 620ms cubic-bezier(0.3, 0.7, 0.15, 1) 450ms forwards;
+    }
+    .is-draw {
+      animation: nm-press 420ms ease-out 820ms both;
+    }
+  }
+  @keyframes nm-cut {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes nm-press {
+    0% {
+      transform: scale(1);
+    }
+    30% {
+      transform: scale(0.94);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+</style>

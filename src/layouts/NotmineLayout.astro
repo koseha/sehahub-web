@@ -1,0 +1,211 @@
+---
+// 내돈아님 소개 사이트의 틀(2026-11-20 · 내돈아님 팀) — 앱 자기 색 · 자기 머리 · 자기 바닥.
+// 공용 PageLayout · site.css 는 고치지 않는다. site.css 에서는 리셋 · 글꼴만 빌리고 색은 html.nm 에서 덮는다.
+// sehahub 로 돌아가는 길 = 바닥의 sehahub.
+import "@styles/site.css"
+import { getImage } from "astro:assets"
+import Logo from "@components/notmine/Logo.astro"
+import { STORE_URL, PAGES, MAIL } from "@components/notmine/links"
+import icon from "../assets/notmine/icon.png"
+
+type Props = {
+  title: string
+  description: string
+}
+
+const { title, description } = Astro.props
+const canonicalURL = new URL(Astro.url.pathname, Astro.site)
+const og = await getImage({ src: icon, width: 512, height: 512, format: "png" })
+const fav = await getImage({ src: icon, width: 64, height: 64, format: "png" })
+const touch = await getImage({ src: icon, width: 180, height: 180, format: "png" })
+const ogImage = new URL(og.src, Astro.site)
+---
+
+<!doctype html>
+<html lang="ko" class="nm">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#F0F1F4" />
+    <link rel="icon" type="image/png" href={fav.src} />
+    <link rel="apple-touch-icon" href={touch.src} />
+    <link rel="preload" href="/fonts/WantedSansVariable-KR.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="canonical" href={canonicalURL} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="twitter:card" content="summary" />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={ogImage} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+  </head>
+  <body>
+    <header class="nm-bar" data-nm-bar>
+      <a href="/notmine/" class="nm-mark">
+        <Logo size="28px" />
+        <span>내돈아님</span>
+      </a>
+      <a href={PAGES.support} class="nm-link">지원</a>
+      <a href={STORE_URL} class="nm-get nm-get-sm">App Store에서 받기</a>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="nm-foot">
+      <nav class="nm-foot-links" aria-label="내돈아님">
+        <a href={PAGES.support}>지원</a>
+        <a href={PAGES.releases}>업데이트 내역</a>
+        <a href={PAGES.privacy}>개인정보처리방침</a>
+        <a href={`mailto:${MAIL}`}>{MAIL}</a>
+      </nav>
+      <a href="/" class="nm-home">sehahub</a>
+    </footer>
+
+    <script>
+      // 머리 — 조금만 내려도 바탕을 깐다
+      const bar = document.querySelector<HTMLElement>("[data-nm-bar]")
+      const onScroll = () => bar?.classList.toggle("is-past", window.scrollY > 8)
+      window.addEventListener("scroll", onScroll, { passive: true })
+      onScroll()
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  /* 앱 토큰(앱 repo .claude/docs/design_system.md §1) — 네이비 틴트 뉴트럴 · 상태색 절제 · 베이지 없음 */
+  html.nm {
+    --bg: #f0f1f4; /* surfaceSoft = 스토어 보드 바탕 · 아이콘(surface)과 휴대폰 화면이 그 위에서 한 단 밝다 */
+    --soft: #e1e5ea; /* surfaceBand */
+    --ink: #191f28; /* ink = 아이콘 ₩ */
+    --ink2: #404956;
+    --ink3: #616d7c;
+    --line: rgba(25, 31, 40, 0.1);
+    --gut: clamp(20px, 4vw, 40px);
+    /* 머리 · 바닥의 안쪽 선을 본문 틀(최대 1180)과 맞춘다 */
+    --edge: max(var(--gut), calc((100% - 1180px) / 2 + var(--gut)));
+    background: var(--bg);
+    color: var(--ink);
+  }
+  html.nm body {
+    background: var(--bg);
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  .nm-bar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 60px;
+    padding: 0 var(--edge);
+    white-space: nowrap;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  .nm-bar.is-past {
+    background: rgba(240, 241, 244, 0.86);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 1px 0 var(--line);
+  }
+  .nm-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-right: auto;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .nm-link {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink2);
+    padding: 11px 10px;
+    border-radius: 10px;
+  }
+  /* 아주 좁은 폭(320)에서는 머리 「지원」을 뺀다 — 바닥에 같은 링크가 있다 */
+  @media (max-width: 359px) {
+    .nm-link {
+      display: none;
+    }
+  }
+  .nm-link:hover {
+    color: var(--ink);
+    background: var(--soft);
+  }
+
+  /* App Store 버튼 — 앱의 채운 버튼(ink · radius 16) */
+  .nm-get {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    padding: 0 24px;
+    border-radius: 16px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    transition: transform 0.15s ease, background 0.2s;
+  }
+  .nm-get:hover {
+    background: #2a313c;
+  }
+  .nm-get:active {
+    transform: scale(0.97);
+  }
+  .nm-get:focus-visible,
+  .nm-link:focus-visible,
+  .nm-mark:focus-visible,
+  .nm-foot a:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+  .nm-get-sm {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  .nm-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 24px;
+    padding: 24px var(--edge) 32px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--ink3);
+  }
+  .nm-foot-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 20px;
+  }
+  .nm-foot a {
+    display: inline-block;
+    padding: 10px 0;
+  }
+  .nm-foot a:hover {
+    color: var(--ink);
+  }
+  .nm-home {
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+</style>
