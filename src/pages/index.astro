@@ -87,10 +87,13 @@ const SLABS = 14 // 아이콘 두께 = 겹 수 × 1.6px
       font-display: swap;
     }
     :root {
-      --bg: #f2f1ee;
-      --ink: #1b1f27;
-      --side: #8e939c;
-      --muted: #6b707a;
+      /* 베이지 배경은 쓰지 않는다(대표 11/20 「요즘 ai 구현물들이 다 배경색을 베이지로」) — 흰 바탕 · 먹색 글자 */
+      --bg: #ffffff;
+      --ink: #16181d;
+      --muted: #6b6f78;
+      /* 포인트 = 주황 + 미세한 분홍(대표 11/20) — 옆면 · 두께 · 표시에만 */
+      --o: #ff5a1f;
+      --p: #ffa3b8;
       /* 튕김 — CSS linear() 로 만든 스프링(라이브러리 없음) */
       --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1.004 83.8%, 1);
     }
@@ -106,7 +109,7 @@ const SLABS = 14 // 아이콘 두께 = 겹 수 × 1.6px
     .bar-mark { font-weight: 900; letter-spacing: -0.03em; font-size: 18px; opacity: 0; transform: translateY(-6px); transition: opacity .3s, transform .3s; }
     .bar.is-past .bar-mark { opacity: 1; transform: none; }
     .bar-mail { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 999px; transition: background .2s; }
-    .bar-mail:hover { background: rgba(27, 31, 39, .07); }
+    .bar-mail:hover { background: color-mix(in srgb, var(--p) 22%, transparent); color: var(--o); }
     .bar-mail svg { width: 22px; height: 22px; }
 
     /* 첫 화면 */
@@ -116,19 +119,29 @@ const SLABS = 14 // 아이콘 두께 = 겹 수 × 1.6px
     .ch {
       display: inline-block; will-change: transform;
       /* 옆면 — 글자를 눌러 뽑은 덩어리처럼. em 이라 글자 크기에 비례한다(휴대폰에서 번지지 않게) */
-      text-shadow: .004em .004em 0 var(--side), .008em .008em 0 var(--side), .012em .012em 0 var(--side), .016em .016em 0 var(--side), .02em .02em 0 var(--side), .024em .024em 0 var(--side), .028em .028em 0 var(--side), .032em .032em 0 var(--side), .055em .085em .11em rgba(27, 31, 39, .16);
+      /* 옆면은 앞에서 뒤로 주황 → 옅은 분홍 */
+      text-shadow:
+        .004em .004em 0 var(--o),
+        .008em .008em 0 color-mix(in oklab, var(--o), var(--p) 8%),
+        .012em .012em 0 color-mix(in oklab, var(--o), var(--p) 16%),
+        .016em .016em 0 color-mix(in oklab, var(--o), var(--p) 24%),
+        .02em .02em 0 color-mix(in oklab, var(--o), var(--p) 32%),
+        .024em .024em 0 color-mix(in oklab, var(--o), var(--p) 40%),
+        .028em .028em 0 color-mix(in oklab, var(--o), var(--p) 48%),
+        .032em .032em 0 color-mix(in oklab, var(--o), var(--p) 56%),
+        .055em .085em .11em color-mix(in srgb, var(--p) 30%, transparent);
     }
     @keyframes drop {
       from { transform: translateY(-115vh) rotate(var(--r)); }
       to { transform: none; }
     }
-    .hint { position: absolute; bottom: 28px; left: 50%; width: 28px; height: 28px; translate: -50% 0; color: var(--muted); animation: bob 1.8s ease-in-out 2s infinite both; opacity: 0; }
+    .hint { position: absolute; bottom: 28px; left: 50%; width: 28px; height: 28px; translate: -50% 0; color: var(--o); animation: bob 1.8s ease-in-out 2s infinite both; opacity: 0; }
     .hint svg { width: 100%; height: 100%; }
     @keyframes bob { 0% { opacity: 0; transform: translateY(-4px); } 30% { opacity: 1; } 50% { transform: translateY(6px); } 100% { opacity: .9; transform: translateY(-4px); } }
 
     /* 제품 선반 */
     .shelf { min-height: 100svh; padding: 12vh clamp(16px, 4vw, 40px) 16vh; display: flex; flex-direction: column; align-items: center; }
-    .label { font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 9vh; }
+    .label { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--o); margin-bottom: 9vh; }
     .objs { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(48px, 8vw, 120px); }
     .obj { --size: 200px; display: flex; flex-direction: column; align-items: center; gap: 34px; cursor: pointer; outline: none; }
     .is-solo .obj { --size: clamp(220px, 30vw, 320px); }
@@ -138,18 +151,19 @@ const SLABS = 14 // 아이콘 두께 = 겹 수 × 1.6px
     .obj-tilt { position: absolute; inset: 0; display: block; transform-style: preserve-3d; will-change: transform; transition: scale .25s var(--spring); }
     .obj:active .obj-tilt { scale: .94; transition-duration: .08s; }
     .slab, .face, .gloss { position: absolute; inset: 0; border-radius: 22.4%; }
-    /* 두께 — 뒤로 갈수록 어두운 겹을 쌓는다 */
-    .slab { transform: translateZ(calc(var(--k) * -1.6px)); background: color-mix(in oklab, #d7d9de, #8b9099 calc(var(--k) * 6%)); }
+    /* 두께 = sehahub 바탕 — 앞에서 뒤로 주황 → 옅은 분홍(제품이 늘어도 모두 같은 바탕 위에 놓인다) */
+    .slab { transform: translateZ(calc(var(--k) * -1.6px)); background: color-mix(in oklab, var(--o), var(--p) calc(var(--k) * 4%)); }
     .face { width: 100%; height: 100%; object-fit: cover; transform: translateZ(0.5px); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06); }
     .gloss { transform: translateZ(1px); background: linear-gradient(135deg, rgba(255, 255, 255, .55) 0%, rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, .06) 100%); pointer-events: none; }
-    .floor { position: absolute; left: 12%; right: 12%; bottom: -26px; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(27, 31, 39, .28), rgba(27, 31, 39, 0)); will-change: transform, opacity; }
+    .floor { position: absolute; left: 12%; right: 12%; bottom: -26px; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--o) 30%, transparent), transparent); will-change: transform, opacity; }
     .obj-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; opacity: 0; transform: translateY(8px); }
     .obj.is-in .obj-name { opacity: 1; transform: none; transition: opacity .5s ease calc(var(--d) + 700ms), transform .5s ease calc(var(--d) + 700ms); }
     .obj:focus-visible .obj-name { text-decoration: underline; text-underline-offset: 4px; }
 
     .foot { display: flex; justify-content: space-between; align-items: center; padding: 28px clamp(16px, 4vw, 40px); font-size: 14px; color: var(--muted); border-top: 1px solid rgba(27, 31, 39, .1); }
     .foot-mark { font-weight: 900; letter-spacing: -0.03em; color: var(--ink); }
-    .foot a:hover { color: var(--ink); }
+    .foot a:hover { color: var(--o); }
+    .obj:hover .obj-name { color: var(--o); }
 
     /* 움직임 줄이기 — 떨어지기 · 둥실 · 기울기를 모두 끈다 */
     @media (prefers-reduced-motion: reduce) {
