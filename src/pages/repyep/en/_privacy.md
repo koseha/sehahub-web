@@ -33,7 +33,7 @@ RepYep is an iPhone journal for your workouts and how your body feels afterward.
 
 ## 3. Apple Health
 
-- RepYep writes to the Health app only if you turn it on in the app (Settings › Apple Health). It's off by default.
+- RepYep writes to the Health app only if you turn it on in the app (Settings › Connections › Apple Health). It's off by default.
 - It writes only finished workouts (as strength training, with start and end time) and the body weight you log. It doesn't estimate calories.
 - It never reads your Health data and doesn't ask for read access.
 - Records from before you turn it on aren't added. Edits or deletions in RepYep carry over to what RepYep saved.
@@ -42,10 +42,12 @@ RepYep is an iPhone journal for your workouts and how your body feels afterward.
 
 ## 4. Export and import
 
-- Settings › Records › Export to File puts your records into one transfer file (.repyep). Turn on Include Photos to add your photos.
+- Settings › Move Records › Export to File puts your records into one transfer file (.repyep). Turn on Include Photos to add your photos.
+- On the same screen, choosing CSV for Viewing makes four spreadsheet-friendly CSV files (workouts, body, check-ins, days) in one .zip. Photos are not included.
 - The file goes only where you choose in the share sheet (Files, Mail, AirDrop and so on). After that, it follows the policies of wherever you sent it.
 - Import from File replaces this iPhone's records with the records in the .repyep file you pick.
 - Import from Another App reads the CSV file you pick (a Strong- or Hevy-compatible format) on this iPhone and adds it to your records. The file isn't sent anywhere.
+- Import InBody App File reads a CSV exported by the InBody app on this iPhone and saves it as body composition reports. It reads only weight, skeletal muscle mass, body fat mass, segmental lean and fat mass, basal metabolic rate and the measurement date. The file isn't sent anywhere.
 
 ## 5. Permissions
 
@@ -89,4 +91,9 @@ RepYep is an iPhone journal for your workouts and how your body feels afterward.
 
 ---
 
-Effective November 20, 2026 · first version
+Effective November 23, 2026 · version 2
+
+What changed
+
+- Version 2 (effective November 23, 2026): Section 4 now covers the app's new CSV for Viewing export and Import InBody App File. Both happen only on this iPhone and the files aren't sent anywhere, so what we receive hasn't changed. The app's Settings screen was reorganized, so the Settings paths in sections 3 and 4 now match it.
+- First version (effective November 20, 2026): [view earlier version](/repyep/en/privacy-v1/)

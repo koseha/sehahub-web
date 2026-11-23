@@ -12,13 +12,13 @@ There's no account or sign-in. Your records stay on your iPhone. There's no serv
 
 ### Can I move my records to a new iPhone?
 
-Yes. On your old iPhone, go to **Settings › Records › Export to File** to make a transfer file (.repyep). Turn on Include Photos to bring your photos too.
+Yes. On your old iPhone, go to **Settings › Move Records › Export to File** to make a transfer file (.repyep). Turn on Include Photos to bring your photos too.
 
-In RepYep on the new iPhone, choose that file in **Settings › Records › Import from File**. Any records already on the new iPhone are replaced by the file's records, and this can't be undone.
+In RepYep on the new iPhone, choose that file in **Settings › Move Records › Import from File**. Any records already on the new iPhone are replaced by the file's records, and this can't be undone.
 
 ### Can I bring in records from another workout app?
 
-Yes. In **Settings › Records › Import from Another App**, choose a Strong- or Hevy-compatible CSV file.
+Yes. In **Settings › Move Records › Import from Another App**, choose a Strong- or Hevy-compatible CSV file.
 
 - Your current records stay as they are. It only adds.
 - Only weight-and-reps sets come in. Sets with only time or distance (cardio, planks and so on) are skipped.
@@ -39,7 +39,7 @@ Allow notifications in **iPhone Settings › Notifications › RepYep**. RepYep'
 
 ### How do I save to Apple Health?
 
-In **Settings › Apple Health**, turn on Save Workouts to Health and Save Body Weight to Health.
+In **Settings › Connections › Apple Health**, turn on Save Workouts to Health and Save Body Weight to Health.
 
 - RepYep adds only finished workouts (as strength training, with start and end time) and the body weight you log. It never reads your Health data.
 - Records from before you turn this on aren't added. Edits or deletions in RepYep carry over to what RepYep saved.
