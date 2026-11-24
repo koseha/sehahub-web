@@ -16,7 +16,8 @@ export default defineConfig({
   },
   integrations: [
     mdx(),
-    sitemap({ filter: (page) => !page.endsWith("/blog/") && !page.endsWith("/search/") }),
+    // 옛 방침 판(/…/privacy-v…/)은 공개 약속이라 쪽은 두고 사이트맵에서만 뺀다 — 「개인정보」 검색에 옛 판이 먼저 뜨지 않게(11/24 SEO)
+    sitemap({ filter: (page) => !page.endsWith("/blog/") && !page.endsWith("/search/") && !/\/privacy-v\d/.test(page) }),
     solidJs(),
     tailwind({ applyBaseStyles: false }),
   ],

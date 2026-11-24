@@ -3,7 +3,8 @@ import type { Site, Page } from "@types"
 // Global — 설명은 쪽에 보이지 않고 검색 · 공유 미리보기에만 쓰인다. 시키지 않은 문구를 넣지 않는다(2026-11-20 · 그룹 지식 §2)
 export const SITE: Site = {
   TITLE: "sehahub",
-  DESCRIPTION: "sehahub가 만든 앱.",
+  // 11/24 SEO — 이름만 더함(사실만 · 그룹 계획 `seo-geo-plan-2026-11-24.md` · 대표 「해놔」). 제품이 늘면 여기도 더한다
+  DESCRIPTION: "sehahub가 만든 앱 — 내돈아님 · 운동해 넵.",
   AUTHOR: "seha",
 }
 
