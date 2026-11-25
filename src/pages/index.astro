@@ -119,6 +119,10 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
     .foot a:hover { color: var(--a); }
     .obj:hover .obj-name { color: var(--a); }
 
+    /* 어두운 판 — 바닥 그림자는 더 짙게(먹색 그림자는 어두운 바탕에 묻힌다) · 바닥 선은 색 변수로 */
+    [data-theme="dark"] .floor { background: radial-gradient(closest-side, rgba(0, 0, 0, .55), transparent); }
+    [data-theme="dark"] .foot { border-top-color: var(--line); }
+
     /* 움직임 줄이기 — 떨어지기 · 둥실 · 기울기를 모두 끈다 */
     @media (prefers-reduced-motion: reduce) {
       .ch-drop, .hint { animation: none; opacity: 1; }

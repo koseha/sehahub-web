@@ -50,6 +50,7 @@ const projects = pinnedFirst(await getSortedEntries("projects"))
       box-shadow: 0 0 0 1px var(--line), 0 22px 44px -30px rgba(22, 24, 29, .45);
       transition: transform .6s var(--spring), box-shadow .4s ease;
     }
+    :global([data-theme="dark"]) .pj-shot { background: #23262d; }
     .pj-shot :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: top; transition: transform .9s cubic-bezier(.2, .7, .2, 1); }
     .pj-card:hover .pj-shot { transform: translateY(-8px) rotate(-.6deg); box-shadow: 0 0 0 1px var(--line), 0 34px 60px -30px rgba(22, 24, 29, .5); }
     .pj-card:hover .pj-shot :global(img) { transform: scale(1.03); }

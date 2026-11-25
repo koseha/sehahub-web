@@ -58,10 +58,10 @@ function formatWorkDate(input: Date | string) {
       <div class="mt-4 space-y-3">
         {stack.map((group) => (
           <div>
-            <p class="text-sm text-black/60 mb-2">{group.label}</p>
+            <p class="text-sm text-black/60 dark:text-white/60 mb-2">{group.label}</p>
             <ul class="flex flex-wrap items-center gap-2" aria-label={group.label}>
               {group.items.map((tech) => (
-                <li class="px-3 py-1.5 rounded border border-black/15 text-sm text-black/75">{tech}</li>
+                <li class="px-3 py-1.5 rounded border border-black/15 dark:border-white/15 text-sm text-black/75 dark:text-white/75">{tech}</li>
               ))}
             </ul>
           </div>
@@ -71,7 +71,7 @@ function formatWorkDate(input: Date | string) {
 
     <ul>
       {work.map((entry) => (
-        <li class="border-t border-black/10 py-8">
+        <li class="border-t border-black/10 dark:border-white/10 py-8">
           <div class="text-sm uppercase mb-4">
             {formatWorkDate(entry.data.dateStart)} ~ {formatWorkDate(entry.data.dateEnd)}
           </div>

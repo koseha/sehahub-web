@@ -2,7 +2,8 @@ import defaultTheme from "tailwindcss/defaultTheme"
 
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: ["class"],
+  // 어두운 판 = html 의 data-theme="dark"(PageLayout 의 해/달 버튼 · 2026-11-25)
+  darkMode: ["selector", '[data-theme="dark"]'],
   content: ["./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}"],
   theme: {
     extend: {

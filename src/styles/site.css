@@ -27,6 +27,16 @@
   --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1.004 83.8%, 1);
 }
 
+/* 어두운 판(대표 11/25 「버튼」) — PageLayout 이 html 에 data-theme 를 단다(기기 설정을 따르고 · 해/달 버튼으로 바꾸면 기억).
+   data-theme 가 없는 쪽(내돈아님 · 운동해 넵 제품 틀)은 늘 밝다. 포인트 코랄은 그대로. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #16181d;
+  --ink: #eceef1;
+  --muted: #9a9ea7;
+  --line: rgba(236, 238, 241, 0.12);
+}
+
 html {
   color-scheme: light;
   background: var(--bg);
@@ -87,7 +97,8 @@ main {
 .bar-link[aria-current="page"] {
   color: var(--a);
 }
-.bar-mail {
+.bar-mail,
+.bar-theme {
   width: 40px;
   height: 40px;
   display: grid;
@@ -95,13 +106,29 @@ main {
   border-radius: 999px;
   transition: background 0.2s, color 0.2s;
 }
-.bar-mail:hover {
+.bar-mail:hover,
+.bar-theme:hover {
   background: color-mix(in srgb, var(--a) 14%, transparent);
   color: var(--a);
 }
-.bar-mail svg {
+.bar-mail svg,
+.bar-theme svg {
   width: 22px;
   height: 22px;
+}
+/* 좁은 휴대폰(360 등) — 해/달 버튼이 들어간 만큼 링크 옆 여백을 줄여 버튼이 눌리지 않게 */
+@media (max-width: 380px) {
+  .bar-link {
+    padding-inline: 8px;
+  }
+}
+/* 해/달 버튼 — 밝을 때 달(누르면 어둡게) · 어두울 때 해(누르면 밝게) */
+.bar-theme .i-sun,
+[data-theme="dark"] .bar-theme .i-moon {
+  display: none;
+}
+[data-theme="dark"] .bar-theme .i-sun {
+  display: block;
 }
 
 /* 바닥 */
@@ -137,6 +164,15 @@ article {
   --tw-prose-th-borders: rgba(22, 24, 29, 0.2);
   --tw-prose-td-borders: var(--line);
 }
+[data-theme="dark"] article {
+  --tw-prose-body: #c9ccd3;
+  --tw-prose-lead: var(--muted);
+  --tw-prose-quotes: var(--ink);
+  --tw-prose-quote-borders: var(--line);
+  --tw-prose-captions: var(--muted);
+  --tw-prose-code: var(--ink);
+  --tw-prose-th-borders: rgba(236, 238, 241, 0.2);
+}
 article a:hover {
   color: var(--a);
 }
@@ -160,7 +196,7 @@ article a:hover {
 }
 
 .pill-muted {
-  @apply bg-black/5 text-black/75;
+  @apply bg-black/5 text-black/75 dark:bg-white/10 dark:text-white/75;
 }
 
 .pill-outline {
@@ -173,7 +209,7 @@ article a:hover {
 
 /* 흐름 도식 — 프로젝트 상세의 구조 블록. 마크다운 안에서 `not-prose` 와 함께 쓴다 */
 .flow-box {
-  @apply my-8 rounded border border-black/15 p-5 text-sm;
+  @apply my-8 rounded border border-black/15 p-5 text-sm dark:border-white/15;
 }
 
 .flow-label {
@@ -185,11 +221,11 @@ article a:hover {
 }
 
 .flow-node {
-  @apply inline-flex items-center rounded border border-black/20 px-2.5 py-1;
+  @apply inline-flex items-center rounded border border-black/20 px-2.5 py-1 dark:border-white/20;
 }
 
 .flow-node-end {
-  @apply font-medium text-black;
+  @apply font-medium text-black dark:text-white;
 }
 
 .flow-arrow {
