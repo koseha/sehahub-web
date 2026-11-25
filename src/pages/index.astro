@@ -28,6 +28,9 @@ const shelves = [
   { id: "products", label: "Products", items: products },
   { id: "games", label: "Games", items: games },
 ]
+// 크기는 가장 많이 놓인 선반을 따른다 — 선반마다 따로 정하면 하나뿐인 게임이 제품보다 커 보인다
+const most = Math.max(...shelves.map((s) => s.items.length))
+const sizeClass = most === 1 ? "is-solo" : most === 2 ? "is-duo" : ""
 
 const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS --depth)
 ---
@@ -51,7 +54,7 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
     {shelves.map((s) => (
     <section class="shelf" id={s.id} aria-label={s.label}>
       <p class="label">{s.label}</p>
-      <ul class={`objs ${s.items.length === 1 ? "is-solo" : s.items.length === 2 ? "is-duo" : ""}`}>
+      <ul class={`objs ${sizeClass}`}>
         {s.items.map((p, i) => (
           <li>
             <a href={p.href} class="obj" data-obj style={`--d:${i * 120}ms`}>
