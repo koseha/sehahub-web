@@ -478,7 +478,7 @@
       const bw = 200, gap = 22, tot = 3 * bw + 2 * gap, x0 = r.x + r.w / 2 - tot / 2;
       labels.forEach(([id, s], i) => out.push({ id, s, x: x0 + i * (bw + gap), y: r.y + r.h - 70, w: bw, h: 44 }));
     } else {
-      labels.forEach(([id, s], i) => out.push({ id, s, x: r.x + 80, y: r.y + r.h - 200 + i * 62, w: r.w - 160, h: 48 }));
+      labels.forEach(([id, s], i) => out.push({ id, s, x: r.x + 60, y: r.y + r.h - 268 + i * 84, w: r.w - 120, h: 70 }));
     }
     return out;
   };
@@ -491,41 +491,47 @@
     A.tape(g, rc.x + rc.w * 0.25, rc.y + 2, -0.08); A.tape(g, rc.x + rc.w * 0.75, rc.y + 2, 0.07);
     const cx = rc.x + rc.w / 2;
     g.textAlign = 'center'; g.fillStyle = INK;
-    g.font = `700 ${port ? 28 : 31}px ${KO}`;
+    g.font = `700 ${port ? 38 : 31}px ${KO}`;
     const big = `손님 ${fmt(E.guests)}명이 우주 정거장에 놀러 왔어요`;
-    if (port) { g.fillText(`손님 ${fmt(E.guests)}명이`, cx, rc.y + 70); g.fillText('우주 정거장에 놀러 왔어요', cx, rc.y + 108); }
+    if (port) { g.fillText(`손님 ${fmt(E.guests)}명이`, cx, rc.y + 78); g.fillText('우주 정거장에 놀러 왔어요', cx, rc.y + 126); }
     else g.fillText(big, cx, rc.y + 72);
-    g.font = `700 20px ${KO}`; g.fillStyle = 'rgba(27,27,27,0.8)';
-    g.fillText(`내 방에서 시작해 ${U.mmss(E.playSec)}`, cx, rc.y + (port ? 146 : 108));
+    g.font = `700 ${port ? 28 : 20}px ${KO}`; g.fillStyle = 'rgba(27,27,27,0.8)';
+    g.fillText(`내 방에서 시작해 ${U.mmss(E.playSec)}`, cx, rc.y + (port ? 172 : 108));
     g.textAlign = 'left';
     // 사진 — 정거장 다 같이 찰칵
-    const ph = port ? { x: rc.x + 40, y: rc.y + 176, w: rc.w - 80, h: 330 } : { x: rc.x + 40, y: rc.y + 136, w: 470, h: 300 };
+    const ph = port ? { x: rc.x + 40, y: rc.y + 198, w: rc.w - 80, h: 320 } : { x: rc.x + 40, y: rc.y + 136, w: 470, h: 300 };
     drawPhoto(g, G, ph);
     // 고른 카드 줄
     const lx = port ? rc.x + 50 : rc.x + 550, ly = port ? ph.y + ph.h + 40 : rc.y + 150;
-    g.fillStyle = INK; g.font = `700 16px ${KO}`; g.fillText('고른 카드', lx, ly);
+    g.fillStyle = INK; g.font = `700 ${port ? 22 : 16}px ${KO}`; g.fillText('고른 카드', lx, ly);
     const rows = U.pickRows(G);
     const colW = port ? (rc.w - 100) / 2 : 190;
-    rows.forEach((r, i) => {
+    if (port) rows.forEach((r, i) => {
+      const x = lx + 30 + (i % 9) * 62, y = ly + 46 + ((i / 9) | 0) * 84;
+      g.fillStyle = A.PT_HL; g.beginPath(); g.arc(x, y, 25, 0, 7); g.fill();
+      g.save(); g.translate(x, y); g.scale(0.9, 0.9); A.icon(g, r.id, 0, 0); g.restore();
+      if (r.c.tier === 'small') { g.fillStyle = INK; g.font = `700 17px ${KO}`; g.textAlign = 'center'; g.fillText(`×${r.lv}`, x, y + 45); g.textAlign = 'left'; }
+    });
+    else rows.forEach((r, i) => {
       const col = i % 2, row = (i / 2) | 0, x = lx + col * colW, y = ly + 18 + row * 40;
       g.fillStyle = A.PT_HL; g.beginPath(); g.arc(x + 15, y + 15, 15, 0, 7); g.fill();
       g.save(); g.translate(x + 15, y + 15); g.scale(0.55, 0.55); A.icon(g, r.id, 0, 0); g.restore();
       g.fillStyle = INK; g.font = `700 14px ${KO}`;
       g.fillText(r.c.tier === 'small' ? `${r.c.name} ×${r.lv}` : r.c.name, x + 36, y + 20);
     });
-    const sy = port ? ly + 18 + Math.ceil(rows.length / 2) * 40 + 30 : rc.y + 470;
-    g.textAlign = 'center'; g.font = `700 16px ${KO}`; g.fillStyle = INK;
+    const sy = port ? ly + 46 + Math.ceil(rows.length / 9) * 84 + 16 : rc.y + 470;
+    g.textAlign = 'center'; g.font = `700 ${port ? 21 : 16}px ${KO}`; g.fillStyle = INK;
     g.fillText(`신바람 타임 ${E.bursts}번 · 가장 많이 모신 1초 ${fmt(E.maxSec)}명`, cx, sy);
-    if (E.prevBest) { g.font = `500 14px ${KO}`; g.fillStyle = 'rgba(27,27,27,0.7)'; g.fillText(`지난번 가장 빠른 기록 ${U.mmss(E.prevBest)}`, cx, sy + 26); }
-    g.font = `500 13px ${KO}`; g.fillStyle = 'rgba(27,27,27,0.65)';
-    g.fillText(`지구에 남은 사람 ${fmt(E.earth)}명 · 다음은 더 넓은 곳`, cx, withButtons ? (port ? rc.y + rc.h - 230 : rc.y + rc.h - 90) : rc.y + rc.h - 28);
+    if (E.prevBest) { g.font = `500 ${port ? 19 : 14}px ${KO}`; g.fillStyle = 'rgba(27,27,27,0.7)'; g.fillText(`지난번 가장 빠른 기록 ${U.mmss(E.prevBest)}`, cx, sy + (port ? 32 : 26)); }
+    g.font = `500 ${port ? 19 : 13}px ${KO}`; g.fillStyle = 'rgba(27,27,27,0.65)';
+    g.fillText(`지구에 남은 사람 ${fmt(E.earth)}명 · 다음은 더 넓은 곳`, cx, withButtons ? (port ? rc.y + rc.h - 292 : rc.y + rc.h - 90) : rc.y + rc.h - 28);
     g.textAlign = 'left';
     if (withButtons) {
       for (const b of U.endButtons(L)) {
         const hov = G.endHover === b.id;
         g.fillStyle = b.id === 'again' ? '#fff' : PT; g.beginPath(); g.roundRect(b.x, b.y, b.w, b.h, b.h / 2); g.fill();
         g.strokeStyle = INK; g.lineWidth = hov ? 2.4 : 1.6; A.rPath(g, A.rrPts(b.x, b.y, b.w, b.h, b.h / 2), true, 0.5);
-        g.fillStyle = b.id === 'again' ? INK : '#fff'; g.font = `700 16px ${KO}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillStyle = b.id === 'again' ? INK : '#fff'; g.font = `700 ${port ? 27 : 16}px ${KO}`; g.textAlign = 'center'; g.textBaseline = 'middle';
         g.fillText(b.s, b.x + b.w / 2, b.y + b.h / 2 + 1); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
       }
     }
