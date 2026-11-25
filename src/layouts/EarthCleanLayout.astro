@@ -1,0 +1,98 @@
+---
+// 「지구 청소」 소개 쪽(/earth-clean/) 전용 틀 — sehahub 공용 틀(PageLayout · site.css)을 쓰지 않고 게임 자기 색(흰 노트 · 검은 펜 · 주홍)으로.
+// 게임 쪽(/earth-clean/play/)은 public/earth-clean/play/ 의 정적 파일이다(정본 = 팀 폴더 teams/earth-clean/web · 이 틀과 무관).
+import { getImage } from "astro:assets"
+import cityShot from "@assets/earth-clean/city.png"
+
+type Props = {
+  title: string
+  description: string
+}
+
+const { title, description } = Astro.props
+const canonicalURL = new URL(Astro.url.pathname, Astro.site)
+const og = await getImage({ src: cityShot, width: 1200, height: 675, format: "png" })
+const ogImage = new URL(og.src, Astro.site)
+const fullTitle = `${title} | sehahub`
+---
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#fdfdfb" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/WantedSansVariable-KR.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="canonical" href={canonicalURL} />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content={fullTitle} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={ogImage} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  @font-face {
+    font-family: "Wanted Sans Variable";
+    /* 한글 포함 빌드 · SIL OFL 1.1(public/fonts/WantedSans-OFL.txt) */
+    src: url("/fonts/WantedSansVariable-KR.woff2") format("woff2");
+    font-weight: 400 1000;
+    font-style: normal;
+    font-display: swap;
+  }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+    /* 게임과 같은 흰 노트 — 점 모눈 */
+    background-color: #fdfdfb;
+    background-image: radial-gradient(rgba(0, 0, 0, 0.14) 1px, transparent 1.2px);
+    background-size: 24px 24px;
+    color: #1b1b1b;
+    font-family: "Wanted Sans Variable", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  :lang(ko) {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  body {
+    margin: 0;
+    min-height: 100svh;
+    overflow-x: clip;
+  }
+  h1,
+  h2,
+  p,
+  ol,
+  ul,
+  figure {
+    margin: 0;
+    padding: 0;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+</style>
