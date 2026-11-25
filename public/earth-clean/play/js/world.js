@@ -25,16 +25,28 @@
       sep: { x: 244.5, y: 0, x2: 244.5, y2: 720 },
     };
     H = Math.min(Wd.PORTRAIT_H[1], Math.max(Wd.PORTRAIT_H[0], Math.round(H || 1400)));
+    // 휴대폰 개편(대표 11/25 「모바일에서 했을 때 게임 외 요소들이 너무 작다」 · 「포기할 거 포기하고, 생략할 거 생략하고, 간단히 할 거 간단히 하고」)
+    // 아래 칸 = 정거장 창 · 손님 수 · 다음 카드 · 메뉴만. 「지금까지 고른 것」 목록과 「+N명/초」는 뺐다. 아래 칸 안은 480×200 으로 짜고 1.5배로 그린다(ui).
+    const k = 1.5, uy = H - 300;
     return {
       portrait: true, W: 720, H,
-      map: { x: 0, y: 0, w: 720, h: H - 260 },
-      stn: { x: 10, y: H - 248, w: 350, h: 238 }, win: { x: 18, y: H - 214, w: 334, h: 138 },
-      count: { x: 22, y: H - 54 }, hatch: { x: 300, y: H - 252 }, hatchDir: 'up',
-      picks: { x: 372, y: H - 248, w: 338, h: 200, cols: 2 },
-      menu: { x: 606, y: H - 46, w: 104, h: 40 },
-      ctr: { x: 360, y: 66, w: 660, h: 112 },
-      sep: { x: 0, y: H - 259.5, x2: 720, y2: H - 259.5 },
+      map: { x: 0, y: 0, w: 720, h: uy },
+      ui: { x: 0, y: uy, k },
+      // stn · win · count · bar · hatchIn 은 아래 칸 안 자리(ui 만큼 옮기고 키워 그린다) — 나머지는 무대 자리
+      stn: { x: 8, y: 8, w: 296, h: 184 }, win: { x: 16, y: 42, w: 280, h: 142 },
+      count: { x: 318, y: 30 }, bar: { x: 318, y: 100, w: 152, h: 18 }, hatchIn: { x: 250, y: 4 },
+      hatch: { x: 250 * k, y: uy + 6 }, hatchDir: 'up',
+      picks: { x: 477, y: uy + 150, w: 228, h: 27, cols: 0 },
+      menu: { x: 477, y: uy + 201, w: 228, h: 75 },
+      ctr: { x: 360, y: 86, w: 668, h: 150 },
+      sep: { x: 0, y: uy + 0.5, x2: 720, y2: uy + 0.5 },
     };
+  };
+
+  // 아래 칸 안 자리 → 무대 자리
+  Wd.toStage = function (L, r) {
+    if (!L.ui) return r;
+    return { x: L.ui.x + r.x * L.ui.k, y: L.ui.y + r.y * L.ui.k, w: r.w * L.ui.k, h: r.h * L.ui.k };
   };
 
   // ---------- 판 만들기 ----------

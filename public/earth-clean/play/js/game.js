@@ -124,9 +124,10 @@
     const RS = G.RS;
     G.bg = buildBg(G.world);
     G.strip = U.stripArt(G.L, RS);
-    G.roomArt = U.roomArt(G.L, RS);
+    const UR = RS * (G.L.ui ? G.L.ui.k : 1);   // 휴대폰 아래 칸은 키워 그리므로 그만큼 촘촘히 만든다
+    G.roomArt = U.roomArt(G.L, UR);
     G.spr = A.sprites(figScale(G.run.stage), RS);
-    G.stnSpr = A.sprites(1.4, RS);
+    G.stnSpr = A.sprites(1.4, UR);
     G.riderSpr = A.sprites(0.62, RS);
     G.walkSpr = A.sprites(1.15, RS);
     G.photoSpr = A.sprites(2.4, RS);
@@ -590,7 +591,7 @@
     const fromRight = L.hatchDir === 'right';
     S.guests.push({ v, ph: Math.random() * 6, rot: (Math.random() - 0.5) * 0.6, vr: (Math.random() - 0.5) * 0.8,
       wide: Math.random() < 0.55, sleep: Math.random() < 0.12,
-      x: quiet ? wn.x + 20 + Math.random() * (wn.w - 40) : fromRight ? wn.x + wn.w - 10 : L.hatch.x,
+      x: quiet ? wn.x + 20 + Math.random() * (wn.w - 40) : fromRight ? wn.x + wn.w - 10 : (L.hatchIn || L.hatch).x,
       y: quiet ? wn.y + 50 + Math.random() * (wn.h - 70) : fromRight ? L.hatch.y : wn.y + 14,
       vx: fromRight ? -(70 + Math.random() * 60) : (Math.random() - 0.5) * 60, vy: fromRight ? (Math.random() - 0.5) * 60 : 70 + Math.random() * 50 });
   }
@@ -881,8 +882,8 @@
     drawHearts(); drawCalls();
     if (G.mode !== 'zoom' && G.mode !== 'end') drawBots(z);
     drawConfetti();
-    if (ph >= 0) {
-      // 도시의 때(아침 → 낮 → 오후 → 저녁)
+    if (ph >= 0 && !G.L.portrait) {
+      // 도시의 때(아침 → 낮 → 오후 → 저녁) — 휴대폰에서는 위 띠에 가려 잘리므로 뺀다
       const tx = M.x + M.w - 62, ty = M.y + 30;
       ctx.strokeStyle = INK; ctx.lineWidth = 1.3; ctx.fillStyle = ph === 3 ? INK : '#fff';
       ctx.beginPath(); ctx.arc(tx, ty, 9, 0, 7); ctx.fill(); ctx.stroke();
@@ -924,8 +925,8 @@
     }
     // 정거장 칸 · 고른 것은 지도 위 호스보다 먼저
     if (L.portrait) { ctx.fillStyle = A.PAPER; } // 칸 바탕은 bg 에 있다
-    U.drawStation(ctx, G);
-    ctx.drawImage(G.picksCanvas, L.picks.x, L.picks.y, L.picks.w, L.picks.h);
+    if (L.ui) { ctx.save(); ctx.translate(L.ui.x, L.ui.y); ctx.scale(L.ui.k, L.ui.k); U.drawStation(ctx, G); ctx.restore(); }
+    else { U.drawStation(ctx, G); ctx.drawImage(G.picksCanvas, L.picks.x, L.picks.y, L.picks.w, L.picks.h); }
     if (G.mode !== 'zoom' && G.mode !== 'end') { drawHoses(); drawNozzles(z); }
     if (G.hint && G.run.stage === 0 && G.mode === 'play') {
       const M = L.map;
@@ -949,7 +950,7 @@
   }
   function drawFinale() {
     // 정거장으로 다가가며 다 같이 찰칵
-    const L = G.L, RS = G.RS, t = G.finale.t, wn = L.win;
+    const L = G.L, RS = G.RS, t = G.finale.t, wn = Wd.toStage(L, L.win);
     const e0 = Math.min(1, t / 1.6), e = e0 * e0 * (3 - 2 * e0);
     const M = L.map;
     const tw = Math.min(M.w * 0.8, (M.h * 0.7) * wn.w / wn.h), th = tw * wn.h / wn.w;
@@ -1006,9 +1007,30 @@
   window.__frames = 0;
 
   // ---------- 돌리기 ----------
-  window.addEventListener('pagehide', save);
-  // 화면이 가려지면(다른 앱 · 다른 탭 · 화면 꺼짐) 놀이를 세운다 — 브라우저가 프레임을 계속 줘도 안 돈다(대표 11/25 「모바일에서 백그라운드로 넘겼는데도 돌아가는 듯 하다」)
-  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  // ---------- 자리 비움(다른 앱 · 홈 화면 · 다른 탭 · 다른 창) ----------
+  // 대표 11/25 「아이폰에서 바를 올려서 홈으로 가도 청소가 진행되고 있다」 → visibilitychange 만 받아 세웠더니 「홈으로 나가도 아직 진행되는데」.
+  // 가려졌다는 신호가 브라우저마다 다르게 온다 — 오는 신호를 다 받아 세우고, 돌아온 신호나 손이 닿으면 다시 돈다.
+  // ?debug=1 이면 어떤 신호가 왔는지 화면 왼쪽 위에 적는다(아이폰에서 무슨 일이 나는지 보려고).
+  let away = false, awayFrames = 0;
+  const dbg = /[?&]debug=1/.test(location.search) ? [] : null;
+  function mark(type) {
+    if (!dbg) return;
+    dbg.push(`${new Date().toTimeString().slice(0, 8)} ${type} 손님${G.run ? Math.round(G.run.guests) : '-'} hidden=${document.hidden ? 1 : 0} focus=${document.hasFocus() ? 1 : 0} 쉰프레임${awayFrames}`);
+    if (dbg.length > 14) dbg.shift();
+    let el = document.getElementById('dbg');
+    if (!el) {
+      el = document.createElement('pre'); el.id = 'dbg';
+      el.style.cssText = 'position:fixed;left:4px;top:4px;margin:0;padding:4px 6px;background:rgba(0,0,0,.78);color:#fff;font:10px/1.35 monospace;z-index:9;pointer-events:none;white-space:pre-wrap;max-width:96vw';
+      document.body.appendChild(el);
+    }
+    el.textContent = dbg.join(String.fromCharCode(10));
+  }
+  function leave(e) { mark(e.type); if (!away) { away = true; awayFrames = 0; if (G.run) save(); EC.sound.pause(true); } }
+  function back(e) { mark(e.type); if (document.hidden) return; away = false; EC.sound.pause(false); }
+  document.addEventListener('visibilitychange', (e) => (document.hidden ? leave(e) : back(e)));
+  window.addEventListener('pagehide', leave); window.addEventListener('blur', leave); document.addEventListener('freeze', leave);
+  window.addEventListener('pageshow', back); window.addEventListener('focus', back); document.addEventListener('resume', back);
+  window.addEventListener('pointerdown', (e) => { if (away) back(e); }, true);
   let rt = 0;
   window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(onResize, 120); });
   resize();
@@ -1016,7 +1038,7 @@
   let last = performance.now();
   function loop(now) {
     requestAnimationFrame(loop);
-    if (document.hidden) { last = now; return; }
+    if (away || document.hidden) { last = now; awayFrames++; return; }
     G.frames++; window.__frames = G.frames;
     const rdt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
     update(rdt);

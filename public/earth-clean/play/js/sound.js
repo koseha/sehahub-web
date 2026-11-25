@@ -17,6 +17,12 @@
     if (master) master.gain.value = on ? 0.5 : 0;
   };
 
+  // 자리를 비우면 소리도 세운다(소리가 나는 쪽은 아이폰이 뒤에서도 계속 돌리려 든다)
+  S.pause = function (v) {
+    if (!ac) return;
+    try { if (v) ac.suspend(); else if (on) ac.resume(); } catch (e) { /* 무시 */ }
+  };
+
   // 브라우저는 손이 닿기 전에는 소리를 막는다 — 손이 닿을 때마다 깨운다
   function unlock() {
     try {
