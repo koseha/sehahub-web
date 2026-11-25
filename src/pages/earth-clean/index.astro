@@ -1,0 +1,178 @@
+---
+// 「지구 청소」 소개 쪽(팀 earth-clean · 2026-11-25 대표 「sehahub.info 에 넣을 earth-clean 전용 페이지도 만들어봐. … 게임 소개 페이지와 게임 페이지가 따로야.」)
+// 게임 쪽 = /earth-clean/play/ (public/earth-clean/play/ · 정본은 팀 폴더).
+// 글은 사실만 둔다(이름 · 무엇을 하는 게임인지 · 판 셋의 손님 수 · 되는 기기) — 시키지 않은 문구를 넣지 않는다(그룹 지식 §2).
+// 말투 — 사람에게 「치운다 · 청소한다」를 쓰지 않는다(「모신다 · 빨아들인다」). 「청소」는 지구에만(팀 AGENTS.md).
+// 첫 화면에 그림을 둔다 — 글만 있으면 이름이 구호처럼 읽힌다(공개 전 반대 읽기 11/25 · 손님들이 정거장에서 노는 그림이 먼저 보이게).
+import { Image } from "astro:assets"
+import EarthCleanLayout from "@layouts/EarthCleanLayout.astro"
+import photo from "@assets/earth-clean/end-card.png"
+import room from "@assets/earth-clean/room.png"
+import town from "@assets/earth-clean/town.png"
+import city from "@assets/earth-clean/city.png"
+
+const name = "지구 청소"
+const one = "지구에 남은 사람 82억 명을 흡입구로 빨아들여 우주 정거장으로 모시는 게임."
+const stages = [
+  { img: room, name: "내 방", people: "손님 8명" },
+  { img: town, name: "동네", people: "손님 6,000명" },
+  { img: city, name: "첫 도시", people: "손님 3,000,000명" },
+]
+---
+
+<EarthCleanLayout title={name} description={one}>
+  <main>
+    <header class="top">
+      <h1>{name}</h1>
+      <p class="one">{one}</p>
+      <figure class="photo">
+        <Image src={photo} alt={`${name} — 맛보기 끝 화면. 우주 정거장에 놀러 온 손님들이 다 같이 사진을 찍는다.`} widths={[480, 960, 1280]} sizes="(min-width: 1000px) 920px, 92vw" loading="eager" />
+      </figure>
+      <a class="play" href="/earth-clean/play/">맛보기 하러 가기</a>
+      <p class="facts">무료 · 설치 없음 · PC와 휴대폰 브라우저</p>
+    </header>
+
+    <ol class="stages">
+      {
+        stages.map((s) => (
+          <li>
+            <figure>
+              <Image src={s.img} alt={`${name} — ${s.name} 화면`} widths={[480, 960, 1280]} sizes="(min-width: 1000px) 920px, 92vw" loading="lazy" />
+              <figcaption>
+                <b>{s.name}</b>
+                <span>{s.people}</span>
+              </figcaption>
+            </figure>
+          </li>
+        ))
+      }
+    </ol>
+
+    <footer>
+      <a class="play" href="/earth-clean/play/">맛보기 하러 가기</a>
+      <a class="home" href="/">sehahub</a>
+    </footer>
+  </main>
+</EarthCleanLayout>
+
+<style>
+  main {
+    --ink: #1b1b1b;
+    --pt: #ff5a2c;
+    --pale: #ffe3d8;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 20px 72px;
+  }
+  .top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+  h1 {
+    font-size: clamp(40px, 10vw, 72px);
+    font-weight: 900;
+    line-height: 1.05;
+  }
+  .one {
+    font-size: clamp(16px, 4.2vw, 20px);
+    font-weight: 500;
+    max-width: 30em;
+    line-height: 1.55;
+  }
+  .photo,
+  .stages figure {
+    background: #fff;
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.12);
+  }
+  .photo {
+    width: 100%;
+    transform: rotate(-0.4deg);
+  }
+  .photo img,
+  .stages img {
+    width: 100%;
+  }
+  .play {
+    display: inline-block;
+    background: var(--pt);
+    color: #fff;
+    font-size: 20px;
+    font-weight: 800;
+    padding: 15px 34px;
+    border: 2.5px solid var(--ink);
+    border-radius: 999px;
+    box-shadow: 3px 4px 0 var(--ink);
+    transition:
+      transform 0.08s,
+      box-shadow 0.08s;
+  }
+  .play:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 3px 0 var(--ink);
+  }
+  .play:active {
+    transform: translate(3px, 4px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+  .play:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 4px;
+  }
+  .facts {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(27, 27, 27, 0.72);
+  }
+  .stages {
+    list-style: none;
+    display: grid;
+    gap: 34px;
+    margin-top: 56px;
+  }
+  .stages li:nth-child(odd) figure {
+    transform: rotate(-0.35deg);
+  }
+  .stages li:nth-child(even) figure {
+    transform: rotate(0.4deg);
+  }
+  figcaption {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 12px 18px 14px;
+    border-top: 2px solid var(--ink);
+    font-size: 18px;
+  }
+  figcaption b {
+    font-weight: 800;
+  }
+  figcaption span {
+    font-weight: 700;
+    color: var(--pt);
+  }
+  footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    margin-top: 56px;
+  }
+  .home {
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .play {
+      transition: none;
+    }
+  }
+</style>
