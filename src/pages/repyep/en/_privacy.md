@@ -62,7 +62,7 @@ RepYep is an iPhone journal for your workouts and how your body feels afterward.
 ## 6. Gym link
 
 - The address you save for Gym on the Calendar tab is stored only on this iPhone.
-- Tapping it opens the page in an in-app Safari view. That page follows its own site's policies. RepYep doesn't read or store the page's content.
+- Tapping it opens the page in the Safari app. That page follows its own site's policies. RepYep doesn't read or store the page's content.
 
 ## 7. What Apple handles
 
@@ -91,9 +91,10 @@ RepYep is an iPhone journal for your workouts and how your body feels afterward.
 
 ---
 
-Effective November 23, 2026 · version 2
+Effective November 25, 2026 · version 3
 
 What changed
 
-- Version 2 (effective November 23, 2026): Section 4 now covers the app's new CSV for Viewing export and Import InBody App File. Both happen only on this iPhone and the files aren't sent anywhere, so what we receive hasn't changed. The app's Settings screen was reorganized, so the Settings paths in sections 3 and 4 now match it.
+- Version 3 (effective November 25, 2026): The app's gym link now opens in the Safari app instead of an in-app Safari view, so section 6 now matches it. RepYep still doesn't read or store the page's content, and what we receive hasn't changed.
+- Version 2 (effective November 23, 2026): Section 4 now covers the app's new CSV for Viewing export and Import InBody App File. Both happen only on this iPhone and the files aren't sent anywhere, so what we receive hasn't changed. The app's Settings screen was reorganized, so the Settings paths in sections 3 and 4 now match it. [View earlier version](/repyep/en/privacy-v2/)
 - First version (effective November 20, 2026): [view earlier version](/repyep/en/privacy-v1/)
