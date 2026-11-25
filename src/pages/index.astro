@@ -7,6 +7,7 @@ import PageLayout from "@layouts/PageLayout.astro"
 import { SITE } from "@consts"
 import notmineIcon from "../assets/products/notmine-icon.png"
 import repyepIcon from "../assets/products/repyep-icon.png"
+import earthCleanIcon from "../assets/products/earth-clean-icon.png"
 
 const WORD = "sehahub".split("")
 
@@ -16,6 +17,20 @@ const products = [
   { name: "내돈아님", icon: notmineIcon, href: "/notmine/" },
   { name: "운동해 넵", icon: repyepIcon, href: "/repyep/" },
 ]
+
+// 게임 = Products 와 따로 선반(대표 11/25 「sehahub.info에 game 항목 추가해 … 기본은 web인데, mobile app으로 확장할 수도 있고 스팀에 넣을수도 있고」 · 나눌지는 그룹 판단)
+// 지구 청소 = 팀 earth-clean · 링크 = 팀 소개 쪽(/earth-clean/) · 아이콘 = 팀 그림 teams/earth-clean/web/icon/icon.png 를 옮겨 둠(팀이 다시 뽑으면 다시 옮긴다)
+const games = [
+  { name: "지구 청소", icon: earthCleanIcon, href: "/earth-clean/" },
+]
+
+const shelves = [
+  { id: "products", label: "Products", items: products },
+  { id: "games", label: "Games", items: games },
+]
+// 크기는 가장 많이 놓인 선반을 따른다 — 선반마다 따로 정하면 하나뿐인 게임이 제품보다 커 보인다
+const most = Math.max(...shelves.map((s) => s.items.length))
+const sizeClass = most === 1 ? "is-solo" : most === 2 ? "is-duo" : ""
 
 const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS --depth)
 ---
@@ -36,10 +51,11 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
     </section>
 
     <!-- 제품 — 아이콘을 두께 있는 물건으로. 화면에 들어오면 떨어져 놓이고, 포인터 쪽으로 기울고, 가만두면 둥실거린다 -->
-    <section class="shelf" id="products" aria-label="Products">
-      <p class="label">Products</p>
-      <ul class={`objs ${products.length === 1 ? "is-solo" : products.length === 2 ? "is-duo" : ""}`}>
-        {products.map((p, i) => (
+    {shelves.map((s) => (
+    <section class="shelf" id={s.id} aria-label={s.label}>
+      <p class="label">{s.label}</p>
+      <ul class={`objs ${sizeClass}`}>
+        {s.items.map((p, i) => (
           <li>
             <a href={p.href} class="obj" data-obj style={`--d:${i * 120}ms`}>
               <span class="obj-drop">
@@ -60,6 +76,7 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
         ))}
       </ul>
     </section>
+    ))}
 
   <style is:global>
     /* 홈만의 움직임 — 색 변수 · 스프링 · 머리 · 바닥은 src/styles/site.css */
@@ -178,17 +195,19 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
       letterBase[letterBase.length - 1]?.addEventListener("animationend", measure)
       itemBase.forEach((b) => b.addEventListener("transitionend", (e) => { if (e.target === b) measure() }))
 
-      // 보이는 구역만 계산한다
-      let heroOn = true, shelfOn = false
+      // 보이는 구역만 계산한다 — 선반이 여럿(Products · Games)이라 보이는 선반을 모아 둔다
+      let heroOn = true
+      const shelvesOn = new Set<Element>()
       const vis = new IntersectionObserver((entries) => {
         for (const e of entries) {
           if (e.target.classList.contains("hero")) heroOn = e.isIntersecting
-          else shelfOn = e.isIntersecting
+          else if (e.isIntersecting) shelvesOn.add(e.target)
+          else shelvesOn.delete(e.target)
         }
       })
-      const hero = document.querySelector(".hero"), shelf = document.querySelector(".shelf")
+      const hero = document.querySelector(".hero")
       if (hero) vis.observe(hero)
-      if (shelf) vis.observe(shelf)
+      document.querySelectorAll(".shelf").forEach((s) => vis.observe(s))
 
       const frame = (t: number) => {
         // 글자 — 포인터 가까이 있는 글자만 들썩(첫 화면이 보일 때 · 다 가라앉았고 포인터가 없으면 쓰지 않음)
@@ -208,7 +227,7 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
         }
 
         // 아이콘 — 포인터 쪽으로 기울고 · 가만두면 천천히 흔들리고 · 늘 둥실(선반이 보일 때만)
-        if (shelfOn) items.forEach((it, i) => {
+        if (shelvesOn.size) items.forEach((it, i) => {
           const cx = ic[i].x - window.scrollX, cy = ic[i].y - window.scrollY
           let tx: number, ty: number
           if (active && finePointer) {
