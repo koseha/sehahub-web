@@ -2,7 +2,7 @@
 // 「지구 청소」 소개 쪽(/earth-clean/) 전용 틀 — sehahub 공용 틀(PageLayout · site.css)을 쓰지 않고 게임 자기 색(흰 노트 · 검은 펜 · 주홍)으로.
 // 게임 쪽(/earth-clean/play/)은 public/earth-clean/play/ 의 정적 파일이다(정본 = 팀 폴더 teams/earth-clean/web · 이 틀과 무관).
 import { getImage } from "astro:assets"
-import cityShot from "@assets/earth-clean/city.png"
+import photoShot from "@assets/earth-clean/end-card.png"
 
 type Props = {
   title: string
@@ -11,7 +11,7 @@ type Props = {
 
 const { title, description } = Astro.props
 const canonicalURL = new URL(Astro.url.pathname, Astro.site)
-const og = await getImage({ src: cityShot, width: 1200, height: 675, format: "png" })
+const og = await getImage({ src: photoShot, width: 1200, height: 675, format: "png" })
 const ogImage = new URL(og.src, Astro.site)
 const fullTitle = `${title} | sehahub`
 ---
