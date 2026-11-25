@@ -1,12 +1,14 @@
 /* earth-clean · 30분 맛보기 — 놀이 흐름 · 손 · 흡입구 · 로봇 · 선택창 · 판 넘어가기 · 저장
  * 숫자 규칙은 전부 numbers.js(EarthCleanNumbers)의 값과 함수를 그대로 쓴다.
- * 시험용 문(화면에 안내하지 않음): ?speed=20 · ?bot=1 · ?fresh=1 · window.__state()
+ * 시험용 문(화면에 안내하지 않음 · 공개 주소에서는 안 통함): ?speed=20 · ?bot=1 · ?fresh=1 · ?debug=1 · window.__state()
  */
 (function () {
   'use strict';
   const N = window.EarthCleanNumbers, EC = window.EC, A = EC.art, Wd = EC.world, U = EC.ui;
   const B = N.BASE;
-  const qs = new URLSearchParams(location.search);
+  // 시험용 문은 이 PC(파일로 열기)와 안쪽 망 주소에서만 통한다 — 공개 주소(sehahub.info)에서는 무시한다(공개 전 정리 · 11/25)
+  const TEST = location.protocol === 'file:' || /^(localhost$|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname);
+  const qs = new URLSearchParams(TEST ? location.search : '');
   const SPEED = Math.max(0.05, Math.min(200, Number(qs.get('speed')) || 1));
   const BOT = qs.get('bot') === '1';
   const FRESH = qs.get('fresh') === '1';
@@ -1012,7 +1014,7 @@
   // 가려졌다는 신호가 브라우저마다 다르게 온다 — 오는 신호를 다 받아 세우고, 돌아온 신호나 손이 닿으면 다시 돈다.
   // ?debug=1 이면 어떤 신호가 왔는지 화면 왼쪽 위에 적는다(아이폰에서 무슨 일이 나는지 보려고).
   let away = false, awayFrames = 0;
-  const dbg = /[?&]debug=1/.test(location.search) ? [] : null;
+  const dbg = qs.get('debug') === '1' ? [] : null;
   function mark(type) {
     if (!dbg) return;
     dbg.push(`${new Date().toTimeString().slice(0, 8)} ${type} 손님${G.run ? Math.round(G.run.guests) : '-'} hidden=${document.hidden ? 1 : 0} focus=${document.hasFocus() ? 1 : 0} 쉰프레임${awayFrames}`);
