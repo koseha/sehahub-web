@@ -80,7 +80,7 @@
   // 공개 주소(sehahub.info)에서만 · 한 판에 한 번(표시는 저장(v1) 밖 따로 칸 · 판 씨앗으로 가림 → 새로고침 · 이어하기로 또 안 셈 · 「처음부터」면 다시 셈)
   // 사람을 알아볼 값 없음(아이디 · 쿠키 · 번호 0 · 경로만 다름) · 브라우저 캐시 안 탐 · 실패해도 조용히 · 기다리지 않음 · 파일은 화면 어디에서도 링크하지 않음.
   const COUNT_KEY = 'earth-clean/counted/v1';
-  const COUNT_FILE = { start: 'count/start.txt', city: 'count/city.txt', picture: 'count/picture.txt' };
+  const COUNT_FILE = { start: 'count/start.txt', city: 'count/city.txt', picture: 'count/picture.txt', end: 'count/end.txt' };
   const countHost = (h) => h === 'sehahub.info' || h === 'www.sehahub.info';
   EC.countHost = countHost;   // 확인용(주소를 넣어 참 · 거짓만 본다)
   const COUNT_ON = !TEST && !BOT && !navigator.webdriver && countHost(location.hostname);
@@ -860,7 +860,7 @@
         if (zt >= ZOOM_FLAG + ZOOM_SEC) finishZoom();
       } else if (G.mode === 'finale') {
         G.finale.t += rdt;
-        if (G.finale.t >= FINALE_SEC) { G.mode = 'end'; G.finale = null; if (G.pointer) hoverUpdate(G.pointer); }
+        if (G.finale.t >= FINALE_SEC) { G.mode = 'end'; G.finale = null; countOnce('end'); if (G.pointer) hoverUpdate(G.pointer); }   // 끝 카드에 닿음(다시 열어 끝 카드부터 뜰 때는 안 셈)
       }
     }
     if (G.fly && G.uiClock - G.fly.t0 > 0.3) G.fly = null;
