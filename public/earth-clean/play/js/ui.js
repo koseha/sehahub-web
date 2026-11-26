@@ -303,7 +303,7 @@
       }
     }
     for (const o of S.flashes) {
-      const k = o.k || 1, a = 1 - o.t / 0.35, r0 = (6 + o.t * 30) * k;   // k = 호스 불룩이가 클수록 크게 「통!」
+      const k = o.k || 1, a = 1 - o.t / 0.35, r0 = (6 + o.t * 30) * k;   // k = 호스 불룩이가 클수록 크게 「도착!」
       g.strokeStyle = PT; g.lineWidth = 1.6 * Math.min(2, k); g.globalAlpha = a; g.lineCap = 'round';
       const hx = L.hatchDir === 'right' ? wn.x + wn.w : (L.hatchIn || L.hatch).x, hy = L.hatchDir === 'right' ? L.hatch.y : wn.y;
       const base = L.hatchDir === 'right' ? 0.6 : 0.1;
