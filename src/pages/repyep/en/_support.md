@@ -20,14 +20,14 @@ In RepYep on the new iPhone, choose that file in **Settings › Move Records ›
 
 Yes. In **Settings › Move Records › Import from Another App**, choose a Strong- or Hevy-compatible CSV file.
 
-- Your current records stay as they are. It only adds.
-- Only weight-and-reps sets come in. Sets with only time or distance (cardio, planks and so on) are skipped.
+- Your current records stay as they are. The import only adds to them.
+- Only sets with weight and reps are imported. Sets with only time or distance (cardio, planks and so on) are skipped.
 - Imported workouts don't create check-in questions and aren't saved to Apple Health.
 - The file is read on your iPhone only. You don't need a subscription for this.
 
 ### I can't hear the rest beeps
 
-- Beeps play only through headphones (wired or Bluetooth) — even in silent mode, and without stopping your music.
+- Beeps play only through headphones, wired or Bluetooth. They play even in silent mode and won't stop your music.
 - Check that Beep is on in **Settings › Rest Sound**.
 - Some USB-C headphones aren't recognized as headphones.
 - If you swipe the app away during a rest, the sound stops. With Backup Alarm on, an alarm rings once when rest ends.
@@ -35,7 +35,7 @@ Yes. In **Settings › Move Records › Import from Another App**, choose a Stro
 
 ### I'm not getting notifications
 
-Allow notifications in **iPhone Settings › Notifications › RepYep**. RepYep's notifications are rest end, morning check-in, body photo, and three days before your free period or free trial ends. Morning check-in, body photo and the three-day reminders can also be turned on or off in the app's Settings.
+Allow notifications in **iPhone Settings › Notifications › RepYep**. RepYep sends notifications when rest ends, for the morning check-in and body photos, and three days before your free period or free trial ends. You can also turn the morning check-in, body photo and three-day reminders on or off in RepYep's Settings.
 
 ### How do I save to Apple Health?
 
@@ -43,7 +43,7 @@ In **Settings › Connections › Apple Health**, turn on Save Workouts to Healt
 
 - RepYep adds only finished workouts (as strength training, with start and end time) and the body weight you log. It never reads your Health data.
 - Records from before you turn this on aren't added. Edits or deletions in RepYep carry over to what RepYep saved.
-- If nothing is saved, turn it on in **Settings › Privacy & Security › Health › RepYep**.
+- If nothing gets saved, turn it on in **iPhone Settings › Privacy & Security › Health › RepYep**.
 
 ### How does the free period work?
 
@@ -53,7 +53,7 @@ After the free period, you'll need a subscription to log new workouts, check-ins
 
 ### Is the free trial different from the free period?
 
-Yes. The free period is the month the app counts. The free trial is something the App Store gives to new subscribers.
+Yes. The free period is your first month, tracked by the app itself. The free trial is offered by the App Store to new subscribers.
 
 - If the subscription screen shows a free trial, it starts the day you subscribe, and billing begins when it ends.
 - If you subscribe during your free period, the trial also starts that day and overlaps the rest of your free period.
@@ -65,15 +65,15 @@ There's a monthly and a yearly plan. Prices vary by country. The subscription sc
 
 ### How do I cancel?
 
-Go to **Settings › your name › Subscriptions**, choose RepYep and cancel. While subscribed, you can also open it from the app in **Settings › Subscription › Manage Subscription**. Apple's guide: [support.apple.com/en-us/118428](https://support.apple.com/en-us/118428)
+Go to **iPhone Settings › your name › Subscriptions**, choose RepYep, then cancel. While subscribed, you can also open it from the app in **Settings › Subscription › Manage Subscription**. Apple's guide: [support.apple.com/en-us/118428](https://support.apple.com/en-us/118428)
 
 - Your subscription renews automatically unless you cancel at least 24 hours before the next billing date.
 - After you cancel, you keep full access until the current period ends. Settings › Subscription shows the end date.
-- After that, only new records are locked. You can always view and export what you've logged.
+- After that, you can't add new records, but you can always view and export what you've logged.
 
 ### My subscription doesn't show up on a new iPhone or after reinstalling
 
-Sign in with the Apple Account you subscribed with, then tap **Settings › Subscription › Restore Purchases**. Restore Purchases is also at the bottom of the subscription screen. Your subscription belongs to your Apple Account, so it moves separately from your records.
+Sign in with the Apple Account you subscribed with, then tap **Settings › Subscription › Restore Purchases**. Restore Purchases is also at the bottom of the subscription screen. Your subscription is tied to your Apple Account, so it carries over separately from your records.
 
 ### How do I get a refund?
 
@@ -85,7 +85,7 @@ We can't see payment information, so we can't process refunds for you.
 
 You can delete workouts, body weight, body composition reports, body photos, plans, routines and exercises in the app.
 
-To delete everything, delete the app. All records and photos on this iPhone are erased, and this can't be undone. Export first if you want to keep them. Data saved to the Health app stays there.
+To delete everything, delete the app. All records and photos on your iPhone are erased, and this can't be undone. Export first if you want to keep them. Data saved to the Health app stays there.
 
 ### Does RepYep diagnose pain?
 
