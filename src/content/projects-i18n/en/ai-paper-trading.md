@@ -1,6 +1,6 @@
 ---
 title: "AI Paper Trading"
-summary: "A record of an experiment in which three AIs, given the same data and the same instructions, each manage a virtual fund. Two tracks, Korea and the US, plus day-trading bots you can watch, with trading costs built in."
+summary: "Three AIs get the same data and the same instructions, and each runs its own virtual fund. This is the log: a Korea track, a US track, and day-trading bots you can watch, with trading costs built in."
 period: "Jul 2026 – present"
 team: "Solo project"
 demos:
@@ -32,7 +32,7 @@ Each bot is a bundle of stock-selection criteria and trading rules. Three of the
 
 The bots run under the same rules in Korea and the US. In Korea a transaction tax applies when you sell; in the US it doesn't. How the same strategy plays out in each market becomes a direct comparison. A season lasts eight weeks, and a bot that loses half its starting capital is done for that season. Korea has been paused since October 21, 2026, and only the US is running now.
 
-## What I paid attention to
+## What I was careful about
 
 **Don't contaminate the decision sessions.** The side that makes decisions can reach only two things: the instructions and the input files. It isn't told what the other accounts bought, or even that changes in its own principles are being observed. If it knew, it would hold itself to consistency artificially.
 
