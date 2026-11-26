@@ -2,26 +2,37 @@
 // 프로젝트 상세(2026-11-20 새 틀) — 머리(돌아가기 · 제목 · 기간 · 팀 · 한 줄 · 링크 · 스택) → 스크린샷 줄 → 본문 → 다음 프로젝트.
 // 본문(핵심 도전 · 결정 · 구조 도식)은 예전에 정한 글이라 내용은 그대로 두고 겉모습만 바꿨다.
 // 제품은 여기 없다 — 각 팀 제품 사이트(/notmine/ · /repyep/) · 옛 /projects/notmine/ 은 /notmine/ 으로 넘긴다(astro.config).
-import { type CollectionEntry, getCollection } from "astro:content"
+// 한국어 = /projects/{slug}/ · 영어 · 일본어 = /en/ · /ja/ 아래(2026-11-26 · 번역이 있는 프로젝트만 · src/lib/content.ts)
+import { getCollection } from "astro:content"
 import { Image } from "astro:assets"
 import PageLayout from "@layouts/PageLayout.astro"
-import { getSortedEntries, isPublished } from "@lib/content"
+import { getSortedEntries, isPublished, localizeProjects, type ProjectView } from "@lib/content"
+import { LANGS, alternatesOf, langParam, localePath, ui, type Lang } from "@i18n"
 
 export async function getStaticPaths() {
   const projects = (await getCollection("projects")).filter(isPublished)
-  return projects.map((project) => ({ params: { slug: project.slug }, props: project }))
+  const byLang = await Promise.all(LANGS.map(async (lang) => ({ lang, views: await localizeProjects(lang, projects) })))
+  return byLang.flatMap(({ lang, views }) =>
+    views.map((view) => ({
+      params: { lang: langParam(lang), slug: view.slug },
+      // langs = 이 프로젝트가 있는 언어들(언어 버튼 · hreflang)
+      props: { lang, view, langs: byLang.filter((b) => b.views.some((v) => v.slug === view.slug)).map((b) => b.lang) },
+    }))
+  )
 }
 
-type Props = CollectionEntry<"projects">
-const entry = Astro.props
-const { title, summary, period, team, tags, demos = [], storeUrl, releasesUrl, repoUrl, images = [] } = entry.data
-const { Content } = await entry.render()
+type Props = { lang: Lang; view: ProjectView; langs: Lang[] }
+const { lang, view, langs } = Astro.props
+const { title, summary, period, team, demos, images } = view
+const { tags, storeUrl, releasesUrl, repoUrl } = view.entry.data
+const { Content } = await view.body.render()
+const t = ui[lang]
 
-const back = { href: "/projects/", label: "Projects" }
+const back = { href: localePath(lang, "/projects/"), label: "Projects" }
 
-// 다음 프로젝트
-const ring = await getSortedEntries("projects")
-const at = ring.findIndex((p) => p.slug === entry.slug)
+// 다음 프로젝트 — 같은 언어 쪽 안에서
+const ring = await localizeProjects(lang, await getSortedEntries("projects"))
+const at = ring.findIndex((p) => p.slug === view.slug)
 const next = ring.length > 1 ? ring[(at + 1) % ring.length] : null
 
 // 스크린샷 줄 — 높이를 고정하고 폭은 그림 비율대로(가로 · 세로 그림이 섞여도 높이가 같다)
@@ -33,7 +44,7 @@ const shotWidths = (m: ImageMetadata) => {
 const shotSizes = (m: ImageMetadata) => `calc(clamp(280px, 52svh, ${SHOT_H}px) * ${(m.width / m.height).toFixed(4)})`
 ---
 
-<PageLayout title={title} description={summary}>
+<PageLayout title={title} description={summary} lang={lang} alternates={alternatesOf(`/projects/${view.slug}/`, langs)}>
   <section class="pd-head">
     <a href={back.href} class="pd-back">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -50,20 +61,20 @@ const shotSizes = (m: ImageMetadata) => `calc(clamp(280px, 52svh, ${SHOT_H}px) *
       <div class="pd-links">
         {storeUrl && <a href={storeUrl} target="_blank" class="pd-btn is-main">App Store</a>}
         {demos.map((d) => <a href={d.url} target="_blank" class="pd-btn">{d.label}</a>)}
-        {releasesUrl && <a href={releasesUrl} class="pd-btn">업데이트 내역</a>}
-        {repoUrl && <a href={repoUrl} target="_blank" class="pd-btn">저장소</a>}
+        {releasesUrl && <a href={releasesUrl} class="pd-btn">{t.releases}</a>}
+        {repoUrl && <a href={repoUrl} target="_blank" class="pd-btn">{t.repo}</a>}
       </div>
     )}
 
     {tags.length > 0 && (
-      <ul class="pd-tags" aria-label="스택">
+      <ul class="pd-tags" aria-label={t.stack}>
         {tags.map((t) => <li>{t}</li>)}
       </ul>
     )}
   </section>
 
   {images.length > 0 && (
-    <div class="pd-shots" tabindex="0" role="region" aria-label="스크린샷">
+    <div class="pd-shots" tabindex="0" role="region" aria-label={t.screenshots}>
       {images.map((img, i) => (
         <figure class="pd-fig" data-reveal style={`--d:${i * 90}ms`}>
           <Image src={img.src} alt={img.caption} widths={shotWidths(img.src)} sizes={shotSizes(img.src)} class="pd-shot" loading={i < 3 ? "eager" : "lazy"} />
@@ -81,9 +92,9 @@ const shotSizes = (m: ImageMetadata) => `calc(clamp(280px, 52svh, ${SHOT_H}px) *
 
   {next && (
     <section class="pd-next">
-      <a href={`/projects/${next.slug}/`} class="pd-next-card">
+      <a href={localePath(lang, `/projects/${next.slug}/`)} class="pd-next-card">
         <span class="pd-next-label">Next</span>
-        <span class="pd-next-title">{next.data.title}</span>
+        <span class="pd-next-title">{next.title}</span>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
       </a>
     </section>

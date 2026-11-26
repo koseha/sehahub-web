@@ -131,6 +131,114 @@ main {
   display: block;
 }
 
+/* 언어 버튼(2026-11-26) — 해/달 버튼과 같은 동그라미 · 누르면 아래로 짧은 차림. 다른 언어 판이 있는 쪽(.has-lang)에만 있다 */
+.bar-lang {
+  position: relative;
+}
+.bar-lang > summary {
+  list-style: none;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  transition: background 0.2s, color 0.2s;
+}
+.bar-lang > summary::-webkit-details-marker {
+  display: none;
+}
+.bar-lang > summary:hover,
+.bar-lang[open] > summary {
+  background: color-mix(in srgb, var(--a) 14%, transparent);
+  color: var(--a);
+}
+.bar-lang > summary svg {
+  width: 22px;
+  height: 22px;
+}
+.bar-lang-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 140px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: 0 0 0 1px var(--line), 0 18px 40px -20px rgba(22, 24, 29, 0.4);
+}
+[data-theme="dark"] .bar-lang-menu {
+  box-shadow: 0 0 0 1px var(--line), 0 18px 40px -16px rgba(0, 0, 0, 0.75);
+}
+.bar-lang-menu a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+}
+.bar-lang-menu a:hover {
+  background: color-mix(in srgb, var(--a) 10%, transparent);
+}
+.bar-lang-menu a:hover,
+.bar-lang-menu a[aria-current="page"] {
+  color: var(--a);
+}
+.bar-lang-menu svg {
+  width: 16px;
+  height: 16px;
+}
+/* 차림 아래 밝음 · 어둠 두 칸 — 휴대폰에서만 보인다(아래 640). 지금 판에 코랄 바탕(스크립트 없이도 맞게 html 의 data-theme 로 고른다) */
+.bar-lang-theme {
+  display: none;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.bar-lang-theme button {
+  flex: 1;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--muted);
+  transition: background 0.2s, color 0.2s;
+}
+.bar-lang-theme button:hover {
+  color: var(--a);
+}
+:root:not([data-theme="dark"]) .bar-lang-theme [data-theme-set="light"],
+[data-theme="dark"] .bar-lang-theme [data-theme-set="dark"] {
+  background: color-mix(in srgb, var(--a) 14%, transparent);
+  color: var(--a);
+}
+.bar-lang-menu .bar-lang-theme svg {
+  width: 20px;
+  height: 20px;
+}
+/* 휴대폰(≤640 · 대표 11/26 「웹에서는 전부 보여줘도 됨. 모바일에서는 C로」) — 머리는 넷까지.
+   메일은 어느 쪽에서나 숨는다(연락처는 바닥에 있다). 언어 단추가 있는 쪽은 해/달 단추도 숨고 그 차림 안 두 칸으로 바꾼다.
+   언어 단추가 없는 쪽(팀 방침 · 지원)은 sehahub · Products · Projects · 해/달. 640 보다 넓으면 모두 보인다 */
+@media (max-width: 640px) {
+  .bar-mail,
+  .bar.has-lang .bar-theme {
+    display: none;
+  }
+  .bar-lang-theme {
+    display: flex;
+  }
+}
+
+/* 일본어 쪽 — 글꼴(Wanted Sans 한글판)에 가나 · 한자가 없다. 그 글자만 기기의 일본어 글꼴로 */
+html:lang(ja) {
+  font-family: "Wanted Sans Variable", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, "Noto Sans JP", system-ui, sans-serif;
+}
+
 /* 바닥 */
 .foot {
   display: flex;

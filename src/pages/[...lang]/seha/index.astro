@@ -1,10 +1,19 @@
 ---
 // seha — 만든 사람의 이력(2026-11-20 대표 「전자」 = 이력서 · 프로필 링크로 찾아오는 사람용).
 // 메뉴에 두지 않는다 · 옛 /work/ 는 여기로 넘긴다(astro.config redirects) · 새 문구를 넣지 않는다(그룹 지식 §2).
+// 한국어 = /seha/ · 영어 = /en/seha/ · 일본어 = /ja/seha/(2026-11-26) — 경력 글의 번역 = src/content/work-i18n/{lang}/
 import { getCollection } from "astro:content"
 import PageLayout from "@layouts/PageLayout.astro"
 import TopLayout from "@layouts/TopLayout.astro"
 import BottomLayout from "@layouts/BottomLayout.astro"
+import { LANGS, alternatesOf, langParam, ui, type Lang } from "@i18n"
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang: langParam(lang) }, props: { lang } }))
+}
+
+const { lang } = Astro.props as { lang: Lang }
+const t = ui[lang]
 
 // 대표 스택 큐레이션 — 2026-11-20 옛 홈에서 여기로 옮겼다(홈의 주인공이 sehahub 제품으로 바뀜).
 // 프로젝트 tags·work stack의 파생이 아니다. 선발과 표시는 다른 축을 쓴다.
@@ -22,39 +31,47 @@ import BottomLayout from "@layouts/BottomLayout.astro"
 // 이 주석이 규칙 정본이다. secretary 계획 파일에는 결정 이력만 둔다.
 const stack = [
   // 현업 — 경력 stack 단독 근거(익명 처리된 자기 신고). 축: 언어1·백엔드1·데이터1·인프라2
-  { label: "현업", items: ["Kotlin", "Spring Boot", "MariaDB", "Docker", "AWS"] },
+  { label: t.skillsJob, items: ["Kotlin", "Spring Boot", "MariaDB", "Docker", "AWS"] },
   // 작업물 — 프로젝트 tags 근거. 축: 언어2·백엔드1·데이터2·프론트2·모바일1·인프라2
-  { label: "작업물", items: ["TypeScript", "Python", "NestJS", "PostgreSQL", "Supabase", "React", "Refine", "Flutter", "GitHub Actions", "Cloudflare"] },
+  { label: t.skillsWork, items: ["TypeScript", "Python", "NestJS", "PostgreSQL", "Supabase", "React", "Refine", "Flutter", "GitHub Actions", "Cloudflare"] },
 ]
 
 const collection = await getCollection("work")
 collection.sort((a, b) => new Date(b.data.dateStart).getTime() - new Date(a.data.dateStart).getTime())
+// 영어 · 일본어 — 번역(회사 · 역할 · 「현재」 · 본문)이 있으면 그것, 없으면 한국어 그대로 두고 lang="ko" 를 단다
+const translations = lang === "ko" ? [] : await getCollection("work-i18n", (x) => x.slug.startsWith(`${lang}/`))
 const work = await Promise.all(
   collection.map(async (item) => {
-    const { Content } = await item.render()
-    return { ...item, Content }
+    const tr = translations.find((x) => x.slug === `${lang}/${item.slug}`)
+    const { Content } = await (tr ?? item).render()
+    const data = tr ? { ...item.data, company: tr.data.company, role: tr.data.role, dateEnd: tr.data.dateEnd ?? item.data.dateEnd } : item.data
+    return { ...item, data, Content, textLang: lang !== "ko" && !tr ? "ko" : undefined }
   })
 )
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const RANGE: Record<Lang, string> = { ko: " ~ ", en: " – ", ja: "〜" }
 function formatWorkDate(input: Date | string) {
   if (typeof input === "string") return input
   const year = input.getFullYear()
+  if (lang === "en") return `${MONTHS[input.getMonth()]} ${year}`
+  if (lang === "ja") return `${year}年${input.getMonth() + 1}月`
   const month = String(input.getMonth() + 1).padStart(2, "0")
   return `${year}.${month}`
 }
 ---
 
-<PageLayout title="seha" description="seha">
+<PageLayout title="seha" description="seha" lang={lang} alternates={alternatesOf("/seha/")}>
   <TopLayout>
     <h1 class="page-heading text-3xl">seha</h1>
     <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-      <li><a href="https://github.com/koseha" target="_blank" class="underline underline-offset-2 hover:text-[var(--a)]">GitHub · koseha</a></li>
+      <li><a href="https://github.com/koseha" target="_blank" class="underline underline-offset-2 hover:text-[var(--a)]">{t.github}</a></li>
       <li><a href="mailto:contact@sehahub.info" class="underline underline-offset-2 hover:text-[var(--a)]">contact@sehahub.info</a></li>
     </ul>
   </TopLayout>
   <BottomLayout>
     <section class="mb-14">
-      <p class="font-semibold">주로 다루는 기술</p>
+      <p class="font-semibold">{t.skills}</p>
       <div class="mt-4 space-y-3">
         {stack.map((group) => (
           <div>
@@ -71,9 +88,9 @@ function formatWorkDate(input: Date | string) {
 
     <ul>
       {work.map((entry) => (
-        <li class="border-t border-black/10 dark:border-white/10 py-8">
+        <li class="border-t border-black/10 dark:border-white/10 py-8" lang={entry.textLang}>
           <div class="text-sm uppercase mb-4">
-            {formatWorkDate(entry.data.dateStart)} ~ {formatWorkDate(entry.data.dateEnd)}
+            {formatWorkDate(entry.data.dateStart)}{RANGE[lang]}{formatWorkDate(entry.data.dateEnd)}
           </div>
           <div class="font-semibold">{entry.data.company}</div>
           <div class="text-sm font-semibold">{entry.data.role}</div>

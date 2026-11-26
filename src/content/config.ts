@@ -46,4 +46,26 @@ const projects = defineCollection({
     }),
 })
 
-export const collections = { work, blog, projects }
+// 영어 · 일본어 판(2026-11-26) — 파일 = {lang}/{한국어 항목 이름}.md · 글만 둔다(사실은 한국어 항목에서 · src/lib/content.ts)
+const projectsI18n = defineCollection({
+  type: "content",
+  schema: z.object({
+    title: z.string(),
+    summary: z.string(),
+    period: z.string().optional(),
+    team: z.string().optional(),
+    demos: z.array(z.string()).optional(), // 데모 버튼 이름 — 한국어 항목 demos 와 같은 차례
+    captions: z.array(z.string()).optional(), // 그림 설명 — 한국어 항목 images 와 같은 차례
+  }),
+})
+
+const workI18n = defineCollection({
+  type: "content",
+  schema: z.object({
+    company: z.string(),
+    role: z.string(),
+    dateEnd: z.string().optional(), // 한국어 항목 dateEnd 가 글(「현재」)일 때만
+  }),
+})
+
+export const collections = { work, blog, projects, "projects-i18n": projectsI18n, "work-i18n": workI18n }
