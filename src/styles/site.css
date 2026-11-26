@@ -192,24 +192,45 @@ main {
   width: 16px;
   height: 16px;
 }
-/* 휴대폰 — 버튼이 하나 늘어난 만큼 링크 옆 여백과 버튼 폭을 줄인다(390 에서 sehahub 이름과 붙지 않게 · 360 에서 넘치지 않게) */
-@media (max-width: 440px) {
-  .bar.has-lang .bar-link {
-    padding-inline: 8px;
-  }
-  .bar.has-lang :is(.bar-theme, .bar-mail, .bar-lang > summary) {
-    width: 36px;
-  }
+/* 차림 아래 밝음 · 어둠 두 칸 — 휴대폰에서만 보인다(아래 640). 지금 판에 코랄 바탕(스크립트 없이도 맞게 html 의 data-theme 로 고른다) */
+.bar-lang-theme {
+  display: none;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
 }
-@media (max-width: 380px) {
-  .bar.has-lang {
-    gap: 2px;
+.bar-lang-theme button {
+  flex: 1;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--muted);
+  transition: background 0.2s, color 0.2s;
+}
+.bar-lang-theme button:hover {
+  color: var(--a);
+}
+:root:not([data-theme="dark"]) .bar-lang-theme [data-theme-set="light"],
+[data-theme="dark"] .bar-lang-theme [data-theme-set="dark"] {
+  background: color-mix(in srgb, var(--a) 14%, transparent);
+  color: var(--a);
+}
+.bar-lang-menu .bar-lang-theme svg {
+  width: 20px;
+  height: 20px;
+}
+/* 휴대폰(≤640 · 대표 11/26 「웹에서는 전부 보여줘도 됨. 모바일에서는 C로」) — 머리는 넷까지.
+   메일은 어느 쪽에서나 숨는다(연락처는 바닥에 있다). 언어 단추가 있는 쪽은 해/달 단추도 숨고 그 차림 안 두 칸으로 바꾼다.
+   언어 단추가 없는 쪽(팀 방침 · 지원)은 sehahub · Products · Projects · 해/달. 640 보다 넓으면 모두 보인다 */
+@media (max-width: 640px) {
+  .bar-mail,
+  .bar.has-lang .bar-theme {
+    display: none;
   }
-  .bar.has-lang .bar-link {
-    padding-inline: 6px;
-  }
-  .bar.has-lang :is(.bar-theme, .bar-mail, .bar-lang > summary) {
-    width: 34px;
+  .bar-lang-theme {
+    display: flex;
   }
 }
 
