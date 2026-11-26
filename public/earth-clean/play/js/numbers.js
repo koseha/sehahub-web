@@ -216,17 +216,20 @@
     return null;
   }
   // 다음 카드까지 얼마나 찼나(0~1 · 화면 표시용 · 규칙은 위 nextChoice 그대로) — null 이면 표시하지 않는다(내 방 · 판 끝 무렵 미룸)
+  // 문턱을 넘어도 「카드 사이 최소 30초」가 안 지났으면 카드가 안 뜬다 → 막대도 그 30초에 맞춰 찬다(꽉 차면 곧 뜬다 · 대표 화면 기록 11/26 「꽉 찬 채 오래 멈춤」)
   function choiceProgress(state) {
     var S = STAGES[state.stage];
     if (!S.small.length) return null;
     if (state.left < BASE.choiceHoldTail * S.people) return null;
-    if (state.smallDue > 0 || state.bigDue > 0) return 1;
+    var since = state.playSec - state.lastChoiceAt;
     var p = 0;
-    if (state.smallIdx < S.small.length) {
+    if (state.smallDue > 0 || state.bigDue > 0) p = 1;
+    else if (state.smallIdx < S.small.length) {
       var done = S.people - state.left, a = state.smallIdx > 0 ? S.small[state.smallIdx - 1] : 0;
       p = (done - a) / (S.small[state.smallIdx] - a);
     }
-    if (state.stage > 0) p = Math.max(p, (state.playSec - state.lastChoiceAt) / BASE.choiceMaxGap);
+    if (state.stage > 0) p = Math.max(p, since / BASE.choiceMaxGap);
+    p = Math.min(p, since / BASE.choiceMinGap);
     return Math.max(0, Math.min(1, p));
   }
   // 선택창을 연다 — 카드 셋을 뽑고, 기다리던 몫을 하나 줄이고, 연 때를 적는다

@@ -20,6 +20,9 @@
   const SPIN_R = 70;             // 혼자서도 빙글 — 도는 고리 반지름
   const TRAIL_K = 3;             // 꼬리바람 — 꼬리 길이(초) = (꼬리 배수 − 1) × 이것
   const CELL = 48;
+  // 둥글게 손잡고 도는 무리(world.js) — 판마다 [가장 적게, 가장 많이, 화면에 몇 무리] · 숫자 규칙 아님(사람 수는 그대로 · 이미 있는 사람 그림을 모은다)
+  const RING_CFG = [null, [10, 16, 2], [16, 30, 3]];
+  const RING_OPEN = 0.42;        // 흡입구가 닿으면 무리가 줄줄이 풀려 날아가기 시작하는 데 걸리는 시간(초)
   const INK = A.INK, PT = A.PT, KO = A.KO;
 
   const cv = document.getElementById('c'), ctx = cv.getContext('2d');
@@ -27,7 +30,7 @@
     L: null, RS: 1, cssScale: 1, clock: 0, uiClock: 0, frames: 0, stamp: 0,
     run: null, st: null, world: null, crowd: [], mode: 'play', menu: null, ended: false,
     choice: null, fly: null, zoom: null, finale: null, pendingChoice: null, endInfo: null,
-    noz: { x: 0, y: 0, r: 30, spin: false, sa: 0, scx: 0, scy: 0, sr: 0, dirx: 1, diry: 0 },
+    noz: { x: 0, y: 0, r: 30, spin: false, sa: 0, scx: 0, scy: 0, sr: 0, dirx: 1, diry: 0, vel: 0 },
     twin: { x: 0, y: 0, r: 0 }, robots: [], walkers: [], tail: [], tailClock: 0,
     hand: { x: 0, y: 0, has: false, pending: false, lastMove: -99 },
     bot: { tx: 0, ty: 0, re: 0 },
@@ -36,6 +39,10 @@
     riders: [], pops: [], hearts: [], confetti: [], calls: [],
     pickOrder: [], ctrDigits: { s: '', t: [] }, toast: null, hint: true, stageDone: false,
     lastCheer: 0, cheerSide: 1, lastFriendPop: 0,
+    // 손맛(대표 11/26 「사용자 동작 피드백이 시원시원하게」) — 전부 화면 연출 · 숫자 규칙 아님
+    rings: [], ringWait: 1.5,
+    combo: { n: 0, figs: 0, age: 0, idle: 0, ring: false }, floats: [], bumps: [], waves: [],
+    nozFlare: 0, burstPop: 0, burstFx: null, burstEndAt: -9, burstFrame: 0, cheerUntil: -9, ctrKick: 0, guestKick: 0, shake: 0,
   };
   let grid = [], gridW = 1, gridH = 1;
   const arrivedBuf = [];
@@ -67,6 +74,27 @@
   function bestGet() { try { return Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { return 0; } }
   function bestSet(v) { try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) { /* 무시 */ } }
 
+  // ---------- 셈 표시 셋(제품 그룹장 부탁 11/26 · 팀 todo.md 「그룹장 기입 · 11/26」) ----------
+  // 세 순간에 사이트의 작은 정적 파일 하나씩을 부른다 → 대표가 Cloudflare 도메인 Analytics 에서 경로로 걸러 요청 수를 읽는다.
+  //   start = 새 판에서 사람이 첫 손을 댔을 때 · city = 첫 도시에 들어섰을 때 · picture = 끝 카드 「그림으로 저장」을 눌렀을 때
+  // 공개 주소(sehahub.info)에서만 · 한 판에 한 번(표시는 저장(v1) 밖 따로 칸 · 판 씨앗으로 가림 → 새로고침 · 이어하기로 또 안 셈 · 「처음부터」면 다시 셈)
+  // 사람을 알아볼 값 없음(아이디 · 쿠키 · 번호 0 · 경로만 다름) · 브라우저 캐시 안 탐 · 실패해도 조용히 · 기다리지 않음 · 파일은 화면 어디에서도 링크하지 않음.
+  const COUNT_KEY = 'earth-clean/counted/v1';
+  const COUNT_FILE = { start: 'count/start.txt', city: 'count/city.txt', picture: 'count/picture.txt' };
+  const countHost = (h) => h === 'sehahub.info' || h === 'www.sehahub.info';
+  EC.countHost = countHost;   // 확인용(주소를 넣어 참 · 거짓만 본다)
+  const COUNT_ON = !TEST && !BOT && !navigator.webdriver && countHost(location.hostname);
+  function countOnce(what) {
+    if (!COUNT_ON || !G.run) return;
+    let m = null;
+    try { m = JSON.parse(localStorage.getItem(COUNT_KEY) || 'null'); } catch (e) { m = null; }
+    if (!m || m.seed !== G.run.seed) m = { seed: G.run.seed };
+    if (m[what]) return;
+    m[what] = 1;
+    try { localStorage.setItem(COUNT_KEY, JSON.stringify(m)); } catch (e) { /* 저장이 막힌 브라우저 — 그래도 한 번은 셈 */ }
+    try { fetch(COUNT_FILE[what], { cache: 'no-store' }).catch(() => {}); } catch (e) { /* 조용히 */ }
+  }
+
   // ---------- 시작 · 처음부터 ----------
   function startRun(saved) {
     G.run = saved ? saved.run : N.newRun((Date.now() ^ (Math.random() * 1e9)) >>> 0);
@@ -77,6 +105,8 @@
     G.mode = 'play'; G.menu = null; G.choice = null; G.fly = null; G.zoom = null; G.finale = null; G.pendingChoice = null;
     G.ended = false; G.endInfo = null; G.stageDone = false;
     G.riders = []; G.pops = []; G.hearts = []; G.confetti = []; G.calls = []; G.tail = []; G.robots = []; G.walkers = [];
+    G.floats = []; G.bumps = []; G.waves = []; G.burstFx = null; G.burstFrame = 0; G.burstEndAt = -9; G.ringWait = 1.5;
+    G.combo = { n: 0, figs: 0, age: 0, idle: 0, ring: false };
     G.stn.guests = []; G.stn.bubble = null; G.stn.banner = null; G.stn.rooms = []; G.stn.room = null;
     G.shownEarth = G.run.earth; G.rate = 0; G.secAt = Math.floor(G.run.playSec); G.secN = 0;
     G.hint = G.run.stage === 0 && G.run.guests === 0;
@@ -108,6 +138,7 @@
   function buildStage() {
     G.world = Wd.make(G.run.stage, G.L, (G.run.seed + G.run.stage * 101) >>> 0);
     G.crowd = Wd.initCrowd(G.world, targetCount(), Math.random);
+    G.rings = [];
     buildArt();
   }
   function buildBg(world) {
@@ -126,6 +157,7 @@
     const RS = G.RS;
     G.bg = buildBg(G.world);
     G.strip = U.stripArt(G.L, RS);
+    G.digits = U.digitArt(G.L, RS);
     const UR = RS * (G.L.ui ? G.L.ui.k : 1);   // 휴대폰 아래 칸은 키워 그리므로 그만큼 촘촘히 만든다
     G.roomArt = U.roomArt(G.L, UR);
     G.spr = A.sprites(figScale(G.run.stage), RS);
@@ -182,6 +214,7 @@
     const off = type === 'touch' ? 40 / G.cssScale : 0;   // 휴대폰 = 손가락 40px 위
     [G.hand.x, G.hand.y] = clampMap(p.x, p.y - off);
     G.hand.has = true; G.hand.pending = true;
+    if (G.run.stage === 0 && G.run.guests === 0 && G.mode === 'play') countOnce('start');   // 새 판 · 첫 손
   }
   cv.addEventListener('pointermove', (e) => {
     const p = toStage(e);
@@ -333,11 +366,13 @@
       if (h.has) { tx = h.x; ty = h.y; }
     }
     const dx = tx - n.x, dy = ty - n.y, d = Math.hypot(dx, dy);
+    let moved = 0;
     if (d > 0.01) {
       const s = Math.min(d, vmax * dt);
-      n.x += dx / d * s; n.y += dy / d * s;
+      n.x += dx / d * s; n.y += dy / d * s; moved = s;
       if (s > 0.3) { const k = 1 - Math.exp(-dt * 6); n.dirx += (dx / d - n.dirx) * k; n.diry += (dy / d - n.diry) * k; }
     }
+    n.vel += (moved / dt - n.vel) * (1 - Math.exp(-dt * 12));   // 꼬리 바람 줄(빨리 움직일 때만 · 그림만)
     [n.x, n.y] = clampMap(n.x, n.y);
     n.r = z.r;
     // 쌍둥이 — 손 옆을 따라다닌다
@@ -389,9 +424,39 @@
   }
 
   // ---------- 모시기 ----------
+  // 흡입구(쌍둥이 · 꼬리바람 포함)가 무리 한 명에 닿으면 무리 전체가 줄줄이 날아온다. 로봇 · 산책 손님이 닿으면 그 한 명만.
   function fly(p, c) {
-    p.st = 3; p.by = c; p.vel = 120; p.ft = 0; p.rot = 0; p.sc = 1;
-    p.sd = Math.random() < 0.5 ? -1 : 1; p.spin = p.sd * (4 + Math.random() * 3);
+    const R = p.ring;
+    if (R && R.state !== 'release') {
+      if (c === G.noz || c === G.twin) { releaseRing(R, c, p); return; }
+      Wd.leaveRing(R, p);
+      if (R.members.length < 5) Wd.dissolveRing(G.world, R, Math.random);
+    }
+    welcomeFly(p, c, R && R.state === 'release' ? R : null);
+  }
+  function releaseRing(R, c, p0) {
+    R.state = 'release'; R.by = c; R.rt = 0; R.dir = Math.random() < 0.5 ? -1 : 1;
+    const n = R.n, i0 = p0.slot;
+    // 닿은 사람에서부터 양쪽으로 번갈아 — 원이 그 자리에서 풀린다
+    const rest = R.members.filter((q) => q !== p0).map((q) => {
+      const d = Math.abs(q.slot - i0), e = Math.min(d, n - d);
+      return [e + ((q.slot - i0 + n) % n < n / 2 ? 0 : 0.5), q];
+    });
+    rest.sort((a, b) => a[0] - b[0]);
+    const gap = Math.min(0.035, RING_OPEN / Math.max(1, rest.length));
+    R.queue = rest.map((q, k) => ({ p: q[1], at: (k + 1) * gap }));
+    const figs = R.members.length;
+    G.combo.ring = true;
+    G.nozFlare = 1; G.shake = Math.max(G.shake, 0.45);
+    G.waves.push({ x: R.x, y: R.y, t: 0, dur: 0.45, max: R.rx * 1.7, lw: 7, ratio: 0.62 });
+    EC.sound.ring(figs);
+    welcomeFly(p0, c, R);
+  }
+  function welcomeFly(p, c, R) {
+    if (R) { const i = R.members.indexOf(p); if (i >= 0) R.members.splice(i, 1); }
+    p.ring = null;
+    p.st = 3; p.by = c; p.vel = R ? 320 : 120; p.ft = 0; p.rot = 0; p.sc = 1;
+    p.sd = R ? R.dir : Math.random() < 0.5 ? -1 : 1; p.spin = p.sd * (4 + Math.random() * 3);
     EC.sound.take();
     if (G.run.left <= perEff() * 1.01 + 1e-6) pop('나도!', p.x - 14, p.y - 30, true);
     if (G.clock - G.lastCheer > 0.6 && c === G.noz) {
@@ -405,6 +470,7 @@
     const heartP = 0.1 + 0.05 * (G.run.picks.pull || 0) + (G.run.picks.window ? 0.08 : 0);
     query(n.x, n.y, z.ring, (p, d2) => {
       if (d2 < r2) { fly(p, n); return; }
+      if (p.ring) return;   // 무리는 노느라 걸어오지 않는다 — 흡입구가 직접 닿아야 한다
       if (p.cool > 0 && !z.lc) return;
       if (p.exc < stamp - 1 && Math.random() < heartP && G.hearts.length < 40) G.hearts.push({ x: p.x, y: p.y - G.spr.h - 4, t: 0 });
       p.exc = stamp; p.by = n;
@@ -423,19 +489,97 @@
     const took = G.run.guests - before;
     G.secN += took; G.rateAcc = (G.rateAcc || 0) + took;
     G.hint = false;
+    if (p.by === G.noz || p.by === G.twin) noteWelcome(took);
     if (G.run.picks.friend && G.clock - G.lastFriendPop > 7 && Math.random() < 0.05) { G.lastFriendPop = G.clock; pop('친구도!', G.noz.x + 20, G.noz.y - 60); }
     for (const e of w.events) {
       if (e.type === 'clear') { startZoom(); return; }
       if (e.type === 'end') { startFinale(); return; }
     }
   }
+  // 흡입구가 한 사람을 모셨다 — 벌름 · 호스 불룩 · 「+N명」 모음
+  function noteWelcome(took) {
+    const c = G.combo;
+    if (!c.figs) c.age = 0;
+    c.n += took; c.figs++; c.idle = 0;
+    G.nozFlare = Math.min(1, G.nozFlare + 0.22);
+    const last = G.bumps[G.bumps.length - 1];
+    if (last && last.t < (c.ring ? 0.3 : 0.08)) { last.figs++; last.ring = last.ring || c.ring; }
+    else if (G.bumps.length < 16) G.bumps.push({ t: 0, figs: 1, ring: c.ring });
+  }
+  function endCombo() {
+    const c = G.combo;
+    if (c.figs >= 4 || c.ring) {
+      const f = plusAt(c);
+      f.t = 0; G.floats.push(f);
+      G.ctrKick = Math.max(G.ctrKick, c.ring ? 1 : Math.min(1, c.figs / 40));
+    }
+    c.n = 0; c.figs = 0; c.age = 0; c.idle = 0; c.ring = false;
+  }
+  // 「+N명」 글자 크기 · 자리(흡입구 머리 옆 · 오른쪽 끝이면 왼쪽에)
+  function plusAt(c) {
+    const n = G.noz, s = nozScale(n.r), M = G.L.map, P = G.L.portrait;
+    const size = Math.round(((P ? 18 : 15) + 3 * Math.log10(Math.max(1, c.n)) + Math.min(8, c.figs * 0.15)) * (c.ring ? 1.35 : 1));
+    const right = n.x < M.x + M.w * 0.62;
+    return { s: `+${U.fmt(c.n)}명${c.ring ? '!' : ''}`, size, hot: c.ring, x: n.x + (right ? 1 : -1) * (30 * s + 10), y: n.y - 50 * s, align: right ? 'left' : 'right' };
+  }
+  // 호스 불룩이가 정거장 입구에 닿았다 — 통!
+  function bumpArrive(b) {
+    const k = Math.min(1, Math.sqrt(b.figs) / 6);
+    G.stn.flashes.push({ t: 0, k: 1 + k * 1.6 });
+    if (b.figs >= 3) G.guestKick = Math.max(G.guestKick, 0.25 + 0.75 * k);
+    if (b.ring || k >= 0.9) {
+      const h = G.L.hatch;
+      pop('통!', G.L.hatchDir === 'right' ? h.x + 8 : h.x + 16, h.y - 14, true);
+      EC.sound.plop(k);
+    }
+  }
   function refill() {
     const need = targetCount() - G.crowd.length;
     for (let i = 0; i < need && i < 80; i++) { const p = Wd.spawn(G.world, Math.random); if (p) G.crowd.push(p); }
   }
+  // 무리 — 날아가는 차례를 넘기고 · 모자라면 새로 모인다(판 끝 「나도!」 무렵에는 새로 안 모인다)
+  function manageRings(dt, z) {
+    for (const R of G.rings) if (R.state === 'release') {
+      R.rt += dt;
+      while (R.queue.length && R.queue[0].at <= R.rt) { const p = R.queue.shift().p; if (p.ring === R && p.st === 4) welcomeFly(p, R.by, R); }
+    }
+    if (G.rings.length && finalRun()) for (const R of G.rings) if (R.state !== 'release') Wd.dissolveRing(G.world, R, Math.random);   // 판 끝 — 무리도 풀고 달려온다
+    if (G.rings.length) G.rings = G.rings.filter((R) => R.state !== 'done' && R.members.length);
+    const cfg = RING_CFG[G.run.stage];
+    if (!cfg || G.stageDone) return;
+    G.ringWait -= dt;
+    if (G.ringWait > 0 || G.rings.length >= cfg[2] || z.lc) return;
+    const n = G.noz, L = G.L, avoid = [{ x: n.x, y: n.y, r: z.ring + 90 }];
+    for (const R of G.rings) avoid.push({ x: R.x, y: R.y, r: R.rx + 24 });
+    const R = Wd.formRing(G.world, G.crowd, { R: Math.random, n0: cfg[0], n1: cfg[1], sp: 12 * G.spr.scale, avoid, keep: { x: n.x, y: n.y, r: z.ring + 120 },
+      minY: L.gauge.y + 22 + G.spr.h, stamp: G.stamp, reach: 240, v: 42, life: 28 + Math.random() * 14 });
+    G.ringWait = R ? 1 + Math.random() * 1.5 : 0.6;
+    if (R) G.rings.push(R);
+  }
   function onTickEvent(e) {
-    if (e.type === 'burstStart') { pop('신바람!', G.noz.x - 30, G.noz.y - 70, true); EC.sound.burst(); }
-    if (e.type === 'burstEnd' && G.st.gaugeAfter > 0) pop('한 번 더!', G.noz.x - 30, G.noz.y - 70, true);
+    if (e.type === 'burstStart') burstStart();
+    if (e.type === 'burstEnd') {
+      G.burstEndAt = G.clock;
+      EC.sound.burstEnd();
+      if (G.st.gaugeAfter > 0) pop('한 번 더!', G.noz.x - 30, G.noz.y - 70, true);
+    }
+  }
+  // 신바람이 터진다 — 화면 전체에서 느껴지게(대표 11/26 「신바람이 있는지도 모르겠다」) · 무음이어도 보이게
+  function burstStart() {
+    EC.sound.burst();
+    const n = G.noz;
+    G.burstFx = { t: 0 }; G.burstPop = 1; G.shake = 1; G.cheerUntil = G.clock + 1.4;
+    G.waves.push({ x: n.x, y: n.y, t: 0, dur: 0.75, max: 900, lw: 14, ratio: 0.92 }, { x: n.x, y: n.y, t: -0.14, dur: 0.75, max: 650, lw: 8, ratio: 0.92 });
+    for (let i = 0; i < 44; i++) {
+      const a = Math.random() * 6.283, v = 220 + Math.random() * 420;
+      G.confetti.push({ x: n.x, y: n.y - 20, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 180, r: Math.random() * 6, vr: (Math.random() - 0.5) * 14, t: 0, g: 520, drag: 1.6, life: 1.7, white: Math.random() < 0.35 });
+    }
+    // 멀리서도 「와아~」
+    let k = 0;
+    for (let i = 0; i < 40 && k < 5 && G.crowd.length; i++) {
+      const p = G.crowd[(Math.random() * G.crowd.length) | 0];
+      if (p.st !== 3 && Math.hypot(p.x - n.x, p.y - n.y) > 140 && p.y > G.L.gauge.y + 30) { pop('와아~', p.x - 16, p.y - G.spr.h - 6); k++; }
+    }
   }
   const PHASE_MUL = [
     { plaza: 0.6, park: 0.3, market: 0.4, shop: 1, av: 2.5 },
@@ -449,10 +593,15 @@
     const p = 1 - G.run.left / N.STAGES[2].people;
     return p < 0.18 ? 0 : p < 0.5 ? 1 : p < 0.82 ? 2 : 3;
   }
-  const cx = { dt: 0, stamp: 0, walkIn: B.walkIn, R: Math.random, spotMul: () => 1, avMul: 1 };
+  const cx = { dt: 0, stamp: 0, walkIn: B.walkIn, R: Math.random, spotMul: () => 1, avMul: 1, rings: null, home: null };
+  // 판 끝 — 사람 그림이 이만큼만 남으면 다들 「나도!」 하며 흡입구로 달려온다(대표 화면 기록 11/26 「동네 마지막 2명 찾는 데 8초」 · 그림만 · 사람 수 규칙 그대로)
+  const FINAL_N = 10;
+  const finalRun = () => G.mode === 'play' && G.run.stage > 0 && G.run.left > 0 && targetCount() <= FINAL_N;
   function crowdCtx(dt) {
     const ph = phase();
     cx.dt = dt; cx.stamp = G.stamp; cx.lastCall = G.run.stage > 0 && N.lastCall(G.st, G.run.stage, G.run.left);
+    cx.rings = G.rings;
+    cx.home = finalRun() ? G.noz : null;
     cx.spotMul = ph < 0 ? () => 1 : (k) => (PHASE_MUL[ph][k] !== undefined ? PHASE_MUL[ph][k] : 1);
     cx.avMul = ph < 0 ? 1 : PHASE_MUL[ph].av;
     return cx;
@@ -474,6 +623,7 @@
     syncRobots(false);
     moveBots(G.robots, dt, z.rr, z.rv);
     moveBots(G.walkers, dt, z.rr * Math.sqrt(B.walkerShare), z.rv * Math.sqrt(B.walkerShare));
+    manageRings(dt, z);
     catchAll(z);
     arrivedBuf.length = 0;
     Wd.step(G.world, G.crowd, crowdCtx(dt), arrivedBuf);
@@ -531,10 +681,11 @@
     const label = G.run.stage === 0 ? `내 방 친구 ${U.fmt(S.people)}명 모두 도착!` : `${S.name} 사람 ${U.fmt(S.people)}명 모두 도착!`;
     G.stn.banner = { s: label, t: 0 };
     for (const p of G.crowd) addRider(p.v, G.noz);
-    G.crowd = [];
+    G.crowd = []; G.rings = [];
     G.mode = 'zoom';
     G.zoom = { t: 0, snap: G.bg[0], switched: false };
     G.run = N.nextStage(G.run);
+    if (G.run.stage === 2) countOnce('city');   // 첫 도시에 들어섬
     const o = N.openChoice(G.run, 'big', offerRand());
     G.run = o.state;
     G.pendingChoice = o.ids.length ? { tier: 'big', ids: o.ids } : null;
@@ -547,7 +698,7 @@
   function switchWorld() {
     G.zoom.switched = true;
     G.world = G.nextWorld; G.nextWorld = null;
-    G.crowd = Wd.initCrowd(G.world, targetCount(), Math.random);
+    G.crowd = Wd.initCrowd(G.world, targetCount(), Math.random); G.rings = [];
     G.bg = buildBg(G.world);
     G.spr = A.sprites(figScale(G.run.stage), G.RS);
   }
@@ -562,7 +713,7 @@
     G.stageDone = true;
     EC.sound.finale();
     for (const p of G.crowd) addRider(p.v, G.noz);
-    G.crowd = [];
+    G.crowd = []; G.rings = [];
     G.mode = 'finale'; G.finale = { t: 0 };
     G.ended = true;
     G.maxSec = Math.max(G.maxSec, G.secN);
@@ -597,7 +748,7 @@
       y: quiet ? wn.y + 50 + Math.random() * (wn.h - 70) : fromRight ? L.hatch.y : wn.y + 14,
       vx: fromRight ? -(70 + Math.random() * 60) : (Math.random() - 0.5) * 60, vy: fromRight ? (Math.random() - 0.5) * 60 : 70 + Math.random() * 50 });
   }
-  function pop(s, x, y, big) { if (G.pops.length < 12) G.pops.push({ s, x, y, t: 0, big: !!big }); }
+  function pop(s, x, y, big) { if (G.pops.length < 16) G.pops.push({ s, x, y, t: 0, big: !!big }); }
   function toast(s) { G.toast = { s, t: 0, dur: 1.8 }; }
 
   function updateStation(dt) {
@@ -656,8 +807,24 @@
       const M = G.L.map;
       for (let i = 0; i < 2; i++) G.confetti.push({ x: M.x + Math.random() * M.w, y: M.y - 10, vx: (Math.random() - 0.5) * 40, vy: 60 + Math.random() * 80, r: Math.random() * 6, vr: (Math.random() - 0.5) * 8, t: 0 });
     }
-    for (const c of G.confetti) { c.x += c.vx * dt; c.y += c.vy * dt; c.r += c.vr * dt; c.t += dt; }
-    G.confetti = G.confetti.filter((c) => c.t < 6 && c.y < G.L.map.y + G.L.map.h + 10);
+    for (const c of G.confetti) {
+      if (c.g) { c.vy += c.g * dt; const k = Math.exp(-dt * c.drag); c.vx *= k; c.vy *= k; }
+      c.x += c.vx * dt; c.y += c.vy * dt; c.r += c.vr * dt; c.t += dt;
+    }
+    G.confetti = G.confetti.filter((c) => c.t < (c.life || 6) && c.y < G.L.map.y + G.L.map.h + 10);
+    // 손맛 — 「+N명」 모음 · 호스 불룩이 · 물결 · 벌름 · 들썩(전부 그림 시계)
+    const cb = G.combo;
+    if (cb.figs) { cb.age += dt; cb.idle += dt; if (cb.idle > 0.35 || cb.age > (cb.ring ? 1.5 : 0.9)) endCombo(); }
+    for (const f of G.floats) f.t += dt;
+    G.floats = G.floats.filter((f) => f.t < 1.1);
+    for (const b of G.bumps) { b.t += vdt * 0.78; if (b.t >= 1) bumpArrive(b); }
+    G.bumps = G.bumps.filter((b) => b.t < 1);
+    for (const w of G.waves) w.t += dt;
+    G.waves = G.waves.filter((w) => w.t < w.dur);
+    G.nozFlare *= Math.exp(-dt * 9); G.burstPop *= Math.exp(-dt * 6); G.ctrKick *= Math.exp(-dt * 5);
+    G.guestKick *= Math.exp(-dt * 6); G.shake *= Math.exp(-dt * 9);
+    if (G.burstFx && (G.burstFx.t += dt) > 1.3) G.burstFx = null;
+    G.burstFrame += ((G.run.burst > 0 && G.mode === 'play' ? 1 : 0) - G.burstFrame) * (1 - Math.exp(-dt * 8));
     // 판 끝 「나도!」 말풍선
     for (const b of G.calls) b.t += dt;
     G.calls = G.calls.filter((b) => b.t < 1.3 && !b.p.gone && b.p.st !== 3);
@@ -714,9 +881,22 @@
   function bez(P, t) { const u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t; return [a * P[0] + b * P[2] + c * P[4] + d * P[6], a * P[1] + b * P[3] + c * P[5] + d * P[7]]; }
   function bezD(P, t) { const u = 1 - t, a = 3 * u * u, b = 6 * u * t, c = 3 * t * t; return [a * (P[2] - P[0]) + b * (P[4] - P[2]) + c * (P[6] - P[4]), a * (P[3] - P[1]) + b * (P[5] - P[3]) + c * (P[7] - P[5])]; }
   const nozScale = (r) => 0.45 + r / 80;
+  const nozDrawScale = () => nozScale(G.noz.r) * (1 + 0.32 * G.burstPop);   // 신바람이 터질 때 한 번 크게 튄다
 
   function drawGround(x, y, r, ring, t, main) {
-    ctx.fillStyle = 'rgba(255,90,44,0.06)'; ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.92, 0, 0, 7); ctx.fill();
+    const burst = G.run.burst > 0;
+    ctx.fillStyle = burst ? 'rgba(255,90,44,0.13)' : 'rgba(255,90,44,0.06)'; ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.92, 0, 0, 7); ctx.fill();
+    if (main && G.run.gaugeOn) {
+      // 신바람 게이지 — 흡입구 둘레 고리가 주황으로 차오른다(신바람 중이면 남은 시간만큼 줄어든다)
+      const R = r + 7, f = burst ? G.run.burst / G.st.burstSec : G.run.gauge, a0 = -Math.PI / 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(255,90,44,0.2)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(x, y, R, R * 0.92, 0, 0, 7); ctx.stroke();
+      if (f > 0.005) {
+        ctx.strokeStyle = PT; ctx.lineWidth = burst ? 5.5 : 4;
+        ctx.globalAlpha = !burst && f > 0.85 ? 0.55 + 0.45 * Math.sin(t * 14) : 1;
+        ctx.beginPath(); ctx.ellipse(x, y, R, R * 0.92, 0, a0, a0 + 6.2832 * Math.min(1, f)); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+    }
     ctx.strokeStyle = PT; ctx.lineWidth = 2; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -t * 26;
     ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.92, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]);
     if (!main) return;
@@ -729,11 +909,21 @@
     ctx.strokeStyle = 'rgba(27,27,27,0.22)'; ctx.lineWidth = 1; ctx.setLineDash([3, 7]); ctx.lineDashOffset = t * 10;
     ctx.beginPath(); ctx.ellipse(x, y, ring, ring * 0.92, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]);
   }
-  function drawHosePath(P, width, riders) {
+  function drawHosePath(P, width, riders, bumps) {
     const path = () => { ctx.beginPath(); ctx.moveTo(P[0], P[1]); ctx.bezierCurveTo(P[2], P[3], P[4], P[5], P[6], P[7]); };
     ctx.lineCap = 'round';
     path(); ctx.strokeStyle = INK; ctx.lineWidth = width; ctx.stroke();
     path(); ctx.strokeStyle = A.PT_PALE; ctx.lineWidth = width - 3.6; ctx.stroke();
+    if (bumps) for (const b of bumps) {
+      // 삼킨 만큼 불룩한 덩어리가 정거장까지 타고 내려간다
+      const k = Math.min(1, Math.sqrt(b.figs) / 6);
+      if (k < 0.2) continue;
+      const [x, y] = bez(P, b.t), [dx, dy] = bezD(P, b.t);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(dy, dx));
+      ctx.beginPath(); ctx.ellipse(0, 0, 9 + 14 * k, width / 2 + 9 * k, 0, 0, 7);
+      ctx.fillStyle = A.PT_PALE; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.stroke();
+      ctx.restore();
+    }
     if (riders) for (const r of riders) drawRider(P, r);
     path(); ctx.setLineDash([6, 9]); ctx.lineDashOffset = -G.clock * 45; ctx.lineCap = 'butt';
     ctx.strokeStyle = 'rgba(255,90,44,0.85)'; ctx.lineWidth = width - 3.6; ctx.stroke(); ctx.setLineDash([]);
@@ -751,7 +941,7 @@
     ctx.restore();
   }
   function drawHoses() {
-    const n = G.noz, s = nozScale(n.r), top = A.nozzleTop(n.y, s);
+    const n = G.noz, s = nozDrawScale(), top = A.nozzleTop(n.y, s);
     const P = hoseCtrl(n.x, top);
     const main = [], twinR = [], bots = new Map();
     for (const r of G.riders) { if (r.src && r.t < 0.35) { (bots.get(r.src) || bots.set(r.src, []).get(r.src)).push(r); } else if (r.twin && r.t < 0.2) twinR.push(r); else main.push(r); }
@@ -768,18 +958,39 @@
     };
     for (const b of G.robots) if (!b.drop) thin(b.x, b.y - 22 * (b.r / 16), bots.get(b) || [], 0.35);
     if (G.st.twin > 1) { const ts = nozScale(G.twin.r); thin(G.twin.x, A.nozzleTop(G.twin.y, ts), twinR, 0.2); }
-    drawHosePath(P, 17, main);
+    drawHosePath(P, 17, main, G.bumps);
     ctx.save(); ctx.translate(0.9, -0.7); ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.moveTo(P[0], P[1]); ctx.bezierCurveTo(P[2], P[3], P[4], P[5], P[6], P[7]); ctx.strokeStyle = INK; ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
     const h = G.L.hatch;
     ctx.fillStyle = PT; ctx.strokeStyle = INK; ctx.lineWidth = 1.6;
     ctx.beginPath(); if (G.L.hatchDir === 'right') ctx.ellipse(h.x + 1, h.y, 5, 11, 0, 0, 7); else ctx.ellipse(h.x, h.y + 1, 11, 5, 0, 0, 7); ctx.fill(); ctx.stroke();
   }
+  // 빨리 움직일 때 흡입구 뒤로 바람 줄(그림만)
+  function drawSpeedLines(n, s) {
+    const v = n.vel || 0;
+    if (v < 420) return;
+    const a = Math.min(0.5, (v - 420) / 1400), len = Math.min(130, v * 0.08);
+    const l = Math.hypot(n.dirx, n.diry) || 1, dx = n.dirx / l, dy = n.diry / l, px = -dy, py = dx, cy = n.y - 18 * s;
+    ctx.strokeStyle = `rgba(27,27,27,${a.toFixed(3)})`; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let o = -1; o <= 1; o++) {
+      const off = o * 20 * s, back = 26 * s + Math.abs(o) * 6, L2 = len * (1 - 0.25 * Math.abs(o));
+      const x0 = n.x - dx * back + px * off, y0 = cy - dy * back + py * off;
+      ctx.moveTo(x0, y0); ctx.lineTo(x0 - dx * L2, y0 - dy * L2);
+    }
+    ctx.stroke();
+  }
   function drawNozzles(z) {
     const n = G.noz, t = G.clock, picks = G.run.picks;
     const bounce = z.burst ? Math.abs(Math.sin(t * 14)) * 4 : 0;
-    const s = nozScale(n.r);
-    if (G.st.twin > 1) A.nozzle(ctx, G.twin.x, G.twin.y, nozScale(G.twin.r), { gauge: G.run.gauge, burst: z.burst, jumbo: !!picks.jumbo, t });
-    A.nozzle(ctx, n.x, n.y - bounce, s, { gauge: G.run.gauge, burst: z.burst, jumbo: !!picks.jumbo, notes: picks.joy || 0, t });
+    const s = nozDrawScale(), fl = G.nozFlare;
+    if (G.mode === 'play') drawSpeedLines(n, s);
+    if (G.st.twin > 1) A.nozzle(ctx, G.twin.x, G.twin.y, nozScale(G.twin.r), { gauge: G.run.gauge, burst: z.burst, jumbo: !!picks.jumbo, t, flare: fl });
+    A.nozzle(ctx, n.x, n.y - bounce, s, { gauge: G.run.gauge, burst: z.burst, jumbo: !!picks.jumbo, notes: picks.joy || 0, t, flare: fl });
+    if (z.burst) {
+      // 신바람 중 — 흡입구 둘레를 음표가 돈다
+      ctx.fillStyle = PT; ctx.strokeStyle = INK; ctx.lineWidth = 1.2;
+      for (let k = 0; k < 3; k++) { const a = t * 3.2 + k * 2.094; A.note(ctx, n.x + Math.cos(a) * (z.r + 16), n.y - 14 * s + Math.sin(a) * (z.r + 16) * 0.6, 1.6); }
+    }
     if (n.spin && G.mode === 'play') { ctx.fillStyle = INK; ctx.strokeStyle = INK; ctx.lineWidth = 1; for (let k = 0; k < 2; k++) A.note(ctx, n.x + 24 * s + k * 10, n.y - 50 * s - ((t * 30 + k * 12) % 24), 1); }
     if (picks.window) {
       // 창문 풍선 — 정거장 손님이 손을 흔든다
@@ -865,8 +1076,76 @@
     ctx.globalAlpha = 1;
   }
   function drawConfetti() {
-    ctx.fillStyle = PT; ctx.strokeStyle = INK; ctx.lineWidth = 0.8;
-    for (const c of G.confetti) { ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.r); ctx.fillRect(-3, -2, 6, 4); ctx.strokeRect(-3, -2, 6, 4); ctx.restore(); }
+    if (!G.confetti.length) return;
+    const RS = G.RS;
+    ctx.strokeStyle = INK; ctx.lineWidth = 0.8;
+    for (const c of G.confetti) {
+      const co = Math.cos(c.r) * RS, si = Math.sin(c.r) * RS;
+      ctx.setTransform(co, si, -si, co, (c.x + shakeX) * RS, (c.y + shakeY) * RS);
+      ctx.fillStyle = c.white ? '#fff' : PT; ctx.fillRect(-3, -2, 6, 4); ctx.strokeRect(-3, -2, 6, 4);
+    }
+    ctx.setTransform(RS, 0, 0, RS, shakeX * RS, shakeY * RS);
+  }
+  // 퍼지는 물결(신바람 · 무리가 풀릴 때)
+  function drawWaves() {
+    for (const w of G.waves) {
+      if (w.t < 0) continue;
+      const e0 = w.t / w.dur, e = 1 - (1 - e0) * (1 - e0), r = 10 + (w.max - 10) * e;
+      ctx.globalAlpha = (1 - e0) * 0.75; ctx.strokeStyle = PT; ctx.lineWidth = w.lw * (1 - e0) + 1.5;
+      ctx.beginPath(); ctx.ellipse(w.x, w.y, r, r * w.ratio, 0, 0, 7); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  // 「+N명」 — 삼키는 동안 흡입구 옆에서 세고, 끝나면 떠오르며 사라진다
+  function drawPlus(f, x, y, alpha, sc) {
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(sc, sc);
+    ctx.font = `700 ${f.size}px ${A.HAND}`; ctx.textAlign = f.align; ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(4, f.size * 0.22); ctx.strokeStyle = '#fff'; ctx.strokeText(f.s, 0, 0);
+    ctx.fillStyle = f.hot ? PT : INK; ctx.fillText(f.s, 0, 0);
+    ctx.restore();
+  }
+  function drawCombo() {
+    const c = G.combo;
+    if (G.mode === 'play' && (c.figs >= 4 || (c.ring && c.figs))) { const f = plusAt(c); drawPlus(f, f.x, f.y, 1, 1); }
+    for (const f of G.floats) {
+      const e = f.t / 1.1, sc = f.t < 0.12 ? 1 + 0.18 * (1 - f.t / 0.12) : 1;
+      drawPlus(f, f.x, f.y - 46 * (1 - (1 - e) * (1 - e)), f.t < 0.7 ? 1 : Math.max(0, 1 - (f.t - 0.7) / 0.4), sc);
+    }
+  }
+  // 신바람 — 터지는 순간 큰 글자(터질 때 한 번 그려 두고 1.3초 동안 키웠다 줄였다만) · 이어지는 동안 화면 테두리
+  function burstBannerArt() {
+    const P = G.L.portrait, RS = G.RS, w = P ? 560 : 440, h = P ? 190 : 150, cx = w / 2, cy = P ? 112 : 88;
+    const c = A.mk(w * RS, h * RS), g = c.getContext('2d');
+    g.setTransform(RS, 0, 0, RS, 0, 0); g.textAlign = 'center'; g.lineJoin = 'round';
+    g.font = `800 ${P ? 104 : 80}px ${KO}`;
+    g.lineWidth = 18; g.strokeStyle = '#fff'; g.strokeText('신바람!', cx, cy);
+    g.lineWidth = 5; g.strokeStyle = INK; g.strokeText('신바람!', cx, cy);
+    g.fillStyle = PT; g.fillText('신바람!', cx, cy);
+    const sub = `${Math.round(G.st.burstSec)}초 동안 흡입구가 커져요`, sy = cy + (P ? 54 : 42);
+    g.font = `700 ${P ? 30 : 22}px ${KO}`; g.lineWidth = 7; g.strokeStyle = '#fff'; g.strokeText(sub, cx, sy);
+    g.fillStyle = INK; g.fillText(sub, cx, sy);
+    return { c, w, h, cx, cy };
+  }
+  function drawBurstBanner() {
+    const f = G.burstFx, t = f.t, M = G.L.map, P = G.L.portrait;
+    if (!f.art) f.art = burstBannerArt();
+    const b = f.art;
+    const sIn = t < 0.16 ? 0.3 + 0.95 * (t / 0.16) : t < 0.3 ? 1.25 - 0.25 * ((t - 0.16) / 0.14) : 1;
+    const a = t < 0.95 ? 1 : Math.max(0, 1 - (t - 0.95) / 0.35);
+    const x = M.x + M.w / 2, y = M.y + M.h * (P ? 0.34 : 0.42) - Math.max(0, t - 0.95) * 40;
+    ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.rotate(-0.06); ctx.scale(sIn, sIn);
+    ctx.drawImage(b.c, -b.cx, -b.cy, b.w, b.h);
+    ctx.restore();
+  }
+  function drawBurstFrame() {
+    const M = G.L.map, left = G.run.burst;
+    let a = 0.42 + 0.18 * Math.sin(G.clock * 9);
+    if (left > 0 && left < 1.5) a = ((G.clock * 7) | 0) % 2 ? 0.12 : 0.6;   // 곧 끝 — 깜빡깜빡
+    ctx.save(); ctx.globalAlpha = G.burstFrame * a; ctx.strokeStyle = PT; ctx.lineWidth = 12;
+    ctx.beginPath(); ctx.roundRect(M.x + 6, M.y + 6, M.w - 12, M.h - 12, 16); ctx.stroke();
+    ctx.globalAlpha = G.burstFrame * 0.85; ctx.lineWidth = 3; ctx.setLineDash([12, 10]); ctx.lineDashOffset = -G.clock * 60;
+    ctx.beginPath(); ctx.roundRect(M.x + 16, M.y + 16, M.w - 32, M.h - 32, 12); ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
   }
   function drawWorldLayer(z) {
     const M = G.L.map, ph = phase();
@@ -880,10 +1159,13 @@
       if (G.st.twin > 1) drawGround(G.twin.x, G.twin.y, G.twin.r, G.twin.r, G.clock, false);
       drawTail(z);
     }
-    Wd.drawCrowd(ctx, G.crowd, G.spr, G.clock, G.stamp, G.mode === 'play' && G.run.stage > 0 && z.lc);
+    if (G.rings.length) Wd.drawRings(ctx, G.rings, G.spr, G.clock);
+    // 신바람이 터지면 온 동네가 팔 벌려 들썩(「와아~」 · 그림만)
+    Wd.drawCrowd(ctx, G.crowd, G.spr, G.clock, G.stamp, (G.mode === 'play' && G.run.stage > 0 && z.lc) || G.clock < G.cheerUntil);
     drawHearts(); drawCalls();
     if (G.mode !== 'zoom' && G.mode !== 'end') drawBots(z);
     drawConfetti();
+    drawWaves();
     if (ph >= 0 && !G.L.portrait) {
       // 도시의 때(아침 → 낮 → 오후 → 저녁) — 휴대폰에서는 위 띠에 가려 잘리므로 뺀다
       const tx = M.x + M.w - 62, ty = M.y + 30;
@@ -915,9 +1197,14 @@
     if (a > 0) { ctx.globalAlpha = a; ctx.drawImage(G.zoom.snap, M.x * RS, M.y * RS, M.w * RS, M.h * RS, sp.x, sp.y, sp.w, sp.h); ctx.globalAlpha = 1; }
     ctx.restore();
   }
+  let shakeX = 0, shakeY = 0;
   function draw() {
     const L = G.L, RS = G.RS, bi = Math.floor(G.clock / 0.16) % 3;
-    ctx.setTransform(RS, 0, 0, RS, 0, 0);
+    // 들썩(신바람이 터질 때 · 무리가 풀릴 때 잠깐) — 밀린 가장자리는 종이색으로 채운다
+    const sh = G.shake > 0.03 && G.mode === 'play' ? G.shake * 5 : 0;
+    shakeX = sh ? (Math.random() - 0.5) * 2 * sh : 0; shakeY = sh ? (Math.random() - 0.5) * 2 * sh : 0;
+    if (sh) { ctx.setTransform(RS, 0, 0, RS, 0, 0); ctx.fillStyle = A.PAPER; ctx.fillRect(0, 0, L.W, L.H); }
+    ctx.setTransform(RS, 0, 0, RS, shakeX * RS, shakeY * RS);
     const z = sizes();
     if (G.mode === 'zoom') {
       drawZoom(bi);
@@ -930,6 +1217,7 @@
     if (L.ui) { ctx.save(); ctx.translate(L.ui.x, L.ui.y); ctx.scale(L.ui.k, L.ui.k); U.drawStation(ctx, G); ctx.restore(); }
     else { U.drawStation(ctx, G); ctx.drawImage(G.picksCanvas, L.picks.x, L.picks.y, L.picks.w, L.picks.h); }
     if (G.mode !== 'zoom' && G.mode !== 'end') { drawHoses(); drawNozzles(z); }
+    if (G.burstFrame > 0.02 && G.mode !== 'end') drawBurstFrame();
     if (G.hint && G.run.stage === 0 && G.mode === 'play') {
       const M = L.map;
       ctx.font = `700 22px ${KO}`; ctx.textAlign = 'center';
@@ -939,8 +1227,11 @@
     }
     U.drawMenuButton(ctx, G);
     drawPops();
+    if (G.burstFx && G.mode === 'play') drawBurstBanner();
     if (G.mode === 'choose' && G.choice) U.drawChoice(ctx, G);
     U.drawCounter(ctx, G, bi);
+    U.drawGauge(ctx, G);
+    if (G.mode !== 'choose') drawCombo();   // 「+N명」은 숫자 칸 · 게이지 줄 위에(흡입구가 맨 위에 있을 때 가리지 않게)
     if (G.fly) U.drawFly(ctx, G);
     if (G.mode === 'finale') drawFinale();
     if (G.mode === 'end') {
@@ -975,6 +1266,7 @@
 
   // ---------- 끝 카드 단추 ----------
   function savePicture() {
+    countOnce('picture');
     try {
       const rc = U.endRect(G.L), k = 2;
       const c = A.mk(rc.w * k + 20, rc.h * k + 20), g = c.getContext('2d');
@@ -1036,6 +1328,7 @@
   let rt = 0;
   window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(onResize, 120); });
   resize();
+  cv.classList.add('ready');   // 크기가 정해진 뒤에 보인다(style.css · 화면 밀림 막기)
   startRun(load());
   let last = performance.now();
   function loop(now) {

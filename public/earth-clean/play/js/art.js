@@ -211,9 +211,10 @@
     g.lineTo(6, -38); g.closePath();
   }
   A.nozzlePath = nozzlePath;
-  // (x, y) = 입 가운데 · s = 크기 배수 · o = { gauge 0~1, burst, jumbo, notes, t }
+  // (x, y) = 입 가운데 · s = 크기 배수 · o = { gauge 0~1, burst, jumbo, notes, t, flare 0~1(삼킬 때 입이 벌름) }
   A.nozzle = function (g, x, y, s, o) {
     g.save(); g.translate(x, y + 3 * s); g.scale(s, s);
+    if (o.flare > 0.01) g.scale(1 + 0.3 * o.flare, 1 - 0.07 * o.flare);
     const path = o.jumbo ? trumpetPath : nozzlePath;
     path(g); g.fillStyle = PT; g.fill();
     g.strokeStyle = INK; g.lineWidth = 2 / Math.max(0.7, s * 0.9); g.lineJoin = 'round'; g.stroke();
