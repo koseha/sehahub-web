@@ -131,6 +131,93 @@ main {
   display: block;
 }
 
+/* 언어 버튼(2026-11-26) — 해/달 버튼과 같은 동그라미 · 누르면 아래로 짧은 차림. 다른 언어 판이 있는 쪽(.has-lang)에만 있다 */
+.bar-lang {
+  position: relative;
+}
+.bar-lang > summary {
+  list-style: none;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  transition: background 0.2s, color 0.2s;
+}
+.bar-lang > summary::-webkit-details-marker {
+  display: none;
+}
+.bar-lang > summary:hover,
+.bar-lang[open] > summary {
+  background: color-mix(in srgb, var(--a) 14%, transparent);
+  color: var(--a);
+}
+.bar-lang > summary svg {
+  width: 22px;
+  height: 22px;
+}
+.bar-lang-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 140px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: 0 0 0 1px var(--line), 0 18px 40px -20px rgba(22, 24, 29, 0.4);
+}
+[data-theme="dark"] .bar-lang-menu {
+  box-shadow: 0 0 0 1px var(--line), 0 18px 40px -16px rgba(0, 0, 0, 0.75);
+}
+.bar-lang-menu a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+}
+.bar-lang-menu a:hover {
+  background: color-mix(in srgb, var(--a) 10%, transparent);
+}
+.bar-lang-menu a:hover,
+.bar-lang-menu a[aria-current="page"] {
+  color: var(--a);
+}
+.bar-lang-menu svg {
+  width: 16px;
+  height: 16px;
+}
+/* 휴대폰 — 버튼이 하나 늘어난 만큼 링크 옆 여백과 버튼 폭을 줄인다(390 에서 sehahub 이름과 붙지 않게 · 360 에서 넘치지 않게) */
+@media (max-width: 440px) {
+  .bar.has-lang .bar-link {
+    padding-inline: 8px;
+  }
+  .bar.has-lang :is(.bar-theme, .bar-mail, .bar-lang > summary) {
+    width: 36px;
+  }
+}
+@media (max-width: 380px) {
+  .bar.has-lang {
+    gap: 2px;
+  }
+  .bar.has-lang .bar-link {
+    padding-inline: 6px;
+  }
+  .bar.has-lang :is(.bar-theme, .bar-mail, .bar-lang > summary) {
+    width: 34px;
+  }
+}
+
+/* 일본어 쪽 — 글꼴(Wanted Sans 한글판)에 가나 · 한자가 없다. 그 글자만 기기의 일본어 글꼴로 */
+html:lang(ja) {
+  font-family: "Wanted Sans Variable", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, "Noto Sans JP", system-ui, sans-serif;
+}
+
 /* 바닥 */
 .foot {
   display: flex;

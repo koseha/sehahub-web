@@ -2,20 +2,29 @@
 // 홈 시안(2026-11-20 · 대표 「그래」) — sehahub = 만드는 곳의 입구. 기준 레퍼런스 = notboring.software 의 결(만들어 내놓는 앱이 손에 잡히는 물건처럼 움직인다).
 // 🔴 문구를 넣지 않는다(대표 11/20 「메인에 텍스트 그냥 지워라」) — 이름 · 앱 아이콘 · 연락처만.
 // 대표 「그래 괜찮네」(11/20) 뒤 공용 틀(PageLayout · site.css)로 옮겼다 — 머리 · 바닥 · 색 변수는 거기, 여기는 홈만의 움직임.
+// 한국어 = / · 영어 = /en/ · 일본어 = /ja/ 를 이 파일 하나로 만든다(2026-11-26 · src/i18n.ts).
 import { Image } from "astro:assets"
 import PageLayout from "@layouts/PageLayout.astro"
-import { SITE } from "@consts"
-import notmineIcon from "../assets/products/notmine-icon.png"
-import repyepIcon from "../assets/products/repyep-icon.png"
-import earthCleanIcon from "../assets/products/earth-clean-icon.png"
+import { LANGS, alternatesOf, langParam, ui, type Lang } from "@i18n"
+import notmineIcon from "@assets/products/notmine-icon.png"
+import repyepIcon from "@assets/products/repyep-icon.png"
+import earthCleanIcon from "@assets/products/earth-clean-icon.png"
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang: langParam(lang) }, props: { lang } }))
+}
+
+const { lang } = Astro.props as { lang: Lang }
 
 const WORD = "sehahub".split("")
 
 // 제품이 늘면 여기에 더한다 — 하나일 때는 크게 가운데, 여럿이면 줄을 이룬다(크기는 개수로 정함)
 // 운동해 넵 = 대표 11/20 「운동해넵도 넣어봐」 · 출시 전 노출 = 대표 「그래, 보여줘」 · 아이콘 = 코드 repo AppIcon · 링크 = 팀 제품 사이트(/repyep/ · 팀 repyep 이 만듦)
+// 영어 · 일본어 쪽(intl) — 영어 이름이 있는 앱만 그 이름 · 그 언어 쪽으로(운동해 넵 = RepYep · /repyep/en/ · 일본어 쪽은 아직 없어 영어 쪽).
+// 영어 이름이 없는 것(내돈아님 · 지구 청소)은 한글 이름 · 한국어 쪽 그대로 — 이름을 지어 넣지 않는다
 const products = [
   { name: "내돈아님", icon: notmineIcon, href: "/notmine/" },
-  { name: "운동해 넵", icon: repyepIcon, href: "/repyep/" },
+  { name: "운동해 넵", icon: repyepIcon, href: "/repyep/", intl: { name: "RepYep", href: "/repyep/en/" } },
 ]
 
 // 게임 = Products 와 따로 선반(대표 11/25 「sehahub.info에 game 항목 추가해 … 기본은 web인데, mobile app으로 확장할 수도 있고 스팀에 넣을수도 있고」 · 나눌지는 그룹 판단)
@@ -24,9 +33,14 @@ const games = [
   { name: "지구 청소", icon: earthCleanIcon, href: "/earth-clean/" },
 ]
 
+type Item = { name: string; icon: ImageMetadata; href: string; intl?: { name: string; href: string } }
+// 한국어 쪽이 아닌데 한글 이름 그대로면 lang="ko" 를 단다(읽어 주기 · 글꼴)
+const localize = (p: Item) =>
+  lang === "ko" ? { ...p, nameLang: undefined } : p.intl ? { ...p, ...p.intl, nameLang: undefined } : { ...p, nameLang: "ko" }
+
 const shelves = [
-  { id: "products", label: "Products", items: products },
-  { id: "games", label: "Games", items: games },
+  { id: "products", label: "Products", items: products.map(localize) },
+  { id: "games", label: "Games", items: games.map(localize) },
 ]
 // 크기는 가장 많이 놓인 선반을 따른다 — 선반마다 따로 정하면 하나뿐인 게임이 제품보다 커 보인다
 const most = Math.max(...shelves.map((s) => s.items.length))
@@ -35,7 +49,7 @@ const sizeClass = most === 1 ? "is-solo" : most === 2 ? "is-duo" : ""
 const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS --depth)
 ---
 
-<PageLayout title="sehahub" description={SITE.DESCRIPTION} home>
+<PageLayout title="sehahub" description={ui[lang].siteDescription} lang={lang} alternates={alternatesOf("/")} home>
     <!-- 첫 화면 — 글자가 떨어져 튕기며 자리를 잡고, 포인터가 다가가면 들썩인다 -->
     <section class="hero">
       <h1 class="word" aria-label="sehahub">
@@ -70,7 +84,7 @@ const SLABS = 16 // 아이콘 두께를 이루는 겹 수(두께 자체는 CSS -
                 </span>
                 <span class="floor" data-floor aria-hidden="true"></span>
               </span>
-              <span class="obj-name">{p.name}</span>
+              <span class="obj-name" lang={p.nameLang}>{p.name}</span>
             </a>
           </li>
         ))}
