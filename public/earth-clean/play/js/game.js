@@ -450,6 +450,7 @@
     G.nozFlare = 1; G.shake = Math.max(G.shake, 0.45);
     G.waves.push({ x: R.x, y: R.y, t: 0, dur: 0.45, max: R.rx * 1.7, lw: 7, ratio: 0.62 });
     EC.sound.ring(figs);
+    pop('다 같이 가자~!', R.x - 44, R.y - R.rx - 8, true);   // 무리도 「가고 싶어서」 간다(반대 읽기 11/26)
     welcomeFly(p0, c, R);
   }
   function welcomeFly(p, c, R) {
@@ -504,14 +505,13 @@
     G.nozFlare = Math.min(1, G.nozFlare + 0.22);
     const last = G.bumps[G.bumps.length - 1];
     if (last && last.t < (c.ring ? 0.3 : 0.08)) { last.figs++; last.ring = last.ring || c.ring; }
-    else if (G.bumps.length < 16) G.bumps.push({ t: 0, figs: 1, ring: c.ring });
+    else if (G.bumps.length < 3) G.bumps.push({ t: 0, figs: 1, ring: c.ring });   // 셋까지만 — 줄줄이 이어지면 「칸 사슬」로 읽힌다(반대 읽기 11/26)
   }
   function endCombo() {
     const c = G.combo;
     if (c.figs >= 4 || c.ring) {
       const f = plusAt(c);
       f.t = 0; G.floats.push(f);
-      G.ctrKick = Math.max(G.ctrKick, c.ring ? 1 : Math.min(1, c.figs / 40));
     }
     c.n = 0; c.figs = 0; c.age = 0; c.idle = 0; c.ring = false;
   }
@@ -520,16 +520,16 @@
     const n = G.noz, s = nozScale(n.r), M = G.L.map, P = G.L.portrait;
     const size = Math.round(((P ? 18 : 15) + 3 * Math.log10(Math.max(1, c.n)) + Math.min(8, c.figs * 0.15)) * (c.ring ? 1.35 : 1));
     const right = n.x < M.x + M.w * 0.62;
-    return { s: `+${U.fmt(c.n)}명${c.ring ? '!' : ''}`, size, hot: c.ring, x: n.x + (right ? 1 : -1) * (30 * s + 10), y: n.y - 50 * s, align: right ? 'left' : 'right' };
+    return { s: `손님 +${U.fmt(c.n)}명${c.ring ? '!' : ''}`, size, hot: c.ring, x: n.x + (right ? 1 : -1) * (30 * s + 10), y: Math.max(P ? 236 : 0, n.y - 50 * s), align: right ? 'left' : 'right' };
   }
-  // 호스 불룩이가 정거장 입구에 닿았다 — 통!
+  // 호스 불룩이가 정거장 입구에 닿았다 — 도착!
   function bumpArrive(b) {
     const k = Math.min(1, Math.sqrt(b.figs) / 6);
     G.stn.flashes.push({ t: 0, k: 1 + k * 1.6 });
     if (b.figs >= 3) G.guestKick = Math.max(G.guestKick, 0.25 + 0.75 * k);
     if (b.ring || k >= 0.9) {
       const h = G.L.hatch;
-      pop('통!', G.L.hatchDir === 'right' ? h.x + 8 : h.x + 16, h.y - 14, true);
+      pop('도착!', G.L.hatchDir === 'right' ? h.x + 8 : h.x + 16, h.y - 14, true);
       EC.sound.plop(k);
     }
   }
@@ -828,7 +828,7 @@
     // 판 끝 「나도!」 말풍선
     for (const b of G.calls) b.t += dt;
     G.calls = G.calls.filter((b) => b.t < 1.3 && !b.p.gone && b.p.st !== 3);
-    if (G.mode === 'play' && G.run.stage > 0 && N.lastCall(G.st, G.run.stage, G.run.left) && G.calls.length < 3 && Math.random() < dt * 2 && G.crowd.length) {
+    if (G.mode === 'play' && G.run.stage > 0 && N.lastCall(G.st, G.run.stage, G.run.left) && G.calls.length < (finalRun() ? FINAL_N : 3) && Math.random() < dt * (finalRun() ? 8 : 2) && G.crowd.length) {
       const p = G.crowd[(Math.random() * G.crowd.length) | 0];
       if (p.st !== 3) G.calls.push({ p, t: 0 });
     }
@@ -915,7 +915,7 @@
     path(); ctx.strokeStyle = INK; ctx.lineWidth = width; ctx.stroke();
     path(); ctx.strokeStyle = A.PT_PALE; ctx.lineWidth = width - 3.6; ctx.stroke();
     if (bumps) for (const b of bumps) {
-      // 삼킨 만큼 불룩한 덩어리가 정거장까지 타고 내려간다
+      // 모신 만큼 호스가 불룩해져 정거장까지 내려간다
       const k = Math.min(1, Math.sqrt(b.figs) / 6);
       if (k < 0.2) continue;
       const [x, y] = bez(P, b.t), [dx, dy] = bezD(P, b.t);
@@ -1052,7 +1052,7 @@
     }
     ctx.globalAlpha = 1;
     // 마지막 몇 명 — 머리 위 화살표
-    if (G.mode === 'play' && G.run.stage > 0) {
+    if (G.mode === 'play' && G.run.stage > 0 && !finalRun()) {   // 다들 달려올 때는 찾을 일이 없다 — 화살표가 「찍힌 사람」으로 읽히지 않게(반대 읽기 11/26)
       let live = 0;
       for (const p of G.crowd) if (p.st !== 3) live++;
       if (live > 0 && live < B.lastWaveN) {
@@ -1096,7 +1096,7 @@
     }
     ctx.globalAlpha = 1;
   }
-  // 「+N명」 — 삼키는 동안 흡입구 옆에서 세고, 끝나면 떠오르며 사라진다
+  // 「손님 +N명」 — 모시는 동안 흡입구 옆에서 세고, 끝나면 떠오르며 사라진다
   function drawPlus(f, x, y, alpha, sc) {
     ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(sc, sc);
     ctx.font = `700 ${f.size}px ${A.HAND}`; ctx.textAlign = f.align; ctx.lineJoin = 'round';
@@ -1105,11 +1105,11 @@
     ctx.restore();
   }
   function drawCombo() {
-    const c = G.combo;
-    if (G.mode === 'play' && (c.figs >= 4 || (c.ring && c.figs))) { const f = plusAt(c); drawPlus(f, f.x, f.y, 1, 1); }
+    const c = G.combo, top = G.L.portrait ? 236 : 178;   // 맨 위 「남은 사람」 숫자 · 신바람 줄 위에 겹치지 않게(반대 읽기 11/26 — 줄어드는 숫자 위의 환호로 읽힌다)
+    if (G.mode === 'play' && (c.figs >= 4 || (c.ring && c.figs))) { const f = plusAt(c); drawPlus(f, f.x, Math.max(top, f.y), 1, 1); }
     for (const f of G.floats) {
       const e = f.t / 1.1, sc = f.t < 0.12 ? 1 + 0.18 * (1 - f.t / 0.12) : 1;
-      drawPlus(f, f.x, f.y - 46 * (1 - (1 - e) * (1 - e)), f.t < 0.7 ? 1 : Math.max(0, 1 - (f.t - 0.7) / 0.4), sc);
+      drawPlus(f, f.x, Math.max(top, f.y - 46 * (1 - (1 - e) * (1 - e))), f.t < 0.7 ? 1 : Math.max(0, 1 - (f.t - 0.7) / 0.4), sc);
     }
   }
   // 신바람 — 터지는 순간 큰 글자(터질 때 한 번 그려 두고 1.3초 동안 키웠다 줄였다만) · 이어지는 동안 화면 테두리
