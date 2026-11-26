@@ -82,6 +82,21 @@
     [7, 12, 16, 19].forEach((n, i) => tone(note(n), note(n), 0.14, 0.16, 'triangle', 0.3 + i * 0.07));
     S.buzz([30, 40, 30]);
   };
+  // 신바람 끝 — 내려가는 두 음
+  S.burstEnd = function () {
+    tone(note(12), note(12), 0.1, 0.12, 'triangle');
+    tone(note(7), note(2), 0.22, 0.1, 'triangle', 0.09);
+  };
+  // 둥글게 도는 무리가 한 번에 — 음이 미끄러져 올라가고 끝에 반짝
+  S.ring = function (n) {
+    tone(330, 1320, 0.42, 0.07, 'triangle');
+    [12, 16, 19, 24].forEach((k, i) => tone(note(k + 3), note(k + 3), 0.12, 0.13, 'triangle', 0.32 + i * 0.05));
+    S.buzz(n > 20 ? [25, 30, 25] : 25);
+  };
+  // 호스 불룩이가 정거장 입구에 — 통!
+  S.plop = function (k) {
+    tone(240, 110, 0.1, Math.min(0.2, 0.08 + 0.1 * k), 'sine');
+  };
   // 판 하나 끝 — 모두 도착
   S.clear = function () {
     [0, 4, 7, 12, 16].forEach((n, i) => tone(note(n), note(n), i === 4 ? 0.5 : 0.16, 0.2, 'triangle', i * 0.12));

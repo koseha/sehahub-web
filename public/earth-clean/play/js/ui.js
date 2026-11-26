@@ -149,7 +149,8 @@
     g.restore();
   };
 
-  // 맨 위 종이 띠(세 벌)
+  // 맨 위 종이 띠(세 벌) — 세로 휴대폰은 상자 없이 글자만(지도가 그대로 비친다 · 대표 11/26 「박스 배경을 그냥 투명으로」)
+  // 글자 · 막대에는 흰 테두리를 둘러 사람 그림이 밑을 지나가도 또렷하다. 가로(PC)는 상자 그대로.
   U.stripArt = function (L, RS) {
     const c = L.ctr, bw = c.w + 40, bh = c.h + 40;
     return [0, 1, 2].map((v) => {
@@ -157,28 +158,48 @@
       g.setTransform(RS, 0, 0, RS, 0, 0); g.lineCap = 'round'; g.lineJoin = 'round';
       g.translate(bw / 2, bh / 2);
       A.seed(555 + v * 31);
-      const w = c.w, h = c.h;
-      g.fillStyle = 'rgba(0,0,0,0.08)'; g.beginPath(); g.roundRect(-w / 2 + 3, -h / 2 + 4, w, h, 6); g.fill();
-      g.fillStyle = '#fff'; g.beginPath(); g.roundRect(-w / 2, -h / 2, w, h, 6); g.fill();
-      g.strokeStyle = INK; g.lineWidth = 1.8; A.rPath(g, A.rrPts(-w / 2, -h / 2, w, h, 6), true, 0.8);
+      const w = c.w, h = c.h, P = L.portrait;
+      if (!P) {
+        g.fillStyle = 'rgba(0,0,0,0.08)'; g.beginPath(); g.roundRect(-w / 2 + 3, -h / 2 + 4, w, h, 6); g.fill();
+        g.fillStyle = '#fff'; g.beginPath(); g.roundRect(-w / 2, -h / 2, w, h, 6); g.fill();
+        g.strokeStyle = INK; g.lineWidth = 1.8; A.rPath(g, A.rrPts(-w / 2, -h / 2, w, h, 6), true, 0.8);
+      }
       g.fillStyle = A.PT_HL;
       // 세로 휴대폰(P)은 글자를 키운 큰 띠
-      const P = L.portrait, hy = P ? 8 : 0;
+      const hy = P ? 8 : 0;
       g.beginPath(); g.moveTo(-w * 0.4 + A.jit(2), -24 - hy + A.jit(1)); g.lineTo(w * 0.4 + A.jit(2), -27 - hy + A.jit(1)); g.lineTo(w * 0.41 + A.jit(2), 12 + hy + A.jit(1)); g.lineTo(-w * 0.41 + A.jit(2), 14 + hy + A.jit(1)); g.closePath(); g.fill();
       const ly = P ? -50 : -38, gx = P ? -120 : -88, gy = ly - (P ? 7 : 5), gr = P ? 10 : 7.5;
-      g.fillStyle = INK; g.font = `700 ${P ? 21 : 15}px ${KO}`; g.textAlign = 'center'; g.fillText('지구에 남은 사람', 0, ly); g.textAlign = 'left';
-      g.lineWidth = P ? 1.5 : 1.2; A.rEllipse(g, gx, gy, gr, gr, 0.3);
+      g.font = `700 ${P ? 21 : 15}px ${KO}`; g.textAlign = 'center';
+      if (P) { g.lineWidth = 6; g.strokeStyle = '#fff'; g.strokeText('지구에 남은 사람', 0, ly); g.beginPath(); g.arc(gx, gy, gr + 1, 0, 7); g.fillStyle = '#fff'; g.fill(); }
+      g.fillStyle = INK; g.fillText('지구에 남은 사람', 0, ly); g.textAlign = 'left';
+      g.strokeStyle = INK; g.lineWidth = P ? 1.5 : 1.2; A.rEllipse(g, gx, gy, gr, gr, 0.3);
       g.beginPath(); g.ellipse(gx, gy, gr * 0.43, gr, 0, 0, 7); g.moveTo(gx - gr, gy); g.lineTo(gx + gr, gy); g.stroke();
-      g.strokeStyle = 'rgba(27,27,27,0.3)'; g.lineWidth = 1; g.setLineDash([3, 4]); A.rLine(g, -w / 2 + 16, P ? 32 : 22, w / 2 - 16, P ? 32 : 22, 0.3); g.setLineDash([]);
+      if (!P) { g.strokeStyle = 'rgba(27,27,27,0.3)'; g.lineWidth = 1; g.setLineDash([3, 4]); A.rLine(g, -w / 2 + 16, 22, w / 2 - 16, 22, 0.3); g.setLineDash([]); }
+      if (P) { g.fillStyle = '#fff'; g.strokeStyle = '#fff'; g.lineWidth = 5; g.beginPath(); g.rect(40, 44, w / 2 - 60, 18); g.fill(); g.stroke(); }
       g.strokeStyle = INK; g.lineWidth = 1.3; A.rRect(g, 40, P ? 44 : 32, w / 2 - 60, P ? 18 : 12, 0.4);
-      A.tape(g, -w / 2 + 8, -h / 2 + 4, -0.5); A.tape(g, w / 2 - 8, -h / 2 + 4, 0.5);
+      if (!P) { A.tape(g, -w / 2 + 8, -h / 2 + 4, -0.5); A.tape(g, w / 2 - 8, -h / 2 + 4, 0.5); }
       return cv;
     });
   };
+  // 큰 숫자 글자 조각(흰 테두리를 미리 그려 둔다 — 매 프레임 테두리 글자를 새로 그리지 않게)
+  U.digitArt = function (L, RS) {
+    const P = L.portrait, nf = P ? 58 : 50, pad = 6, font = `700 ${nf}px ${HAND}`;
+    const m = A.mk(1, 1).getContext('2d'); m.font = font;
+    const out = { nf, map: {} };
+    for (const ch of '0123456789,') {
+      const w = m.measureText(ch).width, cw = w + pad * 2, chh = nf * 1.5 + pad * 2, base = pad + nf * 1.12;
+      const cv = A.mk(cw * RS, chh * RS), g = cv.getContext('2d');
+      g.setTransform(RS, 0, 0, RS, 0, 0); g.font = font; g.lineJoin = 'round';
+      g.lineWidth = 9; g.strokeStyle = '#fff'; g.strokeText(ch, pad, base);
+      g.fillStyle = INK; g.fillText(ch, pad, base);
+      out.map[ch] = { cv, w, cw, chh, base };
+    }
+    return out;
+  };
   const STAGE_LEFT = ['내 방에 남은 사람', '이 동네에 남은 사람', '이 도시에 남은 사람'];
   U.drawCounter = function (g, G, bi) {
-    const L = G.L, c = L.ctr;
-    g.save(); g.translate(c.x, c.y); g.rotate(-0.006);
+    const L = G.L, c = L.ctr, kick = 1 + 0.07 * (G.ctrKick || 0);
+    g.save(); g.translate(c.x, c.y); g.rotate(-0.006); g.scale(kick, kick);   // 한 번에 많이 모시면 숫자 칸이 들썩
     g.drawImage(G.strip[bi], -c.w / 2 - 20, -c.h / 2 - 20, c.w + 40, c.h + 40);
     // 큰 숫자 — 바뀐 자리만 살짝 들썩
     const s = fmt(G.shownEarth);
@@ -186,24 +207,60 @@
     if (cd.s.length !== s.length) { cd.s = s; cd.t = Array.from(s, () => -9); }
     for (let i = 0; i < s.length; i++) if (s[i] !== cd.s[i]) cd.t[i] = G.clock;
     cd.s = s;
-    const P = L.portrait, nf = P ? 58 : 50, ny = P ? 16 : 12;
-    g.font = `700 ${nf}px ${HAND}`; const w1 = g.measureText(s).width;
+    const P = L.portrait, ny = P ? 16 : 12, D = G.digits;
+    let w1 = 0;
+    for (let i = 0; i < s.length; i++) w1 += D.map[s[i]].w;
     g.font = `700 ${P ? 26 : 22}px ${KO}`; const w2 = g.measureText('명').width;
     const x0 = -(w1 + 6 + w2) / 2;
-    g.fillStyle = INK; g.font = `700 ${nf}px ${HAND}`;
+    let x = x0;
     for (let i = 0; i < s.length; i++) {
-      const age = G.clock - cd.t[i], jy = age < 0.25 ? -3 * (1 - age / 0.25) : 0;
-      g.fillText(s[i], x0 + g.measureText(s.slice(0, i + 1)).width - g.measureText(s[i]).width, ny + jy);
+      const d = D.map[s[i]], age = G.clock - cd.t[i], jy = age < 0.25 ? -3 * (1 - age / 0.25) : 0;
+      g.drawImage(d.cv, x - 6, ny + jy - d.base, d.cw, d.chh);
+      x += d.w;
     }
-    g.font = `700 ${P ? 26 : 22}px ${KO}`; g.fillText('명', x0 + w1 + 6, ny - 2);
+    g.lineJoin = 'round'; g.lineWidth = 6; g.strokeStyle = '#fff'; g.strokeText('명', x0 + w1 + 6, ny - 2);
+    g.fillStyle = INK; g.fillText('명', x0 + w1 + 6, ny - 2);
     // 이 판에 남은 사람 + 막대
     const run = G.run, S = N.STAGES[run.stage];
     const left = G.ended ? 0 : run.left;
     g.font = `700 ${P ? 20 : 14}px ${KO}`; g.fillStyle = INK;
-    g.textAlign = 'right'; g.fillText(`${STAGE_LEFT[run.stage]} ${fmt(left)}명`, 30, P ? 60 : 43); g.textAlign = 'left';
+    const sl = `${STAGE_LEFT[run.stage]} ${fmt(left)}명`;
+    g.textAlign = 'right';
+    if (P) { g.lineWidth = 5; g.strokeStyle = '#fff'; g.strokeText(sl, 30, 60); }
+    g.fillText(sl, 30, P ? 60 : 43); g.textAlign = 'left';
     const bw = c.w / 2 - 60, frac = 1 - left / S.people, by = P ? 45 : 33, bh = P ? 16 : 10;
     g.save(); g.beginPath(); g.rect(41, by, Math.max(0, (bw - 2) * frac), bh); g.clip();
     g.fillStyle = PT; g.fillRect(41, by, bw, bh); g.restore();
+    g.restore();
+  };
+
+  // 신바람 게이지 줄(맨 위 숫자 바로 아래) — 손가락에 가리지 않는 자리에서 차오르는 것 · 신바람 중 남은 시간 · 끝난 것이 보이게(대표 11/26)
+  U.drawGauge = function (g, G) {
+    const q = G.L.gauge, run = G.run, t = G.clock;
+    if (!run.gaugeOn || G.ended || G.mode === 'choose' || G.mode === 'finale' || G.mode === 'end') return;
+    const burst = run.burst > 0, f = burst ? run.burst / G.st.burstSec : run.gauge;
+    const ended = !burst && t - G.burstEndAt < 1.4;
+    const label = burst ? '신바람 중!' : ended ? '신바람 끝' : '신바람';
+    const bx = q.x, by = q.y - q.h / 2;
+    g.save();
+    g.font = `700 ${q.f}px ${KO}`; g.textAlign = 'right'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+    g.lineWidth = 5; g.strokeStyle = '#fff'; g.strokeText(label, bx - 10, q.y + 1);
+    g.fillStyle = burst ? PT : ended ? 'rgba(27,27,27,0.55)' : INK; g.fillText(label, bx - 10, q.y + 1);
+    g.fillStyle = '#fff'; g.strokeStyle = '#fff'; g.lineWidth = 4;
+    g.beginPath(); g.roundRect(bx, by, q.w, q.h, q.h / 2); g.fill(); g.stroke();
+    if (f > 0.004) {
+      g.save(); g.beginPath(); g.roundRect(bx, by, q.w, q.h, q.h / 2); g.clip();
+      g.fillStyle = PT;
+      g.globalAlpha = burst ? (run.burst < 1.5 && ((t * 7) | 0) % 2 ? 0.4 : 1) : f > 0.85 ? 0.6 + 0.4 * Math.sin(t * 14) : 1;
+      g.fillRect(bx, by, q.w * Math.min(1, f), q.h);
+      g.restore();
+    }
+    g.strokeStyle = INK; g.lineWidth = 1.6; g.beginPath(); g.roundRect(bx, by, q.w, q.h, q.h / 2); g.stroke();
+    if (burst) {
+      const sec = `${Math.ceil(run.burst)}초`;
+      g.textAlign = 'left'; g.lineWidth = 5; g.strokeStyle = '#fff'; g.strokeText(sec, bx + q.w + 10, q.y + 1);
+      g.fillStyle = PT; g.fillText(sec, bx + q.w + 10, q.y + 1);
+    }
     g.restore();
   };
 
@@ -246,11 +303,11 @@
       }
     }
     for (const o of S.flashes) {
-      const a = 1 - o.t / 0.35, r0 = 6 + o.t * 30;
-      g.strokeStyle = PT; g.lineWidth = 1.6; g.globalAlpha = a; g.lineCap = 'round';
+      const k = o.k || 1, a = 1 - o.t / 0.35, r0 = (6 + o.t * 30) * k;   // k = 호스 불룩이가 클수록 크게 「통!」
+      g.strokeStyle = PT; g.lineWidth = 1.6 * Math.min(2, k); g.globalAlpha = a; g.lineCap = 'round';
       const hx = L.hatchDir === 'right' ? wn.x + wn.w : (L.hatchIn || L.hatch).x, hy = L.hatchDir === 'right' ? L.hatch.y : wn.y;
       const base = L.hatchDir === 'right' ? 0.6 : 0.1;
-      for (let k = 0; k < 5; k++) { const ang = Math.PI * (base + k * 0.2); g.beginPath(); g.moveTo(hx + Math.cos(ang) * r0, hy + Math.sin(ang) * r0); g.lineTo(hx + Math.cos(ang) * (r0 + 5), hy + Math.sin(ang) * (r0 + 5)); g.stroke(); }
+      for (let q = 0; q < 5; q++) { const ang = Math.PI * (base + q * 0.2); g.beginPath(); g.moveTo(hx + Math.cos(ang) * r0, hy + Math.sin(ang) * r0); g.lineTo(hx + Math.cos(ang) * (r0 + 5 * k), hy + Math.sin(ang) * (r0 + 5 * k)); g.stroke(); }
       g.globalAlpha = 1;
     }
     if (S.bubble) {
@@ -279,11 +336,12 @@
     }
     // 손님 수 + 1초에 모시는 사람
     const gs = fmt(N.EARTH_START - Math.round(G.shownEarth));
-    const cx = L.count.x, cy = L.count.y;
+    const cx = L.count.x, cy = L.count.y, gk = 1 + 0.2 * (G.guestKick || 0);   // 호스 불룩이가 닿으면 손님 수가 들썩
     if (L.ui) {
       // 휴대폰 — 손님 수와 다음 카드만 크게(「+N명/초」는 뺐다)
       g.fillStyle = INK; g.font = `700 14px ${KO}`; g.fillText('손님', cx, cy);
-      g.font = `700 ${gs.length > 7 ? 24 : 29}px ${HAND}`; g.fillStyle = PT; g.fillText(gs, cx - 1, cy + 34);
+      g.font = `700 ${gs.length > 7 ? 24 : 29}px ${HAND}`; g.fillStyle = PT;
+      g.save(); g.translate(cx - 1, cy + 34); g.scale(gk, gk); g.fillText(gs, 0, 0); g.restore();
       const gw = g.measureText(gs).width;
       g.fillStyle = INK; g.font = `700 14px ${KO}`; g.fillText('명', cx + gw + 3, cy + 33);
       const pc = G.ended ? null : N.choiceProgress(G.run), b = L.bar;
@@ -296,7 +354,8 @@
       }
     } else {
     g.fillStyle = INK; g.font = `700 12px ${KO}`; g.fillText('손님', cx, cy);
-    g.font = `700 17px ${HAND}`; g.fillStyle = PT; g.fillText(gs, cx + 32, cy + 2);
+    g.font = `700 17px ${HAND}`; g.fillStyle = PT;
+    g.save(); g.translate(cx + 32, cy + 2); g.scale(gk, gk); g.fillText(gs, 0, 0); g.restore();
     const w = g.measureText(gs).width;
     g.fillStyle = INK; g.font = `700 12px ${KO}`; g.fillText('명', cx + 36 + w, cy);
     if (G.run.stage > 0 || G.rate > 0.5) {
@@ -386,7 +445,8 @@
       for (let i = 0; i < n; i++) out.push({ x: x0 + i * (cw + gap), y: y0, w: cw, h: ch });
     } else {
       const cw = 600, ch = 196, gap = 22, tot = n * ch + (n - 1) * gap;
-      const x0 = M.x + M.w / 2 - cw / 2, y0 = M.y + M.h / 2 - tot / 2 + 40;
+      // 제목 「하나 골라요」가 맨 위 숫자와 겹치지 않게(상자 없이 비치므로 · 낮은 화면 1240 에서도)
+      const x0 = M.x + M.w / 2 - cw / 2, y0 = Math.max(M.y + M.h / 2 - tot / 2 + 40, 236);
       for (let i = 0; i < n; i++) out.push({ x: x0, y: y0 + i * (ch + gap), w: cw, h: ch });
     }
     return out;

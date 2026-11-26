@@ -22,6 +22,7 @@
       picks: { x: 12, y: 280, w: 222, h: 396, cols: 1 },
       menu: { x: 14, y: 686, w: 66, h: 26 },
       ctr: { x: 640, y: 64, w: 560, h: 112 },
+      gauge: { x: 600, y: 140, w: 150, h: 11, f: 15 },   // 신바람 게이지 줄(숫자 상자 바로 아래 · x = 막대 왼쪽 끝 · 글은 그 왼쪽)
       sep: { x: 244.5, y: 0, x2: 244.5, y2: 720 },
     };
     H = Math.min(Wd.PORTRAIT_H[1], Math.max(Wd.PORTRAIT_H[0], Math.round(H || 1400)));
@@ -39,6 +40,7 @@
       picks: { x: 477, y: uy + 150, w: 228, h: 27, cols: 0 },
       menu: { x: 477, y: uy + 201, w: 228, h: 75 },
       ctr: { x: 360, y: 86, w: 668, h: 150 },
+      gauge: { x: 280, y: 190, w: 250, h: 16, f: 22 },
       sep: { x: 0, y: uy + 0.5, x2: 720, y2: uy + 0.5 },
     };
   };
@@ -184,14 +186,14 @@
     }
     w.spots.forEach((s, si) => { for (const n of s.nodes) nodes[n].spots.push(si); });
 
-    // 집 · 건물(맨 위 숫자 밑과 광장은 비운다)
+    // 집 · 건물(광장은 비운다 · 가로는 맨 위 숫자 상자 밑도 비운다 — 세로는 상자가 없어 지도가 비친다 · 대표 11/26)
     const ctr = L.ctr, cz = { x: ctr.x - ctr.w / 2 - 12, y: 0, w: ctr.w + 24, h: ctr.y + ctr.h / 2 + 10 };
     const blocked = (x, y, bw, bh, b) => {
       for (const pz of w.plazas) {
         const qx = Math.max(x, Math.min(pz.x, x + bw)), qy = Math.max(y, Math.min(pz.y, y + bh));
         if (Math.hypot(qx - pz.x, qy - pz.y) < pz.r + 10) return true;
       }
-      if (x < cz.x + cz.w && x + bw > cz.x && y < cz.y + cz.h && y + bh > cz.y) return true;
+      if (!L.portrait && x < cz.x + cz.w && x + bw > cz.x && y < cz.y + cz.h && y + bh > cz.y) return true;
       const rv = b.reserve;
       if (rv && x < rv.x + rv.w && x + bw > rv.x && y < rv.y + rv.h && y + bh > rv.y) return true;
       return false;
@@ -670,15 +672,132 @@
     return p;
   };
 
-  // 한 걸음 — cx = { dt, stamp, walkIn, R, spotMul, avMul, wave }
+  // ---------- 둥글게 손잡고 도는 무리(대표 11/26 「시원시원하게 빨아들일 요소가 있으면 좋겠어」) ----------
+  // 판에 이미 있는 사람 그림이 스스로 모여 손잡고 빙글빙글 돈다 — 보너스 사람이 아니다(사람 수 · 길이 규칙은 numbers.js 그대로).
+  // 상태: join(제자리로 뛰어옴) → spin(손잡고 돈다) → release(흡입구가 닿아 줄줄이 날아감 · game.js) · 시간이 다 되면 흩어져 다시 걷는다.
+  // 사람 st = 4 가 무리 안. 줄 · 울타리 · 미끼 없이 사람들이 알아서 모여 노는 모습만(반대 읽기 「꾀어 모아 줄 세워 이송」).
+  const RING_RY = 0.62, RING_PERIM = 5.23, RING_JOIN = 85;   // 타원 세로 비율 · 둘레 ≈ 가로 반지름 × 5.23 · 뛰어오는 빠르기(px/초)
+  function toRoad(w, p, R) {
+    // 무리에서 나온 사람 — 가장 가까운 갈림길에서 다시 걷는다(길 쪽으로 천천히 돌아간다)
+    let n = -1, bd = 1e9;
+    for (let i = 0; i < w.nodes.length; i++) { const nd = w.nodes[i]; if (nd.exit) continue; const d = Math.hypot(nd.x - p.x, nd.y - p.y); if (d < bd) { bd = d; n = i; } }
+    const adj = w.nodes[n].adj;
+    p.st = 0; p.ring = null; p.spot = null; p.leader = null;
+    setEdge(w, p, n, adj[(R() * adj.length) | 0]);
+    p.t = 0; roadPos(w, p);
+    p.dx = p.x - p.rx; p.dy = p.y - p.ry;
+  }
+  // o = { R, n0, n1, sp(옆 사람 간격 px), avoid:[{x,y,r}], keep:{x,y,r}, minY(무리 윗끝), stamp, reach, v(도는 빠르기 px/초), life(초) }
+  Wd.formRing = function (w, crowd, o) {
+    if (w.kind === 'room') return null;
+    const R = o.R, M = w.M;
+    const n = o.n0 + Math.floor(R() * (o.n1 - o.n0 + 1));
+    const rx = n * o.sp / RING_PERIM, ry = rx * RING_RY;
+    const cands = [];
+    for (const s of w.spots) cands.push({ x: s.x, y: s.y, wt: 3 });
+    for (const g of w.grid) for (const i of g) cands.push({ x: w.nodes[i].x, y: w.nodes[i].y, wt: 1 });
+    let tot = 0;
+    for (const c of cands) tot += c.wt;
+    for (let tries = 0; tries < 14; tries++) {
+      let r = R() * tot, c = cands[0];
+      for (const q of cands) { r -= q.wt; if (r <= 0) { c = q; break; } }
+      const x = c.x + (R() - 0.5) * 40, y = c.y + (R() - 0.5) * 30;
+      if (x - rx < M.x + 14 || x + rx > M.x + M.w - 14 || y - ry < o.minY || y + ry > M.y + M.h - 12) continue;
+      let bad = false;
+      for (const a of o.avoid) if (Math.hypot((a.x - x) / (rx + a.r), (a.y - y) / (ry + a.r)) < 1) { bad = true; break; }
+      if (bad) continue;
+      const near = [], k = o.keep;   // keep = 흡입구 둘레 — 거기 사람은 데려가지 않는다(흡입구 쪽이 성겨지지 않게)
+      for (const p of crowd) {
+        if (p.st > 2 || p.ring || p.exc >= o.stamp - 1 || p.cool > 0) continue;
+        if (k && Math.hypot(p.x - k.x, p.y - k.y) < k.r) continue;
+        const d = Math.hypot(p.x - x, p.y - y);
+        if (d < o.reach) near.push([d, p]);
+      }
+      if (near.length < o.n0) continue;
+      near.sort((a, b) => a[0] - b[0]);
+      const mem = near.slice(0, n).map((q) => q[1]);
+      const ang = (p) => Math.atan2((p.y - y) / ry, (p.x - x) / rx);
+      mem.sort((a, b) => ang(a) - ang(b));
+      const nn = mem.length, rx2 = nn * o.sp / RING_PERIM;   // 모인 수에 맞춰 크기를 다시
+      const g = { x, y, rx: rx2, ry: rx2 * RING_RY, sp: o.sp, n: nn, members: mem, ang: ang(mem[0]), w: (R() < 0.5 ? -1 : 1) * o.v / rx2,
+        state: 'join', t: 0, life: o.life, hop: R() * 6, rt: 0, queue: null, by: null, dir: 1 };
+      mem.forEach((p, i) => { p.st = 4; p.ring = g; p.slot = i; p.rin = false; p.spot = null; p.leader = null; p.dx = 0; p.dy = 0; });
+      return g;
+    }
+    return null;
+  };
+  // 다 흩어진다(시간이 다 됨 · 너무 적게 남음) — 다시 길을 걷는다
+  Wd.dissolveRing = function (w, g, R) {
+    for (const p of g.members) if (p.ring === g && p.st === 4) toRoad(w, p, R);
+    g.members.length = 0; g.state = 'done';
+  };
+  // 한 명만 빠진다(로봇 등) — 남은 사람이 간격을 다시 맞춘다
+  Wd.leaveRing = function (g, p) {
+    const i = g.members.indexOf(p);
+    if (i >= 0) g.members.splice(i, 1);
+    p.ring = null;
+    if (g.state === 'release') return;
+    g.n = g.members.length;
+    g.rx = g.n * g.sp / RING_PERIM; g.ry = g.rx * RING_RY;   // 원을 줄여 다시 손잡는다
+    g.members.forEach((q, k) => { q.slot = k; q.rin = false; });
+  };
+  function stepRing(w, g, dt, R) {
+    g.t += dt;
+    if (g.state === 'join') {
+      let all = true;
+      for (const p of g.members) if (!p.rin) { all = false; break; }
+      if (all || g.t > 5) g.state = 'spin';
+    } else if (g.state === 'spin') {
+      g.ang += g.w * dt;
+      g.life -= dt;
+      if (g.life <= 0) Wd.dissolveRing(w, g, R);
+    } else if (g.state === 'release') g.ang += g.w * 2.5 * dt;
+  }
+  function ringMember(p, dt) {
+    const g = p.ring, a = g.ang + p.slot * 6.283185 / g.n;
+    const tx = g.x + Math.cos(a) * g.rx, ty = g.y + Math.sin(a) * g.ry;
+    if (p.rin) { p.x = tx; p.y = ty; return; }
+    const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), s = RING_JOIN * dt;
+    if (d <= s + 0.5) { p.x = tx; p.y = ty; p.rin = true; } else { p.x += dx / d * s; p.y += dy / d * s; }
+  }
+  const ringHop = (g, t, sp) => Math.abs(Math.sin(t * 6 + g.hop)) * sp.h * 0.07;
+  // 무리 그리기(사람보다 먼저) — 바닥 무늬 · 맞잡은 손 줄 · 음표
+  Wd.drawRings = function (g, rings, sp, t) {
+    for (const r of rings) {
+      if (r.state === 'done' || !r.members.length) continue;
+      g.fillStyle = 'rgba(255,90,44,0.08)'; g.beginPath(); g.ellipse(r.x, r.y + 1, r.rx + 9, r.ry + 7, 0, 0, 7); g.fill();
+      if (r.state !== 'spin') continue;
+      let all = true;
+      for (const p of r.members) if (!p.rin) { all = false; break; }
+      if (!all) continue;   // 자리를 다시 잡는 동안은 손을 놓는다
+      const hop = ringHop(r, t, sp);
+      g.strokeStyle = INK; g.lineWidth = Math.max(1, 1.2 * sp.scale);
+      g.beginPath(); g.ellipse(r.x, r.y - 8.2 * sp.scale - hop, r.rx, r.ry, 0, 0, 7); g.stroke();
+      g.fillStyle = INK; g.lineWidth = 1.1;
+      for (let k = 0; k < 2; k++) {
+        const ph = (t * 0.7 + k * 0.5 + r.hop) % 1;
+        g.globalAlpha = Math.min(1, (1 - ph) * 2.5);
+        A.note(g, r.x + (k ? 0.3 : -0.3) * r.rx + Math.sin(ph * 6 + k) * 4, r.y - r.ry - sp.h - 8 - ph * 22, 1.3);
+      }
+      g.globalAlpha = 1;
+    }
+  };
+
+  // 한 걸음 — cx = { dt, stamp, walkIn, R, spotMul, avMul, wave, rings, home }
   // 다 날아 들어간 사람(정거장으로 가는 사람)은 arrived 에 넣고 crowd 에서 뺀다
   Wd.step = function (w, crowd, cx, arrived) {
     const dt = cx.dt, R = cx.R;
     for (const s of w.spots) s.n = 0;
     for (const p of crowd) if (p.st === 1 && p.spot) p.spot.n++;
+    if (cx.rings) for (const g of cx.rings) if (g.state !== 'done') stepRing(w, g, dt, R);
     let j = 0;
     for (let i = 0; i < crowd.length; i++) {
       const p = crowd[i];
+      if (p.st === 4) {
+        if (p.ring) ringMember(p, dt); else toRoad(w, p, R);
+        p.ph += dt * 8;
+        crowd[j++] = p; continue;
+      }
       if (p.st === 3) {
         // 흡입구 · 로봇 쪽으로 날아간다(팔을 옆으로 · 웃으며)
         // 흡입구가 아무리 빨리 움직여도 따라잡는다(최고 빠르기 550px/초보다 빠르게 · 0.7초 넘으면 바로 들어감)
@@ -695,7 +814,7 @@
         crowd[j++] = p; continue;
       }
       const off = Math.hypot(p.dx, p.dy);
-      const excited = p.exc === cx.stamp;
+      const excited = p.exc === cx.stamp || !!cx.home;   // cx.home = 판 끝 몇 명 — 스스로 흡입구로 달려온다
       if (p.st === 0) {
         p.t += p.speed * dt * (excited ? 0.08 : off > 6 ? 0.5 : 1);
         if (p.t >= p.len) { p.t = p.len; roadPos(w, p); arriveNode(w, p, cx); } else roadPos(w, p);
@@ -723,8 +842,8 @@
       else { p.excT = 0; if (p.cool > 0) p.cool -= dt; }
       let x = p.rx + p.dx, y = p.ry + p.dy;
       if (excited) {
-        const c = p.by, ex = c.x - x, ey = c.y - y, d = Math.hypot(ex, ey) || 1;
-        const s = Math.min(d, cx.walkIn * dt);
+        const c = cx.home || p.by, ex = c.x - x, ey = c.y - y, d = Math.hypot(ex, ey) || 1;
+        const s = Math.min(d, (cx.home ? Math.max(180, d / 1.8) : cx.walkIn) * dt);   // 판 끝은 어디서든 2초 안팎에 닿게
         x += ex / d * s; y += ey / d * s;
         p.dx = x - p.rx; p.dy = y - p.ry;
       } else if (off > 0.01) {
@@ -750,6 +869,14 @@
         continue;
       }
       let f, hop = 0;
+      if (p.st === 4) {
+        // 무리 — 팔을 옆으로 벌려 손잡고 다 같이 들썩(뛰어오는 중이면 더 크게)
+        const r = p.ring;
+        if (r && p.rin) { f = 4 + (((t * 3 + r.hop) | 0) & 1); hop = ringHop(r, t, sp); }
+        else { f = 4 + (((t * 6 + p.ph0) | 0) & 1); hop = Math.abs(Math.sin(t * 12 + p.ph0)) * sp.h * 0.16; }
+        g.drawImage(fr[f], p.x - ax, p.y - ay - hop, S, S);
+        continue;
+      }
       if (p.exc >= stamp - 1) f = 4 + (((p.ph * 0.5) | 0) & 1);
       else if (wave) { f = 4 + (((t * 4 + p.ph0) | 0) & 1); hop = Math.abs(Math.sin(t * 6 + p.ph0)) * sp.h * 0.12; }
       else if (p.st === 1) {
