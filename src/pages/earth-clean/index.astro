@@ -18,6 +18,12 @@ const stages = [
   { img: town, name: "동네", people: "손님 6,000명" },
   { img: city, name: "첫 도시", people: "손님 3,000,000명" },
 ]
+// 출시 소식(2026-11-27 대표 「우리 게임 페이지에 스팀, 앱스토어 출시 관련 버튼이나 정보 뭐 그런 거 추가하라고 전달해봐」 · 비서 → 그룹장 경유).
+// 상점 페이지가 아직 없어 글로만 둔다 — 스팀 「출시 예정」 페이지가 뜨면 그 주소로 버튼을 단다. 정해지지 않은 날짜 · 약속은 쓰지 않는다.
+const news = [
+  { where: "스팀 (PC)", what: "본편을 준비하고 있어요" },
+  { where: "휴대폰 앱", what: "스팀 다음에 살펴볼 생각이에요" },
+]
 ---
 
 <EarthCleanLayout title={name} description={one}>
@@ -47,6 +53,20 @@ const stages = [
         ))
       }
     </ol>
+
+    <section class="news" aria-labelledby="news-h">
+      <h2 id="news-h">출시 소식</h2>
+      <ul>
+        {
+          news.map((n) => (
+            <li>
+              <b>{n.where}</b>
+              <span>{n.what}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
 
     <footer>
       <a class="play" href="/earth-clean/play/">맛보기 하러 가기</a>
@@ -156,6 +176,39 @@ const stages = [
   figcaption span {
     font-weight: 700;
     color: var(--pt);
+  }
+  .news {
+    margin-top: 56px;
+    padding: 20px 22px 22px;
+    background: #fff;
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.12);
+  }
+  .news h2 {
+    font-size: 20px;
+    font-weight: 900;
+    margin-bottom: 12px;
+  }
+  .news ul {
+    list-style: none;
+    display: grid;
+    gap: 10px;
+  }
+  .news li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 4px 12px;
+    font-size: 17px;
+  }
+  .news b {
+    font-weight: 800;
+  }
+  .news span {
+    font-weight: 600;
+    color: rgba(27, 27, 27, 0.78);
   }
   footer {
     display: flex;
