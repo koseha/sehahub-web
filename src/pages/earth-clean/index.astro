@@ -1,6 +1,6 @@
 ---
 // 「지구 청소」 소개 쪽(팀 earth-clean · 2026-11-25 대표 「sehahub.info 에 넣을 earth-clean 전용 페이지도 만들어봐. … 게임 소개 페이지와 게임 페이지가 따로야.」)
-// 게임 쪽 = /earth-clean/play/ (public/earth-clean/play/ · 정본은 팀 폴더).
+// 게임 쪽(/earth-clean/play/)은 2026-11-27 내렸다(대표 「내려」 · 국내 등급분류 답 전) — 이 쪽에서 맛보기로 잇는 링크도 뺐다. 정본은 팀 폴더.
 // 글은 사실만 둔다(이름 · 무엇을 하는 게임인지 · 판 셋의 손님 수 · 되는 기기) — 시키지 않은 문구를 넣지 않는다(그룹 지식 §2).
 // 말투 — 사람에게 「치운다 · 청소한다」를 쓰지 않는다(「모신다 · 빨아들인다」). 「청소」는 지구에만(팀 AGENTS.md).
 // 첫 화면에 그림을 둔다 — 글만 있으면 이름이 구호처럼 읽힌다(공개 전 반대 읽기 11/25 · 손님들이 정거장에서 노는 그림이 먼저 보이게).
@@ -32,10 +32,8 @@ const news = [
       <h1>{name}</h1>
       <p class="one">{one}</p>
       <figure class="photo">
-        <Image src={photo} alt={`${name} — 맛보기 끝 화면. 우주 정거장에 놀러 온 손님들이 다 같이 사진을 찍는다.`} widths={[480, 960, 1280]} sizes="(min-width: 1000px) 920px, 92vw" loading="eager" />
+        <Image src={photo} alt={`${name} — 끝 화면. 우주 정거장에 놀러 온 손님들이 다 같이 사진을 찍는다.`} widths={[480, 960, 1280]} sizes="(min-width: 1000px) 920px, 92vw" loading="eager" />
       </figure>
-      <a class="play" href="/earth-clean/play/">맛보기 하러 가기</a>
-      <p class="facts">무료 · 설치 없음 · PC와 휴대폰 브라우저</p>
     </header>
 
     <ol class="stages">
@@ -69,7 +67,6 @@ const news = [
     </section>
 
     <footer>
-      <a class="play" href="/earth-clean/play/">맛보기 하러 가기</a>
       <a class="home" href="/">sehahub</a>
     </footer>
   </main>
@@ -117,37 +114,6 @@ const news = [
   .photo img,
   .stages img {
     width: 100%;
-  }
-  .play {
-    display: inline-block;
-    background: var(--pt);
-    color: #fff;
-    font-size: 20px;
-    font-weight: 800;
-    padding: 15px 34px;
-    border: 2.5px solid var(--ink);
-    border-radius: 999px;
-    box-shadow: 3px 4px 0 var(--ink);
-    transition:
-      transform 0.08s,
-      box-shadow 0.08s;
-  }
-  .play:hover {
-    transform: translate(1px, 1px);
-    box-shadow: 2px 3px 0 var(--ink);
-  }
-  .play:active {
-    transform: translate(3px, 4px);
-    box-shadow: 0 0 0 var(--ink);
-  }
-  .play:focus-visible {
-    outline: 3px solid var(--ink);
-    outline-offset: 4px;
-  }
-  .facts {
-    font-size: 14px;
-    font-weight: 600;
-    color: rgba(27, 27, 27, 0.72);
   }
   .stages {
     list-style: none;
@@ -222,10 +188,5 @@ const news = [
     font-weight: 700;
     text-decoration: underline;
     text-underline-offset: 4px;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .play {
-      transition: none;
-    }
   }
 </style>
