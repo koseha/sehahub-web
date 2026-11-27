@@ -25,7 +25,8 @@
   // 판 셋. perFigure = 그림 속 사람 한 명이 나타내는 사람 수 · screenCap = 화면에 동시에 그리는 사람 그림 수
   // small = 이 판에서 작은 선택 문턱(이 판에서 모신 사람 수) · bigAt = 판 안에서 큰 선택이 뜨는 비율
   // 판이 끝나면(마지막 판 빼고) 큰 선택이 하나 뜬다.
-  var STAGES = [
+  // 🔴 이 셋이 맛보기(웹 · 라이브)다. 본편 판은 numbers-full.js(full.html 만)에 두고 본편 켜기로 뒤에 붙인다 — 맛보기 숫자 · 저장(v1)은 그대로.
+  var DEMO_STAGES = [
     { id: 'room', name: '내 방', people: 8, perFigure: 1, screenCap: 8, figurePx: 44,
       small: [], bigAt: [] },
     { id: 'hood', name: '동네', people: 6000, perFigure: 1, screenCap: 400, figurePx: 16,
@@ -39,6 +40,8 @@
   // (동네는 마지막 문턱을 조금 늦춰 「동네 끝 → 도시 첫 큰 선택」 사이가 2분을 덜 넘게 했다).
   // 도시 큰 선택은 사람 수 30%(90만) — 빠르기가 갈수록 붙어 이때가 도시 21분의 시간상 가운데다(절반 150만은 23분쯤이라 너무 늦다).
   // 이 큰 선택이 작은 선택 한 자리를 차지한다(750,000 과 1,000,000 사이).
+  var STAGES = DEMO_STAGES;          // 지금 쓰는 판 목록(본편 켜기가 바꾼다)
+  var FULL_FROM = DEMO_STAGES.length; // 본편에서 새로 붙는 첫 판 번호(= 3)
 
   var BASE = {
     radius: 30,          // 흡입구 반경 — 이 원 안에 들어온 사람은 빨려 든다
@@ -67,7 +70,8 @@
 
   // 카드. small = 작은 선택(겹쳐 고름 · max 까지) · big = 큰 선택(한 번씩)
   // fx 는 한 번 고를 때마다 한 번 더해진다(Mul = 곱 · Add = 더함 · 그 밖 = 켜짐)
-  var CARDS = [
+  // 🔴 이 16장이 맛보기 카드다. 본편 카드는 numbers-full.js(본편 켜기 때만 붙음).
+  var DEMO_CARDS = [
     { id: 'wide',   tier: 'small', max: 5, name: '큰 흡입구',     line: '흡입구가 한 뼘 커져요',              fx: { radiusMul: 1.1 } },
     { id: 'pull',   tier: 'small', max: 5, name: '흡입력',        line: '조금 떨어진 사람도 쏙 빨려 와요',     fx: { pullAdd: 0.25 } },
     { id: 'robot',  tier: 'small', max: 5, name: '마중 로봇',     line: '손을 떼도 알아서 마중 나가요',        fx: { robotsAdd: 1 } },
@@ -86,7 +90,21 @@
     { id: 'fof',    tier: 'big', name: '친구의 친구',     line: '친구가 또 친구를 데려와요',                   fx: { friendsMul: 1.25 } },
     { id: 'window', tier: 'big', name: '창문 풍선',       line: '흡입구 위에 정거장 창문이 떠서 손님들이 손을 흔들어요', fx: { pullAdd: 0.6 } },
   ];
+  var CARDS = DEMO_CARDS;            // 지금 쓰는 카드 목록(본편 켜기가 바꾼다)
   var FIRST_SMALL = ['wide', 'pull', 'robot'];   // 첫 작은 선택은 늘 이 셋(배우는 판 · 시안 D 의 카드 셋과 같다)
+
+  // ───────────── 본편(스팀) 자료는 numbers-full.js — full.html 만 읽는다(공개 맛보기에는 안 실린다 · tools/export-site.mjs 안전장치) ─────────────
+  // numbers-full.js 가 addFull({ stages, cards, max, friendFam, base }) 로 본편 판 · 카드 · 상한 · 「친구 모임」 카드 묶음 · 본편 BASE 값을 넣고,
+  // 본편 켜기(N.useFull → setFull)를 단다. 맛보기는 이 자리가 비어 있고 숫자 · 저장(v1)은 그대로.
+  var FULL_STAGES = null, FULL_CARDS = null, FULL_MAX = {}, FRIEND_FAM = [];
+  function addFull(pack) {
+    FULL_STAGES = DEMO_STAGES.concat(pack.stages); FULL_CARDS = DEMO_CARDS.concat(pack.cards);
+    FULL_MAX = pack.max || {}; FRIEND_FAM = pack.friendFam || [];
+    if (pack.base) assign(BASE, pack.base);
+    N.FULL_STAGES = FULL_STAGES; N.FULL_CARDS = FULL_CARDS; N.FULL_MAX = FULL_MAX; N.FRIEND_FAM = FRIEND_FAM;
+    return N;
+  }
+  var full = false;
 
   function cardById(id) {
     for (var i = 0; i < CARDS.length; i++) if (CARDS[i].id === id) return CARDS[i];
@@ -94,12 +112,30 @@
   }
 
   function newRun(seed) {
-    return {
+    var s = {
       v: 1, seed: seed >>> 0, stage: 0, left: STAGES[0].people, guests: 0, earth: EARTH_START,
       picks: {}, smallCount: 0, bigCount: 0, since: {},
       smallIdx: 0, bigIdx: 0, smallDue: 0, bigDue: 0, lastChoiceAt: 0,
       gaugeOn: false, gauge: 0, burst: 0, bursts: 0, playSec: 0,
     };
+    if (full) { s.v = 2; s.stageSec = []; s.from = 'new'; }   // 본편 저장 v2 — 판마다 끝난 놀이 시간 · 어디서 왔나('new' · 'demo' = 맛보기 이어하기 코드)
+    return s;
+  }
+
+  // 본편 켜기 — 맛보기 판 셋 뒤에 본편 판을 붙이고 본편 카드를 더한다(on = false 면 맛보기로 되돌림). 게임은 시작 전에 한 번 부른다.
+  function setFull(on) {
+    if (on !== false && !FULL_STAGES) throw new Error('본편 자료(numbers-full.js)를 먼저 읽어야 한다');
+    full = on !== false;
+    STAGES = full ? FULL_STAGES : DEMO_STAGES;
+    CARDS = full ? FULL_CARDS : DEMO_CARDS;
+    N.STAGES = STAGES; N.CARDS = CARDS; N.FULL = full;
+    return N;
+  }
+  // 이 카드를 몇 번까지 고를 수 있나(본편 판에서는 FULL_MAX 가 앞선다)
+  function capOf(state, c) {
+    if (c.tier !== 'small') return 1;
+    if (full && state.stage >= FULL_FROM && FULL_MAX[c.id]) return FULL_MAX[c.id];
+    return c.max;
   }
 
   // 고른 카드 → 지금 능력치
@@ -108,8 +144,10 @@
       radius: BASE.radius, pull: BASE.pull, twin: 1, trail: 1, robots: 0, robotSize: 1, robotSpeed: 1,
       walkers: false, friends: 1, gaugeFill: BASE.gaugeFill, burstSec: BASE.burstSec, burstMul: BASE.burstMul,
       burstAll: false, gaugeAfter: 0, autoSpin: false,
+      // 본편 카드가 쓰는 칸(맛보기에서는 늘 이 값 그대로 — 곱 1 · 더하기 0)
+      sweep: 1, helpers: 0, botMul: 1, idle: 1, burstBots: 1, burstPer: 0, burstHold: false, idleBots: 1, crewRoomMul: 1, crewRoomAdd: 0,
     };
-    var friendsAdd = 0, friendsMul = 1, trailAdd = 0;
+    var friendsAdd = 0, friendsMul = 1, trailAdd = 0, trailMul = 1, sweepAdd = 0, sweepMul = 1, helpersMul = 1, friendSyn = 0, botSyn = 0;
     for (var i = 0; i < CARDS.length; i++) {
       var c = CARDS[i], lv = picks[c.id] || 0, fx = c.fx;
       for (var k = 0; k < lv; k++) {
@@ -129,11 +167,47 @@
         if (fx.burstMulSet) s.burstMul = fx.burstMulSet;
         if (fx.burstAll) s.burstAll = true;
         if (fx.gaugeAfter) s.gaugeAfter = fx.gaugeAfter;
+        // 본편
+        if (fx.sweepAdd) sweepAdd += fx.sweepAdd;
+        if (fx.sweepMul) sweepMul *= fx.sweepMul;
+        if (fx.trailMul) trailMul *= fx.trailMul;
+        if (fx.helpersAdd) s.helpers += fx.helpersAdd;
+        if (fx.botMul) s.botMul *= fx.botMul;
+        if (fx.idleMul) s.idle *= fx.idleMul;
+        if (fx.burstMulMul) s.burstMul *= fx.burstMulMul;
+        if (fx.burstBots) s.burstBots = fx.burstBots;
+        if (fx.burstPerAdd) s.burstPer += fx.burstPerAdd;
+        if (fx.burstHold) s.burstHold = true;
+        if (fx.gaugeAfterAdd) s.gaugeAfter = Math.min(0.8, s.gaugeAfter + fx.gaugeAfterAdd);
+        if (fx.helpersMul) helpersMul *= fx.helpersMul;
+        if (fx.friendSyn) friendSyn += fx.friendSyn;
+        if (fx.botSyn) botSyn += fx.botSyn;
+        if (fx.idleBots) s.idleBots *= fx.idleBots;
+        if (fx.crewRoomMul) s.crewRoomMul *= fx.crewRoomMul;
+        if (fx.crewRoomAdd) s.crewRoomAdd += fx.crewRoomAdd;
       }
     }
+    s.helpers *= helpersMul;
+    if (friendSyn) { var famN = 0; for (var j = 0; j < FRIEND_FAM.length; j++) famN += picks[FRIEND_FAM[j]] || 0; friendsMul *= 1 + friendSyn * famN; }   // 친구 모임
+    if (botSyn) s.botMul *= 1 + botSyn * s.robots;   // 로봇 놀이터
     s.friends = (1 + friendsAdd) * friendsMul;
-    s.trail = 1 + trailAdd;
+    s.trail = (1 + trailAdd) * trailMul;
+    s.sweep = (1 + sweepAdd) * sweepMul;
     return s;
+  }
+
+  // (본편) 화면에 그릴 로봇 · 마중대 수와 화면 밖 몫 — 로봇을 먼저 반까지, 나머지를 마중대(산책 손님 포함)로 채운다.
+  // offShare = numbers.js modelRate 의 로봇 · 마중대 몫 중 화면 밖으로 셀 몫(game.js crewAway 가 botFig × offShare 를 정거장에 더한다 · 화면 안 그림은 직접 모신다)
+  // 상한이 없을 때(다 그릴 때)는 1 − 1/wideBot(지금 뼈대와 같음). wide 가 아닌 판은 다 그리고 화면 밖 몫 0.
+  function crewSplit(st, guests, stage) {
+    var robots = st.robots, walkers = (st.walkers ? walkerCount(guests) : 0) + st.helpers;
+    var S = STAGES[stage];
+    if (!S || !S.wide) return { robots: robots, walkers: walkers, offShare: 0 };
+    var cap = BASE.drawCrew, dr = Math.min(robots, Math.ceil(cap / 2));
+    var dw = Math.min(walkers, cap - dr);
+    if (dr + dw < cap) dr = Math.min(robots, cap - dw);
+    var units = robots + walkers * BASE.walkerShare, drawn = dr + dw * BASE.walkerShare;
+    return { robots: dr, walkers: dw, offShare: units > 0 ? 1 - drawn / (units * BASE.wideBot) : 0 };
   }
 
   // 끌림 고리 반경 — 이 안의 사람은 흡입구 쪽으로 걸어오고, radius 안에 들면 빨려 든다
@@ -164,13 +238,16 @@
 
   function eligible(state, c) {
     var lv = state.picks[c.id] || 0;
-    if (c.tier === 'small' && lv >= c.max) return false;
+    if (c.tier === 'small' && lv >= capOf(state, c)) return false;
     if (c.tier === 'big' && lv > 0) return false;
+    if (c.from && state.stage < c.from) return false;          // 본편 카드는 제 판부터
     var nd = c.needs;
     if (!nd) return true;
     if (nd.robots && stats(state.picks).robots < nd.robots) return false;
     if (nd.gauge && !(state.bursts > 0)) return false;      // 신바람 타임을 한 번은 본 뒤부터
     if (nd.guests && state.guests < nd.guests) return false;
+    if (nd.has && !state.picks[nd.has]) return false;
+    if (nd.picks) for (var k in nd.picks) if ((state.picks[k] || 0) < nd.picks[k]) return false;
     return true;
   }
 
@@ -180,12 +257,17 @@
     if (tier === 'small' && state.smallCount === 0) {
       ids = FIRST_SMALL.slice();
     } else {
-      var pool = CARDS.filter(function (c) { return c.tier === tier && eligible(state, c); });
+      // 본편 판을 여는 큰 선택(아직 아무도 안 모심)에는 그 판의 새 카드가 먼저 나온다 — 맛보기 판에는 firstBig 이 없어 빈 줄
+      var S = STAGES[state.stage];
+      var pre = tier === 'big' && S.firstBig && state.left === S.people
+        ? S.firstBig.filter(function (id) { var c = cardById(id); return c && eligible(state, c); }) : [];
+      var pool = CARDS.filter(function (c) { return c.tier === tier && eligible(state, c) && pre.indexOf(c.id) < 0 && !c.filler; });
+      if (tier === 'small' && pool.length < 3) pool = pool.concat(CARDS.filter(function (c) { return c.filler && eligible(state, c); }));
       var w = pool.map(function (c) {
         var n = state.since[c.id] === undefined ? BASE.offerBoostMax : Math.min(BASE.offerBoostMax, state.since[c.id]);
         return 1 + BASE.offerBoost * n;
       });
-      ids = [];
+      ids = pre.slice();
       while (ids.length < 3 && pool.length) {
         var tot = 0, k;
         for (k = 0; k < w.length; k++) tot += w[k];
@@ -208,11 +290,13 @@
   // 판 끝 큰 선택은 여기를 거치지 않고 바로 띄운다(줌아웃과 같이 · openChoice 를 바로 부름)
   function nextChoice(state) {
     var since = state.playSec - state.lastChoiceAt;
+    var S = STAGES[state.stage];
     if (since < BASE.choiceMinGap) return null;
+    if (S.noChoice) return null;                               // 끝 장면 판(본편)
     if (state.bigDue > 0) return 'big';
-    if (state.left < BASE.choiceHoldTail * STAGES[state.stage].people) return null;
+    if (state.left < (S.holdTail || BASE.choiceHoldTail) * S.people) return null;
     if (state.smallDue > 0) return 'small';
-    if (state.stage > 0 && since >= BASE.choiceMaxGap) return 'small';
+    if (state.stage > 0 && since >= (S.maxGap || BASE.choiceMaxGap)) return 'small';
     return null;
   }
   // 다음 카드까지 얼마나 찼나(0~1 · 화면 표시용 · 규칙은 위 nextChoice 그대로) — null 이면 표시하지 않는다(내 방 · 판 끝 무렵 미룸)
@@ -220,7 +304,7 @@
   function choiceProgress(state) {
     var S = STAGES[state.stage];
     if (!S.small.length) return null;
-    if (state.left < BASE.choiceHoldTail * S.people) return null;
+    if (state.left < (S.holdTail || BASE.choiceHoldTail) * S.people) return null;
     var since = state.playSec - state.lastChoiceAt;
     var p = 0;
     if (state.smallDue > 0 || state.bigDue > 0) p = 1;
@@ -228,7 +312,7 @@
       var done = S.people - state.left, a = state.smallIdx > 0 ? S.small[state.smallIdx - 1] : 0;
       p = (done - a) / (S.small[state.smallIdx] - a);
     }
-    if (state.stage > 0) p = Math.max(p, since / BASE.choiceMaxGap);
+    if (state.stage > 0) p = Math.max(p, since / (S.maxGap || BASE.choiceMaxGap));
     p = Math.min(p, since / BASE.choiceMinGap);
     return Math.max(0, Math.min(1, p));
   }
@@ -272,19 +356,31 @@
   function nextStage(state) {
     var n = state.stage + 1;
     if (n >= STAGES.length) return state;
-    return assign({}, state, { stage: n, left: STAGES[n].people, smallIdx: 0, bigIdx: 0, gaugeOn: true, burst: 0 });
+    var s = assign({}, state, { stage: n, left: STAGES[n].people, smallIdx: 0, bigIdx: 0, gaugeOn: true, burst: 0 });
+    if (full) {
+      s.stageSec = (state.stageSec || []).concat([state.playSec]);   // 본편 — 판마다 끝난 때(엔딩 카드 · 기록 도전)
+      // 손님 · 지구 숫자를 판 사람 수의 정수 합으로 다시 맞춘다 — 수십억에 소수 몫을 수백만 번 더하고 빼면 오차가 판마다 1명 가까이 쌓인다(11/27 봇 · 개발 담당)
+      var before = 0;
+      for (var i = 0; i < n; i++) before += STAGES[i].people;
+      s.guests = before; s.earth = EARTH_START - before;
+    }
+    return s;
   }
 
   // 놀이 시간이 dt 만큼 흐름(멈춘 동안은 부르지 않는다) — 신바람은 손으로 쓰는 동안 차고, 가득 차면 저절로 신바람 타임
-  function tick(state, st, dt, handOn) {
+  // (본편 · 신바람 단추를 고르면 st.burstHold) 가득 찬 게이지가 기다린다 — release(눌렀나)가 참일 때 신바람 타임. 맛보기에서는 burstHold 가 늘 거짓
+  function tick(state, st, dt, handOn, release) {
     var s = assign({}, state, { playSec: state.playSec + dt }), ev = [];
     if (!s.gaugeOn) return { state: s, events: ev };
     if (s.burst > 0) {
       s.burst = Math.max(0, s.burst - dt);
       if (s.burst === 0) { s.gauge = st.gaugeAfter; ev.push({ type: 'burstEnd' }); }
-    } else if (handOn) {
-      s.gauge += dt / st.gaugeFill;
-      if (s.gauge >= 1) { s.gauge = 0; s.burst = st.burstSec; s.bursts++; ev.push({ type: 'burstStart' }); }
+    } else if (handOn || (st.burstHold && s.gauge >= 1)) {
+      if (s.gauge < 1) s.gauge += dt / st.gaugeFill;
+      if (s.gauge >= 1) {
+        if (st.burstHold && !release) s.gauge = 1;   // 누를 때까지 기다림(game.js 가 「눌러요!」를 띄운다)
+        else { s.gauge = 0; s.burst = st.burstSec; s.bursts++; ev.push({ type: 'burstStart' }); }
+      }
     }
     return { state: s, events: ev };
   }
@@ -292,15 +388,66 @@
   // 저장 — 웹 맛보기와 스팀판이 같은 꼴을 쓴다(이어하기 코드 = 이것을 JSON → base64)
   var SAVE_KEYS = ['v', 'seed', 'stage', 'left', 'guests', 'earth', 'picks', 'smallCount', 'bigCount', 'since',
     'smallIdx', 'bigIdx', 'smallDue', 'bigDue', 'lastChoiceAt', 'gaugeOn', 'gauge', 'bursts', 'playSec'];
+  var SAVE_KEYS_FULL = ['stageSec', 'from'];   // 본편 v2 에만 더하는 칸
   function toSave(state) {
     var o = {};
     for (var i = 0; i < SAVE_KEYS.length; i++) o[SAVE_KEYS[i]] = state[SAVE_KEYS[i]];
+    if (full) { o.v = 2; for (var j = 0; j < SAVE_KEYS_FULL.length; j++) o[SAVE_KEYS_FULL[j]] = state[SAVE_KEYS_FULL[j]]; }
     o.left = Math.round(o.left); o.guests = Math.round(o.guests); o.earth = EARTH_START - o.guests;
     return o;
   }
   function fromSave(o) {
+    if (full) return fromSaveFull(o);
     if (!o || o.v !== 1 || typeof o.stage !== 'number' || o.stage < 0 || o.stage >= STAGES.length) return null;
     return assign(newRun(o.seed || 0), o, { burst: 0 });
+  }
+  // 본편 — v2 저장, 또는 맛보기 v1(브라우저 저장 · 이어하기 코드)을 받아 v2 로 올린다.
+  // 이어하기 코드는 사람이 붙여 넣는 글이라 값을 하나하나 다시 맞춘다 — 손님 수 · 지구 숫자는 판 · 남은 사람에서 다시 셈(82억 합이 늘 맞게).
+  function fromSaveFull(o) {
+    if (!o || (o.v !== 1 && o.v !== 2)) return null;
+    var stage = o.stage;
+    if (typeof stage !== 'number' || stage !== Math.floor(stage) || stage < 0 || stage >= STAGES.length) return null;
+    if (o.v === 1 && stage >= FULL_FROM) return null;           // 맛보기 저장은 판 0~2 뿐
+    var S = STAGES[stage];
+    var left = Math.max(0, Math.min(S.people, Math.round(Number(o.left))));
+    if (!(left >= 0)) return null;
+    var s = newRun(Number(o.seed) >>> 0);
+    var num = function (k, lo, hi) { var x = Number(o[k]); return isFinite(x) ? Math.max(lo, Math.min(hi, x)) : s[k]; };
+    s.stage = stage; s.left = left;
+    s.playSec = num('playSec', 0, 1e7); s.lastChoiceAt = num('lastChoiceAt', 0, s.playSec);
+    s.smallIdx = Math.floor(num('smallIdx', 0, S.small.length)); s.bigIdx = Math.floor(num('bigIdx', 0, S.bigAt.length));
+    s.smallDue = Math.floor(num('smallDue', 0, 50)); s.bigDue = Math.floor(num('bigDue', 0, 10));
+    s.gauge = num('gauge', 0, 1); s.bursts = Math.floor(num('bursts', 0, 1e6)); s.gaugeOn = stage > 0 || !!o.gaugeOn;
+    var picks = {}, sc = 0, bc = 0;
+    if (o.picks && typeof o.picks === 'object') for (var id in o.picks) {
+      var c = cardById(id), lv = Math.floor(Number(o.picks[id]));
+      if (!c || !(lv > 0)) continue;
+      lv = Math.min(lv, c.tier === 'small' ? Math.max(c.max, FULL_MAX[id] || 0) : 1);
+      picks[id] = lv; if (c.tier === 'small') sc += lv; else bc += lv;
+    }
+    s.picks = picks; s.smallCount = sc; s.bigCount = bc;
+    var since = {};
+    if (o.since && typeof o.since === 'object') for (var k2 in o.since) if (cardById(k2) && isFinite(Number(o.since[k2]))) since[k2] = Math.max(0, Math.floor(Number(o.since[k2])));
+    s.since = since;
+    var before = 0;
+    for (var i = 0; i < stage; i++) before += STAGES[i].people;
+    s.guests = before + S.people - left; s.earth = EARTH_START - s.guests;
+    s.stageSec = (Array.isArray(o.stageSec) ? o.stageSec : []).slice(0, stage).map(function (x) { return typeof x === 'number' && isFinite(x) ? x : null; });
+    while (s.stageSec.length < stage) s.stageSec.push(null);     // 맛보기에서 온 판은 판별 시간이 없다(null)
+    s.from = o.v === 1 ? 'demo' : (o.from === 'demo' ? 'demo' : 'new');
+    if (o.v === 1 && stage === FULL_FROM - 1 && left === 0) {
+      // 맛보기를 끝까지 한 코드 — 본편 첫 판부터 · 판을 여는 큰 선택이 바로 뜬다
+      s = nextStage(s);
+      s.bigDue = 1; s.lastChoiceAt = Math.min(s.lastChoiceAt, s.playSec - BASE.choiceMinGap);
+    }
+    return s;
+  }
+  // 이어하기 코드(맛보기 끝 카드 · 메뉴의 「이어하기 코드 복사」 = 저장을 JSON → base64) → 본편 상태. 못 읽으면 null
+  function fromCode(text) {
+    try {
+      var raw = typeof atob === 'function' ? atob(String(text).replace(/\s+/g, '')) : null;
+      return raw ? fromSave(JSON.parse(raw)) : null;
+    } catch (e) { return null; }
   }
 
   // 0~1 난수(같은 seed 면 같은 줄)
@@ -324,7 +471,8 @@
   }
 
   function modelRate(st, ctx) {
-    var stage = ctx.stage, per = perFigure(st, stage);
+    var stage = ctx.stage, per = perFigure(st, stage), SS = STAGES[stage];
+    if (ctx.burst && (SS.burstPer || st.burstPer)) per *= 1 + (SS.burstPer || 0) + st.burstPer;   // 본편 — 신바람 때 친구를 더 데려온다
     var n = figuresOnScreen(st, stage, ctx.left);
     if (n <= 0) return { n: 0, per: per, fig: 0, people: 0, handFig: 0, botFig: 0 };
     var rho = n / MAP_AREA;
@@ -335,21 +483,40 @@
     if (ctx.handOn) {
       var v = Math.min(ctx.hand.v, BASE.maxSpeed);
       var R = modelCatchRadius(r, ring, v);
-      var area = rho * 2 * R * v * ctx.hand.e * st.twin * st.trail;
+      var area = rho * 2 * R * v * ctx.hand.e * st.twin * st.trail * st.sweep;
       var aim = 1 / (Math.max(0, dnn - R) / v + ctx.hand.tReact);
       handFig = Math.max(area, aim);
     } else if (ctx.autoOn && st.autoSpin) {
-      handFig = rho * 2 * modelCatchRadius(r, ring, BASE.autoSpeed) * BASE.autoSpeed * ctx.autoEff * st.twin * st.trail;
+      handFig = rho * 2 * modelCatchRadius(r, ring, BASE.autoSpeed) * BASE.autoSpeed * ctx.autoEff * st.twin * st.trail * st.sweep * st.idle;
     }
-    var bots = st.robots + (st.walkers ? walkerCount(ctx.guests) * BASE.walkerShare : 0);
+    var bots = st.robots + (st.walkers ? walkerCount(ctx.guests) * BASE.walkerShare : 0) + st.helpers * BASE.walkerShare;
     var botFig = 0;
     if (bots > 0) {
       var rbm = ctx.burst && st.burstAll ? BASE.burstMul : 1;
       var rR = st.radius * BASE.robotRadius * st.robotSize * rbm;
       var rv = BASE.robotSpeed * st.robotSpeed;
-      var bArea = bots * rho * 2 * rR * rv * ctx.botEff;
+      var bArea = bots * rho * 2 * rR * rv * ctx.botEff * st.botMul * (ctx.burst ? st.burstBots : 1) * (SS.wide ? BASE.wideBot : 1) * (ctx.handOn ? 1 : st.idleBots);
       var bAim = bots / (Math.max(0, dnn - rR) / rv + ctx.botReact);
       botFig = Math.max(bArea, bAim);
+    }
+    // ctx.sat — 「지나간 자리는 아직 덜 찼다」: 1초에 덮는 넓이가 지도에 가까워지면 더 덮어도 덜 모신다(1초 상한 = 화면 사람 수).
+    // 맛보기 계산(처음 손 셋)은 이것 없이 맞췄다 — 계산기는 실측 손 둘(모든 판)과 본편 판(모든 손)에만 켠다(run.mjs).
+    if (ctx.sat && handFig + botFig > 0) {
+      var hA = ctx.handOn || (ctx.autoOn && st.autoSpin) ? (ctx.handOn ? area : handFig) : 0;   // 넓이로 센 몫만 포화시킨다
+      var bA = bots > 0 ? bArea : 0;
+      var hS, bS;
+      if (SS.wide) {                                                // 본편 — 로봇 · 마중대는 손과 다른 곳에서(따로 포화)
+        // 손 몫은 계산기 어림(게임은 그림을 하나하나 직접 잡는다) — 넓은 맵에서는 손이 지나간 뒤 다른 곳에 사람이 새로 나와 덜 포화(1초 상한 = 화면 수 × handSat · 브라우저 봇에 맞춤)
+        // 로봇 · 마중대 몫(bS)은 게임이 화면 밖 몫을 셀 때 그대로 쓴다(game.js crewAway) — 판이 화면 crewRoom 장만큼 넓다고 보고 그만큼 덜 포화(뒤 판일수록 넓다)
+        var K = BASE.handSat, W = (SS.crewRoom || BASE.wideBot) * st.crewRoomMul + st.crewRoomAdd;
+        hS = n * K * (1 - Math.exp(-hA / (n * K))); bS = n * W * (1 - Math.exp(-bA / (n * W)));
+      } else {
+        var cov = (hA + bA) / n;                                    // 1초에 화면의 몇 배를 덮나
+        var satFig = cov > 0 ? n * (1 - Math.exp(-cov)) : 0;
+        hS = cov > 0 ? satFig * hA / (hA + bA) : 0; bS = satFig - hS;
+      }
+      handFig = ctx.handOn ? Math.max(hS, aim) : hS;
+      botFig = bots > 0 ? Math.max(bS, bAim) : 0;
     }
     var fig = handFig + botFig;
     return { n: n, per: per, fig: fig, people: fig * per, handFig: handFig, botFig: botFig };
@@ -358,7 +525,7 @@
   // 사람이 화면에 꽉 찼을 때 평균 1초에 모시는 사람 수(쉬는 몫 · 신바람 몫을 평균 낸 것) — 카드 고르기 어림과 문서용
   function modelAverage(st, stage, hand, opt) {
     var base = { stage: stage, left: STAGES[stage].people, guests: opt.guests, hand: hand,
-      autoEff: opt.autoEff, botEff: opt.botEff, botReact: opt.botReact };
+      autoEff: opt.autoEff, botEff: opt.botEff, botReact: opt.botReact, sat: opt.sat };
     var on = modelRate(st, assign({}, base, { handOn: true, burst: false }));
     var onB = modelRate(st, assign({}, base, { handOn: true, burst: true }));
     var off = modelRate(st, assign({}, base, { handOn: false, autoOn: true, burst: false }));
@@ -374,6 +541,9 @@
     eligible: eligible, offer: offer, nextChoice: nextChoice, choiceProgress: choiceProgress, openChoice: openChoice, pick: pick,
     welcome: welcome, nextStage: nextStage, tick: tick, toSave: toSave, fromSave: fromSave, rng: rng,
     modelRate: modelRate, modelAverage: modelAverage, modelCatchRadius: modelCatchRadius,
+    // 본편(스팀) — 본편 켜기 전에는 STAGES · CARDS 가 맛보기 그대로다
+    FULL: false, FULL_FROM: FULL_FROM, DEMO_STAGES: DEMO_STAGES, FULL_STAGES: FULL_STAGES, DEMO_CARDS: DEMO_CARDS, FULL_CARDS: FULL_CARDS,
+    FULL_MAX: FULL_MAX, setFull: setFull, addFull: addFull, capOf: capOf, fromCode: fromCode, crewSplit: crewSplit, FRIEND_FAM: FRIEND_FAM,
   };
   root.EarthCleanNumbers = N;
   if (typeof module === 'object' && module && module.exports) module.exports = N;

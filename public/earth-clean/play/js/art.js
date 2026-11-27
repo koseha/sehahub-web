@@ -360,6 +360,13 @@
         g.fillStyle = '#fff'; g.beginPath(); g.arc(cx, cy - 4, 15, 0, 7); g.fill(); g.lineWidth = 1.8; g.stroke();
         g.fillStyle = PT_PALE; g.beginPath(); g.arc(cx, cy - 4, 10, 0, 7); g.fill(); g.lineWidth = 1.3; g.stroke();
         head(g, cx, cy - 7, 3.4, true); break;
+      default: {
+        // 본편 새 카드 — 그림이 나올 때까지 임시(흰 동그라미 + 카드 이름 첫 글자)
+        const s = EC.ui && EC.ui.cardText ? EC.ui.cardText(id).name : id;
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(cx, cy, 17, 0, 7); g.fill(); g.lineWidth = 1.6; g.stroke();
+        g.fillStyle = PT; g.font = `800 17px ${A.KO}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(Array.from(s)[0] || '?', cx, cy + 1); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+      }
     }
     g.restore();
   };

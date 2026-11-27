@@ -52,7 +52,10 @@
   };
 
   // ---------- 판 만들기 ----------
+  // 본편(스팀 · numbers.js useFull) 판 3~8 은 첫 도시와 같은 길 그물에 바탕만 다른 임시 그림(field) · 판 9 = 끝 장면(last)
   Wd.make = function (stage, L, seed) {
+    const S = window.EarthCleanNumbers && window.EarthCleanNumbers.STAGES[stage];
+    if (S && S.last) return Wd.lastWorld(L, seed);   // world-full.js(본편만)
     return stage === 0 ? roomWorld(L, seed) : townWorld(stage, L, seed);
   };
 
@@ -80,7 +83,7 @@
   function townWorld(stage, L, seed) {
     const M = L.map;
     const R = A.mulberry(seed);
-    const city = stage === 2;
+    const city = stage >= 2;   // 본편 판(3~)도 첫 도시와 같은 촘촘한 길 그물
     const k = city ? 0.82 : 1;
     const ROAD = city ? 11 : 15, AV = city ? 17 : 15;
     const sx = city ? 150 : 205, sy = city ? 165 : 225;
@@ -89,7 +92,7 @@
     for (let y = M.y + (city ? 150 : 175); y < M.y + M.h - 45; y += sy) YS.push(Math.round(y));
     const avRow = city ? 1 : -1;
     const hw = (j) => (j === avRow ? AV : ROAD);
-    const w = { kind: city ? 'city' : 'hood', stage, M, XS, YS, ROAD, hw, avRow, k, seed,
+    const w = { kind: stage === 2 ? 'city' : city ? 'field' : 'hood', stage, M, XS, YS, ROAD, hw, avRow, k, seed,
       nodes: [], exits: [], spots: [], bld: [], trees: [], parks: [], plazas: [], markets: [], shops: [], lamps: [], doors: [] };
 
     // 길 그물 — 갈림길 + 지도 끝(밖으로 나간 사람은 다른 끝에서 들어온다)
@@ -186,14 +189,12 @@
     }
     w.spots.forEach((s, si) => { for (const n of s.nodes) nodes[n].spots.push(si); });
 
-    // 집 · 건물(광장은 비운다 · 가로는 맨 위 숫자 상자 밑도 비운다 — 세로는 상자가 없어 지도가 비친다 · 대표 11/26)
-    const ctr = L.ctr, cz = { x: ctr.x - ctr.w / 2 - 12, y: 0, w: ctr.w + 24, h: ctr.y + ctr.h / 2 + 10 };
+    // 집 · 건물(광장은 비운다 · 맨 위 숫자 칸은 상자 없이 투명이라 그 밑에도 지도가 그대로 비친다 — 세로 11/26 · 가로 11/27 대표)
     const blocked = (x, y, bw, bh, b) => {
       for (const pz of w.plazas) {
         const qx = Math.max(x, Math.min(pz.x, x + bw)), qy = Math.max(y, Math.min(pz.y, y + bh));
         if (Math.hypot(qx - pz.x, qy - pz.y) < pz.r + 10) return true;
       }
-      if (!L.portrait && x < cz.x + cz.w && x + bw > cz.x && y < cz.y + cz.h && y + bh > cz.y) return true;
       const rv = b.reserve;
       if (rv && x < rv.x + rv.w && x + bw > rv.x && y < rv.y + rv.h && y + bh > rv.y) return true;
       return false;
@@ -238,6 +239,13 @@
       w.doors.push({ x: dx, y: s.y, ...rp });
     }
     if (w.myHouse) { const h = w.myHouse; const rp = roadPoint(h.x + h.w * 0.25, h.y); w.doors.push({ x: h.x + h.w * 0.25, y: h.y, ...rp }); }
+    if (w.kind === 'field') {
+      // 본편 임시 맵 — 사람은 길 위에 고르게(광장 · 공원 · 장터 자리는 그리지 않으므로 모이지 않게) · 가로등 없음
+      const NS = window.EarthCleanNumbers.STAGES;
+      w.look = NS[stage].look; w.prevLook = NS[stage - 1].look || 'city';
+      for (const s of w.spots) s.cap = 0;
+      w.lamps = [];
+    }
     return w;
   }
 
@@ -246,7 +254,7 @@
     const M = w.M;
     g.save(); g.beginPath(); g.rect(M.x, M.y, M.w, M.h); g.clip();
     g.lineCap = 'round'; g.lineJoin = 'round';
-    if (w.kind === 'room') drawRoom(g, w); else drawTown(g, w);
+    if (w.kind === 'room') drawRoom(g, w); else if (w.kind === 'field' || w.kind === 'last') Wd.drawField(g, w); else drawTown(g, w);   // field · last = world-full.js(본편만)
     g.restore();
   };
 
@@ -525,6 +533,7 @@
     g.lineWidth = 1.3; A.rRect(g, wn.x, wn.y, wn.w, wn.h, 0.3);
     g.lineWidth = 0.8; A.rLine(g, wn.x + wn.w / 2, wn.y, wn.x + wn.w / 2, wn.y + wn.h, 0.2); A.rLine(g, wn.x, wn.y + wn.h / 2, wn.x + wn.w, wn.y + wn.h / 2, 0.2);
   }
+  Wd._drawMiniHood = (g, z) => drawMiniHood(g, z);   // world-full.js 가 앞 판 조각을 그릴 때
   function drawMiniHood(g, z) {
     // 도시 속 동네 한 구역(동네가 여기로 작아져 들어온다)
     g.strokeStyle = A.MAP; g.lineWidth = 0.8;
@@ -622,6 +631,7 @@
   // 판에 처음 사람을 놓는다
   Wd.initCrowd = function (w, n, R) {
     const crowd = [];
+    if (w.kind === 'last') return crowd;   // 본편 끝 장면 판 — 걷는 사람 없음
     if (w.kind === 'room') {
       for (let i = 0; i < n; i++) {
         const p = newFig(R), s = w.spots[w.home[i % w.home.length]];

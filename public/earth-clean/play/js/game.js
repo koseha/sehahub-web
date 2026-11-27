@@ -12,7 +12,9 @@
   const SPEED = Math.max(0.05, Math.min(200, Number(qs.get('speed')) || 1));
   const BOT = qs.get('bot') === '1';
   const FRESH = qs.get('fresh') === '1';
-  const SAVE_KEY = 'earth-clean/save/v1', BEST_KEY = 'earth-clean/best/v1';
+  // 본편(스팀 · full.html 이 게임 스크립트보다 먼저 N.useFull() 을 부른다) — 저장 칸 v2 · 문구 표 text.js · 셈 표시 안 함
+  const FULL = !!N.FULL, TX = EC.text, T = TX.T, KO_L = TX.lang === 'ko';   // 화면 글은 text.js(맛보기 · 본편 같이 · 한국어 칸 = 예전 글자)
+  const SAVE_KEY = FULL ? 'earth-clean/save/v2' : 'earth-clean/save/v1', BEST_KEY = FULL ? 'earth-clean/best/v2' : 'earth-clean/best/v1';
   // 화면 연출(숫자 규칙 아님)
   const STEP = 1 / 40;           // 한 걸음 길이(놀이 시간 · 초)
   const ZOOM_FLAG = 0.9, ZOOM_SEC = 3.0, FINALE_SEC = 2.6;
@@ -22,6 +24,11 @@
   const CELL = 48;
   // 둥글게 손잡고 도는 무리(world.js) — 판마다 [가장 적게, 가장 많이, 화면에 몇 무리] · 숫자 규칙 아님(사람 수는 그대로 · 이미 있는 사람 그림을 모은다)
   const RING_CFG = [null, [10, 16, 2], [16, 30, 3]];
+  const ringCfg = (s) => (s < RING_CFG.length ? RING_CFG[s] : N.STAGES[s].last ? null : RING_CFG[2]);   // 본편 맵은 첫 도시와 같게(임시)
+  // 본편 — 화면 밖 로봇 · 마중대의 덮는 효율 · 반응(web/sim/run.mjs 의 BOT 과 같은 가정값)
+  const CREW_EFF = { botEff: 0.6, botReact: 1.0, autoEff: 0.55 };
+  const CREW_HAND = { v: 520, e: 1.27, tReact: 0.2 };   // 계산기 「봇 확인」 손(design-full.md) — crewAway 에서는 botFig 만 쓰므로 값은 결과에 안 들어간다
+  const LAST_PLACES = ['peak', 'island', 'lake', 'hill'];   // 마지막 손님이 있던 곳(판 씨앗으로 하나 · design-full.md 「끝 장면」 ③)
   const RING_OPEN = 0.42;        // 흡입구가 닿으면 무리가 줄줄이 풀려 날아가기 시작하는 데 걸리는 시간(초)
   const INK = A.INK, PT = A.PT, KO = A.KO;
 
@@ -83,7 +90,7 @@
   const COUNT_FILE = { start: 'count/start.txt', city: 'count/city.txt', picture: 'count/picture.txt', end: 'count/end.txt' };
   const countHost = (h) => h === 'sehahub.info' || h === 'www.sehahub.info';
   EC.countHost = countHost;   // 확인용(주소를 넣어 참 · 거짓만 본다)
-  const COUNT_ON = !TEST && !BOT && !navigator.webdriver && countHost(location.hostname);
+  const COUNT_ON = !FULL && !TEST && !BOT && !navigator.webdriver && countHost(location.hostname);   // 본편에서는 부르지 않는다
   function countOnce(what) {
     if (!COUNT_ON || !G.run) return;
     let m = null;
@@ -107,7 +114,8 @@
     G.riders = []; G.pops = []; G.hearts = []; G.confetti = []; G.calls = []; G.tail = []; G.robots = []; G.walkers = [];
     G.floats = []; G.bumps = []; G.waves = []; G.burstFx = null; G.burstFrame = 0; G.burstEndAt = -9; G.ringWait = 1.5;
     G.combo = { n: 0, figs: 0, age: 0, idle: 0, ring: false };
-    G.stn.guests = []; G.stn.bubble = null; G.stn.banner = null; G.stn.rooms = []; G.stn.room = null;
+    if (FULL) { G.last = null; G.meet = null; G.crewRate = 0; G.crewAcc = 0; G.releaseReq = false; G.edgeRiders = []; G.edgeWait = 0; }
+    G.stn.guests = []; G.stn.bubble = null; G.stn.banner = null; G.stn.rooms = []; G.stn.room = null; G.stn.party = null;
     G.shownEarth = G.run.earth; G.rate = 0; G.secAt = Math.floor(G.run.playSec); G.secN = 0;
     G.hint = G.run.stage === 0 && G.run.guests === 0;
     G.hand.has = false; G.hand.lastMove = -99;
@@ -120,9 +128,11 @@
     // 손님 칸 채우기(다시 열었을 때도 몇 명은 놀고 있게)
     const n = Math.min(13, Math.round(G.run.guests));
     for (let i = 0; i < n; i++) addGuest((i * 3) % A.NV, true);
-    if (saved && saved.ended && G.run.stage === N.STAGES.length - 1 && G.run.left <= 0) {
+    if (saved && (saved.ended || (FULL && N.STAGES[G.run.stage].last)) && G.run.stage === N.STAGES.length - 1 && G.run.left <= 0) {
       G.ended = true; G.mode = 'end'; G.crowd = [];
       G.endInfo = endInfo(saved.prevBest || null);
+    } else if (FULL && N.STAGES[G.run.stage].last) {
+      initLast();   // 본편 끝 장면 판에서 다시 열었다 — 연 찾기부터
     } else if (saved && saved.open && Array.isArray(saved.open.ids) && saved.open.ids.length) {
       showChoice(saved.open.tier, saved.open.ids);
     }
@@ -218,6 +228,7 @@
   }
   cv.addEventListener('pointermove', (e) => {
     const p = toStage(e);
+    if (FULL && e.pointerType !== 'mouse' && !e.isPrimary) return;   // 본편 — 두 번째 손가락은 「신바람 단추」만(흡입구를 끌지 않는다)
     G.pointer = p;
     hoverUpdate(p);
     if (e.pointerType === 'mouse' || touchDown) handTo(p, e.pointerType);
@@ -225,30 +236,75 @@
   cv.addEventListener('pointerdown', (e) => {
     const p = toStage(e);
     if (uiClick(p)) { e.preventDefault(); return; }
+    if (FULL) {
+      G.touchUI = e.pointerType !== 'mouse';
+      // 본편 신바람 단추 — PC 마우스 왼쪽 단추(끌면서 누름) · 휴대폰 두 번째 손가락 톡
+      if (G.mode === 'play' && (e.pointerType === 'mouse' ? e.button === 0 : touchDown && !e.isPrimary)) G.releaseReq = true;
+      if (e.pointerType !== 'mouse' && !e.isPrimary) return;
+    }
     if (e.pointerType !== 'mouse') { touchDown = true; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* 무시 */ } }
     handTo(p, e.pointerType);
   });
-  const up = () => { touchDown = false; };
+  const up = (e) => { if (FULL && e && e.pointerType !== 'mouse' && !e.isPrimary) return; touchDown = false; };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   window.addEventListener('keydown', (e) => {
     if (G.mode === 'choose' && !G.menu && G.choice && /^[1-3]$/.test(e.key)) { const i = Number(e.key) - 1; if (i < G.choice.ids.length) choose(i); }
+    if (e.key === 'Escape' && G.menu === 'paste') { closePaste(); return; }
     if (e.key === 'Escape' && G.mode !== 'end') { G.menu = G.menu ? null : 'open'; }
   });
+  // 본편 — 메뉴 「맛보기 이어하기 코드 넣기」: 붙여 넣는 칸 하나(붙여 넣거나 Enter → N.fromCode · 맛보기 끝 코드면 본편 첫 판부터)
+  function openPaste() {
+    G.menu = 'paste';
+    const box = document.createElement('div'); box.id = 'code-in';
+    box.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(86vw,440px);box-sizing:border-box;padding:16px 18px;background:#fdfdfb;border:2px solid #1b1b1b;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.25);font:700 16px ' + A.KO + ';color:#1b1b1b;z-index:5';
+    const head = document.createElement('div'); head.textContent = TX.T('code.enter');
+    const ta = document.createElement('textarea'); ta.rows = 3; ta.spellcheck = false;
+    ta.style.cssText = 'display:block;width:100%;box-sizing:border-box;margin:10px 0 6px;padding:6px;font:12px monospace;border:1.5px solid #1b1b1b;border-radius:6px;resize:none';
+    const msg = document.createElement('div'); msg.style.cssText = 'min-height:22px;color:#ff5a2c;font-size:14px';
+    const btn = document.createElement('button'); btn.textContent = TX.T('menu.resume');
+    btn.style.cssText = 'display:block;margin:4px auto 0;padding:8px 26px;font:700 15px ' + A.KO + ';background:#ff5a2c;color:#fff;border:2px solid #1b1b1b;border-radius:20px;cursor:pointer';
+    const tryIt = () => {
+      const v = ta.value.trim();
+      if (!v) return;
+      const run = N.fromCode(v);
+      if (!run) { msg.textContent = TX.T('code.bad'); return; }
+      closePaste();
+      try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* 무시 */ }
+      startRun({ run, open: null, order: null, maxSec: 0, ended: false });
+      // 맛보기 끝 코드 = 본편 첫 판을 여는 큰 선택 — 로봇이 한 명이라도 모시기 전에 띄워야 그 판의 새 카드 둘(넓적 · 세쌍둥이)이 먼저 나온다
+      if (G.mode === 'play' && N.nextChoice(G.run) === 'big') openChoice('big');
+      save();
+      toast(TX.T('code.ok'));
+    };
+    ta.addEventListener('paste', () => setTimeout(tryIt, 0));
+    ta.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); tryIt(); } else if (e.key === 'Escape') closePaste(); e.stopPropagation(); });
+    btn.addEventListener('click', closePaste);
+    box.append(head, ta, msg, btn);
+    document.body.appendChild(box);
+    setTimeout(() => ta.focus(), 0);
+  }
+  function closePaste() {
+    const box = document.getElementById('code-in');
+    if (box) box.remove();
+    if (G.menu === 'paste') G.menu = null;
+  }
   function hoverUpdate(p) {
     let cur = 'default';
     if (G.menu) { const b = U.menuButtons(G.L, G.menu === 'confirm').find((q) => inRect(p, q)); G.menuHover = b ? b.id : null; if (b) cur = 'pointer'; }
     else if (G.mode === 'end') { const b = U.endButtons(G.L).find((q) => inRect(p, q)); G.endHover = b ? b.id : null; if (b) cur = 'pointer'; }
     else if (G.mode === 'choose' && G.choice) { G.choice.hover = G.choice.rects.findIndex((r) => inRect(p, r)); if (G.choice.hover >= 0) cur = 'pointer'; }
     else if (inRect(p, G.L.menu)) cur = 'pointer';
-    else if (G.mode === 'play' && inRect(p, G.L.map)) cur = 'none';
+    else if ((G.mode === 'play' || G.mode === 'find') && inRect(p, G.L.map)) cur = 'none';
     cv.style.cursor = cur;
   }
   function uiClick(p) {
+    if (G.menu === 'paste') return true;   // 본편 코드 넣는 칸이 떠 있는 동안 캔버스는 안 받는다
     if (G.menu) {
       const b = U.menuButtons(G.L, G.menu === 'confirm').find((q) => inRect(p, q));
       if (!b) return true;
       if (b.id === 'resume' || b.id === 'back') G.menu = b.id === 'back' ? 'open' : null;
       else if (b.id === 'code') copyCode();
+      else if (b.id === 'paste') openPaste();
       else if (b.id === 'sound') EC.sound.setOn(!EC.sound.isOn());
       else if (b.id === 'ask') G.menu = 'confirm';
       else if (b.id === 'reset') { G.menu = null; resetGame(); }
@@ -346,8 +402,11 @@
     const lc = N.lastCall(st, run.stage, run.left);
     const ring = N.ringRadius(st) * bm * (lc ? B.lastCallRing : 1);
     const rr = st.radius * B.robotRadius * st.robotSize * (burst && st.burstAll ? B.burstMul : 1);
-    const rv = B.robotSpeed * st.robotSpeed;
-    return { r, ring, lc, rr, rv, burst };
+    // 본편 카드 — botMul(로봇 · 마중대가 더 신나게) · burstBots(신바람 때 두 배)는 빠르기로(맛보기에서는 둘 다 1)
+    const rv = B.robotSpeed * st.robotSpeed * st.botMul * (burst ? st.burstBots : 1);
+    // 본편 카드 sweep(손 쓸기 · 넓적 흡입구 · 옥상 잔치) — 빨려 드는 원(흡입구 · 쌍둥이 · 꼬리)이 그만큼 넓다(맛보기에서는 1)
+    const rc = r * st.sweep;
+    return { r, ring: Math.max(ring, rc), lc, rr, rv, burst, rc };
   }
   function moveNozzle(dt, z) {
     const n = G.noz, h = G.hand, st = G.st;
@@ -355,12 +414,14 @@
     let tx = n.x, ty = n.y, vmax = B.maxSpeed;
     if (st.autoSpin && idle >= B.autoIdleSec && !BOT) {
       // 혼자서도 빙글 — 손을 쉬면 고리를 그리며 돈다(가운데는 사람 많은 쪽으로 천천히)
+      // 본편 「가을바람 타기」(st.idle) — 더 크게 · 더 빨리 돈다(맛보기에서는 1)
+      const SR = SPIN_R * st.idle, AS = B.autoSpeed * st.idle;
       if (!n.spin) { n.spin = true; n.scx = n.x; n.scy = n.y; n.sr = 0; n.sa = 0; }
-      n.sr = Math.min(SPIN_R, n.sr + SPIN_R * 2 * dt);
-      n.sa += B.autoSpeed / SPIN_R * dt;
+      n.sr = Math.min(SR, n.sr + SR * 2 * dt);
+      n.sa += AS / SR * dt;
       if (Math.random() < dt) { const c = densest(n.scx, n.scy, 200, null); if (c) { n.stx = c.x; n.sty = c.y; } }
       if (n.stx !== undefined) { const dx = n.stx - n.scx, dy = n.sty - n.scy, d = Math.hypot(dx, dy); if (d > 1) { const s = Math.min(d, 40 * dt); n.scx += dx / d * s; n.scy += dy / d * s; } }
-      tx = n.scx + Math.cos(n.sa) * n.sr; ty = n.scy + Math.sin(n.sa) * n.sr; vmax = B.autoSpeed * 1.6;
+      tx = n.scx + Math.cos(n.sa) * n.sr; ty = n.scy + Math.sin(n.sa) * n.sr; vmax = AS * 1.6;
     } else {
       n.spin = false;
       if (h.has) { tx = h.x; ty = h.y; }
@@ -378,11 +439,18 @@
     // 쌍둥이 — 손 옆을 따라다닌다
     if (st.twin > 1) {
       const t = G.twin, l = Math.hypot(n.dirx, n.diry) || 1;
-      const px = -n.diry / l, py = n.dirx / l, off = z.r * 2.1;
+      const px = -n.diry / l, py = n.dirx / l, off = z.rc * 2.1;
       const k = 1 - Math.exp(-dt * 7);
       t.x += (n.x + px * off - t.x) * k; t.y += (n.y + py * off - t.y) * k;
       [t.x, t.y] = clampMap(t.x, t.y);
-      t.r = z.r * 0.75;
+      t.r = z.rc * 0.75;
+      if (G.run.picks.trio) {
+        // 본편 세쌍둥이 흡입구 — 셋째가 반대쪽 옆을 따라다닌다
+        const t2 = G.twin2 || (G.twin2 = { x: n.x, y: n.y, r: 0 });
+        t2.x += (n.x - px * off - t2.x) * k; t2.y += (n.y - py * off - t2.y) * k;
+        [t2.x, t2.y] = clampMap(t2.x, t2.y);
+        t2.r = z.rc * 0.6;
+      }
     }
     // 꼬리바람 — 지나간 자리에 바람이 남는다
     if (st.trail > 1) {
@@ -394,12 +462,18 @@
   }
   function syncRobots(instant) {
     const st = G.st, M = G.L.map;
-    while (G.robots.length < st.robots) {
+    if (N.STAGES[G.run.stage].last) { G.robots.length = 0; G.walkers.length = 0; return; }   // 본편 끝 장면 판 — 로봇 · 마중대는 정거장에서 기다린다
+    // 본편 넓은 맵 — 화면에 그리는 로봇 · 마중대는 N.crewSplit 수까지(합 BASE.drawCrew) · 넘는 몫은 crewAway 의 화면 밖 몫(offShare)으로 센다. 맛보기는 고른 만큼 다
+    const cs = FULL ? N.crewSplit(st, G.run.guests, G.run.stage) : null;
+    const nr = cs ? cs.robots : st.robots;
+    if (G.robots.length > nr) G.robots.length = nr;
+    while (G.robots.length < nr) {
       const x = instant ? M.x + 80 + Math.random() * (M.w - 160) : G.noz.x + (Math.random() - 0.5) * 40;
       const y = instant ? M.y + 140 + Math.random() * (M.h - 200) : G.noz.y;
       G.robots.push({ x, y, tx: x, ty: y, re: 0, r: 16, drop: instant ? 0 : 1, ph: Math.random() * 6 });
     }
-    const nw = st.walkers ? N.walkerCount(G.run.guests) : 0;
+    const nw = cs ? cs.walkers : (st.walkers ? N.walkerCount(G.run.guests) : 0) + st.helpers;   // 본편 마중대(st.helpers)도 산책 손님처럼 걸어 다닌다(맛보기에서는 0)
+    if (G.walkers.length > nw) G.walkers.length = nw;
     while (G.walkers.length < nw) {
       const x = M.x + 80 + Math.random() * (M.w - 160), y = M.y + 140 + Math.random() * (M.h - 200);
       G.walkers.push({ x, y, tx: x, ty: y, re: 0, r: 10, drop: instant ? 0 : 1, ph: Math.random() * 6, v: (Math.random() * A.NV) | 0 });
@@ -408,6 +482,7 @@
   function moveBots(list, dt, r, v) {
     for (const b of list) {
       b.r = r;
+      if (b.trip) continue;   // 본편 — 화면 밖으로 마중 나가는 중(crewTrips 가 움직인다)
       if (b.drop > 0) { b.drop = Math.max(0, b.drop - dt * 1.6); continue; }
       b.re -= dt;
       if (b.re <= 0 || Math.hypot(b.tx - b.x, b.ty - b.y) < 8) {
@@ -423,12 +498,98 @@
     }
   }
 
+  // ---------- 본편 — 화면 밖 마중대(그림만 · 숫자는 crewAway) ----------
+  // 넓은 맵에서 마중대(산책 나온 손님 · 마중대 카드)는 화면 가장자리로 나갔다가 친구 손을 잡고 돌아오고,
+  // 친구는 가장자리의 가는 호스를 타고 정거장에 들어간다 — 「보이지 않는 곳에서 데려온다」로 읽히지 않게(design-full.md 반대 읽기 6).
+  // 가로 = 지도 왼쪽 가장자리(정거장 칸 바로 옆) · 세로 = 지도 아래 가장자리.
+  const wideNow = () => FULL && N.STAGES[G.run.stage].wide && G.mode !== 'end';
+  function edgeOf(w) {
+    const M = G.L.map;
+    return G.L.portrait ? [Math.min(M.x + M.w - 40, Math.max(M.x + 40, w.x)), M.y + M.h + 12, 0, -1] : [M.x - 12, Math.min(M.y + M.h - 40, Math.max(M.y + 240, w.y)), 1, 0];
+  }
+  function crewTrips(dt) {
+    if (!wideNow()) { for (const w of G.walkers) { w.trip = null; w.away = false; } return; }
+    let out = 0;
+    for (const w of G.walkers) if (w.trip) out++;
+    for (const w of G.walkers) {
+      if (w.drop) continue;
+      const tr = w.trip;
+      if (!tr) {
+        if (w.tripWait === undefined) w.tripWait = 3 + Math.random() * 12;
+        w.tripWait -= dt;
+        if (w.tripWait <= 0 && out < Math.min(2, Math.ceil(G.walkers.length / 3))) {   // 한 번에 둘까지(나머지 화면 밖 몫은 crewAway · 가장자리 호스)
+          const e = edgeOf(w);
+          w.trip = { st: 'out', ex: e[0], ey: e[1], dx: e[2], dy: e[3], fv: (Math.random() * A.NV) | 0 }; out++;
+        }
+        continue;
+      }
+      if (tr.st === 'out') {
+        const dx = tr.ex - w.x, dy = tr.ey - w.y, d = Math.hypot(dx, dy), sp = 110 * dt;
+        if (d <= sp) { tr.st = 'away'; tr.t = 4 + Math.random() * 5; w.away = true; }
+        else { w.x += dx / d * sp; w.y += dy / d * sp; }
+        w.ph += dt;
+      } else if (tr.st === 'away') {
+        tr.t -= dt;
+        if (tr.t <= 0) { tr.st = 'back'; tr.t = 2.4; w.away = false; w.x = tr.ex; w.y = tr.ey; }
+      } else {
+        w.x += tr.dx * 50 * dt; w.y += tr.dy * 50 * dt; w.ph += dt; tr.t -= dt;
+        if (tr.t <= 0) {   // 친구가 가장자리 호스를 타고 정거장으로
+          addEdgeRider(tr.fv, 1);
+          w.trip = null; w.tripWait = 8 + Math.random() * 12;
+        }
+      }
+    }
+  }
+  function edgeHose() {
+    const L = G.L, M = L.map, h = L.hatch;
+    if (L.portrait) { const sx = M.x + 6, sy = M.y + M.h - 30; return [sx, sy, sx + 160, sy + 30, h.x - 120, h.y - 40, h.x - 12, h.y]; }
+    const sx = M.x + 4, sy = M.y + M.h - 48;
+    return [sx, sy, sx + 26, sy - 220, h.x + 26, h.y + 160, h.x + 1, h.y + 9];
+  }
+  function addEdgeRider(v, n) { if (G.edgeRiders.length < 16) G.edgeRiders.push({ v, n, t: 0, sp: 0.42 + Math.random() * 0.1, wob: Math.random() * 6 }); }
+  function updateEdge(dt, vdt) {
+    if (!FULL) return;
+    if (!wideNow()) { G.edgeRiders.length = 0; return; }
+    // 화면 밖 로봇 · 마중대가 모신 손님이 가장자리 호스로 들어온다(빠르기에 맞춰 · 그림만)
+    if (G.crewRate > 1 && G.mode === 'play' && (G.edgeWait -= dt) <= 0) { G.edgeWait = 0.5 + Math.random() * 0.4; addEdgeRider((Math.random() * A.NV) | 0, Math.random() < 0.5 ? 2 : 1); }
+    for (const r of G.edgeRiders) { r.t += vdt * r.sp; if (r.t >= 1) G.stn.flashes.push({ t: 0, k: 0.8 }); }
+    G.edgeRiders = G.edgeRiders.filter((r) => r.t < 1);
+  }
+  function drawEdgeHose() {
+    if (!wideNow()) return;
+    const Q = edgeHose(), path = () => { ctx.beginPath(); ctx.moveTo(Q[0], Q[1]); ctx.bezierCurveTo(Q[2], Q[3], Q[4], Q[5], Q[6], Q[7]); };
+    ctx.lineCap = 'round';
+    path(); ctx.strokeStyle = INK; ctx.lineWidth = 7; ctx.stroke();
+    ctx.strokeStyle = A.PT_PALE; ctx.lineWidth = 4.4; ctx.stroke();
+    ctx.setLineDash([5, 8]); ctx.lineDashOffset = -G.clock * 40; ctx.strokeStyle = 'rgba(255,90,44,0.8)'; ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = PT; ctx.strokeStyle = INK; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.ellipse(Q[0], Q[1], 6, 6, 0, 0, 7); ctx.fill(); ctx.stroke();   // 가장자리 입구
+    const sp = G.riderSpr;
+    for (const r of G.edgeRiders) {
+      const [x, y] = bez(Q, r.t), [dx, dy] = bezD(Q, r.t);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(dy, dx) + Math.PI / 2 + Math.sin(G.clock * 9 + r.wob) * 0.3);
+      for (let k = 0; k < r.n; k++) ctx.drawImage(sp.spr[(r.v + k * 2) % A.NV][6 + (((G.clock * 6 + r.wob) | 0) & 1)], (k - (r.n - 1) / 2) * sp.size * 0.42 - sp.ax * 0.8, -sp.ay * 0.8 + sp.h * 0.3, sp.size * 0.8, sp.size * 0.8);
+      ctx.restore();
+    }
+  }
+  // 돌아오는 마중대 — 친구 손을 잡고(마중대 옆에 친구 · 맞잡은 손 줄)
+  function drawCrewFriends() {
+    if (!wideNow()) return;
+    const sp = G.walkSpr;
+    for (const w of G.walkers) {
+      const tr = w.trip;
+      if (!tr || tr.st !== 'back') continue;
+      const ox = tr.dy ? 13 : 0, oy = tr.dx ? 13 : 0, fx = w.x + ox, fy = w.y + 4 + oy;
+      ctx.drawImage(sp.spr[tr.fv][4 + (((G.clock * 4) | 0) & 1)], fx - sp.ax, fy - sp.ay, sp.size, sp.size);
+      ctx.strokeStyle = INK; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(w.x + ox * 0.3, w.y + 4 - sp.h * 0.45 + oy * 0.3); ctx.lineTo(fx - ox * 0.3, fy - sp.h * 0.45 - oy * 0.3); ctx.stroke();
+    }
+  }
+
   // ---------- 모시기 ----------
   // 흡입구(쌍둥이 · 꼬리바람 포함)가 무리 한 명에 닿으면 무리 전체가 줄줄이 날아온다. 로봇 · 산책 손님이 닿으면 그 한 명만.
   function fly(p, c) {
     const R = p.ring;
     if (R && R.state !== 'release') {
-      if (c === G.noz || c === G.twin) { releaseRing(R, c, p); return; }
+      if (c === G.noz || c === G.twin || c === G.twin2) { releaseRing(R, c, p); return; }
       Wd.leaveRing(R, p);
       if (R.members.length < 5) Wd.dissolveRing(G.world, R, Math.random);
     }
@@ -450,7 +611,7 @@
     G.nozFlare = 1; G.shake = Math.max(G.shake, 0.45);
     G.waves.push({ x: R.x, y: R.y, t: 0, dur: 0.45, max: R.rx * 1.7, lw: 7, ratio: 0.62 });
     EC.sound.ring(figs);
-    pop('다 같이 가자~!', R.x - 44, R.y - R.rx - 8, true);   // 무리도 「가고 싶어서」 간다(반대 읽기 11/26)
+    pop(T('float.allgo'), R.x - 44, R.y - R.rx - 8, true);   // 무리도 「가고 싶어서」 간다(반대 읽기 11/26)
     welcomeFly(p0, c, R);
   }
   function welcomeFly(p, c, R) {
@@ -459,15 +620,15 @@
     p.st = 3; p.by = c; p.vel = R ? 320 : 120; p.ft = 0; p.rot = 0; p.sc = 1;
     p.sd = R ? R.dir : Math.random() < 0.5 ? -1 : 1; p.spin = p.sd * (4 + Math.random() * 3);
     EC.sound.take();
-    if (G.run.left <= perEff() * 1.01 + 1e-6) pop('나도!', p.x - 14, p.y - 30, true);
+    if (G.run.left <= perEff() * 1.01 + 1e-6) pop(T('float.metoo'), p.x - 14, p.y - 30, true);
     if (G.clock - G.lastCheer > 0.6 && c === G.noz) {
       G.lastCheer = G.clock; G.cheerSide = -G.cheerSide;
-      const s = ['와~', '야호!', '우와!', '신난다~'][(Math.random() * 4) | 0];
+      const s = T('float.cheer')[(Math.random() * 4) | 0];
       pop(s, G.cheerSide > 0 ? c.x + c.r + 6 : c.x - c.r - 40, c.y - 18 - Math.random() * 22);
     }
   }
   function catchAll(z) {
-    const n = G.noz, stamp = G.stamp, r2 = z.r * z.r;
+    const n = G.noz, stamp = G.stamp, r2 = z.rc * z.rc;
     const heartP = 0.1 + 0.05 * (G.run.picks.pull || 0) + (G.run.picks.window ? 0.08 : 0);
     query(n.x, n.y, z.ring, (p, d2) => {
       if (d2 < r2) { fly(p, n); return; }
@@ -477,25 +638,54 @@
       p.exc = stamp; p.by = n;
     });
     if (G.st.twin > 1) query(G.twin.x, G.twin.y, G.twin.r, (p) => fly(p, G.twin));
+    if (G.run.picks.trio && G.twin2) query(G.twin2.x, G.twin2.y, G.twin2.r, (p) => fly(p, G.twin2));
     for (const b of G.robots) if (!b.drop) query(b.x, b.y, b.r, (p) => fly(p, b));
-    for (const w of G.walkers) if (!w.drop) query(w.x, w.y, w.r, (p) => fly(p, w));
-    if (G.tail.length) { const tr = z.r * 0.6; for (let i = 0; i < G.tail.length; i += 2) query(G.tail[i].x, G.tail[i].y, tr, (p) => fly(p, n)); }
+    for (const w of G.walkers) if (!w.drop && !w.away) query(w.x, w.y, w.r, (p) => fly(p, w));
+    if (G.tail.length) { const tr = z.rc * 0.6; for (let i = 0; i < G.tail.length; i += 2) query(G.tail[i].x, G.tail[i].y, tr, (p) => fly(p, n)); }
   }
   function onArrive(p) {
     addRider(p.v, p.by);
     if (G.stageDone) return;
     const before = G.run.guests;
-    const w = N.welcome(G.run, perEff());
+    const w = N.welcome(G.run, perEff() * burstK());
     G.run = w.state;
     const took = G.run.guests - before;
     G.secN += took; G.rateAcc = (G.rateAcc || 0) + took;
+    if (FULL && (G.robots.indexOf(p.by) >= 0 || G.walkers.indexOf(p.by) >= 0)) G.crewAcc += took;   // 정거장 칸 「로봇 · 마중대 +N명/초」
     G.hint = false;
-    if (p.by === G.noz || p.by === G.twin) noteWelcome(took);
-    if (G.run.picks.friend && G.clock - G.lastFriendPop > 7 && Math.random() < 0.05) { G.lastFriendPop = G.clock; pop('친구도!', G.noz.x + 20, G.noz.y - 60); }
+    if (p.by === G.noz || p.by === G.twin || p.by === G.twin2) noteWelcome(took);
+    if (G.run.picks.friend && G.clock - G.lastFriendPop > 7 && Math.random() < 0.05) { G.lastFriendPop = G.clock; pop(T('float.friend'), G.noz.x + 20, G.noz.y - 60); }
     for (const e of w.events) {
-      if (e.type === 'clear') { startZoom(); return; }
+      if (e.type === 'clear') { toNextStage(); return; }
       if (e.type === 'end') { startFinale(); return; }
     }
+  }
+  // 본편 — 신바람 동안 사람 그림 하나가 손님을 더 데려온다(판 깃발 burstPer + 카드 burstPerAdd · numbers.js modelRate 와 같은 셈) · 맛보기에서는 1
+  function burstK() {
+    const S = N.STAGES[G.run.stage];
+    return G.run.burst > 0 && (S.burstPer || G.st.burstPer) ? 1 + (S.burstPer || 0) + G.st.burstPer : 1;
+  }
+  // 판이 끝났다 — 다음 판으로 줌아웃(본편 끝 넓은 판 다음은 줌아웃 없이 끝 장면)
+  function toNextStage() {
+    const nx = N.STAGES[G.run.stage + 1];
+    if (nx && nx.last) startLast(); else startZoom();
+  }
+  // 본편 넓은 맵(wide) — 화면 밖으로 나간 로봇 · 마중대가 모신 손님을 정거장에 따로 더한다.
+  // 몫 = numbers.js modelRate 의 로봇 · 마중대 몫 × crewSplit 의 offShare(그리지 않은 몫 · 화면 밖) — 화면 안 로봇 · 마중대는 그림 그대로 직접 모신다.
+  // handOn = 실제 손 상태(손을 쉬는 동안 modelRate 가 로봇 · 마중대 몫에 st.idleBots 를 곱한다 · 가을바람 타기) — hand 는 modelRate 가 손 몫을 셀 때만 쓰는 자리 채움(여기서는 botFig 만 쓴다)
+  function crewAway(dt, handOn) {
+    if (G.stageDone || G.run.left <= 0) return;
+    const cs = N.crewSplit(G.st, G.run.guests, G.run.stage);
+    if (!(cs.offShare > 0)) return;
+    const m = N.modelRate(G.st, Object.assign({ stage: G.run.stage, left: G.run.left, guests: G.run.guests, handOn, hand: CREW_HAND, autoOn: false, burst: G.run.burst > 0, sat: true }, CREW_EFF));
+    if (!(m.botFig > 0)) return;
+    const figs = Math.min(m.n, m.botFig * cs.offShare * dt);
+    const before = G.run.guests;
+    const w = N.welcome(G.run, figs * N.perFigure(G.st, G.run.stage) * burstK());
+    G.run = w.state;
+    const took = G.run.guests - before;
+    G.secN += took; G.rateAcc = (G.rateAcc || 0) + took; G.crewAcc += took;
+    for (const e of w.events) if (e.type === 'clear') { toNextStage(); return; }
   }
   // 흡입구가 한 사람을 모셨다 — 벌름 · 호스 불룩 · 「+N명」 모음
   function noteWelcome(took) {
@@ -511,16 +701,28 @@
     const c = G.combo;
     if (c.figs >= 4 || c.ring) {
       const f = plusAt(c);
-      f.t = 0; G.floats.push(f);
+      f.t = 0;
+      const last = G.floats[G.floats.length - 1];
+      if (bigMap() && G.floats.length >= 2 && last) {
+        // 본편 맵 — 화면에 둘까지 · 셋째는 새로 띄우지 않고 가장 최근 글자의 수를 올린다(같은 자리 · design-full.md 「본편 맵에서 뜨는 글자」)
+        last.num += c.n; last.ring = last.ring || c.ring; last.s = plusText(last.num, last.ring); last.size = plusSize(last.ring); last.hot = last.ring; last.t = Math.min(last.t, 0.2);
+      } else G.floats.push(f);
     }
     c.n = 0; c.figs = 0; c.age = 0; c.idle = 0; c.ring = false;
   }
+  // 본편 맵(판 3~) — design-full.md 「본편 맵에서 뜨는 글자」: 짧은 수(1만 밑은 숫자 그대로 · 「손님 +867만 명」 · "+8.7M guests") · 둘까지 · 크기 고정 · 「신바람!」 글자와 안 겹치게(맛보기 판은 예전 그대로)
+  const bigMap = () => FULL && G.run.stage >= N.FULL_FROM;
+  const plusNum = (n) => (bigMap() ? TX.fmtRate(n) : U.fmt(n));
+  const plusText = (n, ring) => T('float.plus', { n: plusNum(n) }) + (ring ? '!' : '');
+  const plusSize = (ring) => (G.L.portrait ? (ring ? 30 : 26) : (ring ? 26 : 22));
   // 「+N명」 글자 크기 · 자리(흡입구 머리 옆 · 오른쪽 끝이면 왼쪽에)
   function plusAt(c) {
     const n = G.noz, s = nozScale(n.r), M = G.L.map, P = G.L.portrait;
-    const size = Math.round(((P ? 18 : 15) + 3 * Math.log10(Math.max(1, c.n)) + Math.min(8, c.figs * 0.15)) * (c.ring ? 1.35 : 1));
+    const big = bigMap();
+    const size = big ? plusSize(c.ring) : Math.round(((P ? 18 : 15) + 3 * Math.log10(Math.max(1, c.n)) + Math.min(8, c.figs * 0.15)) * (c.ring ? 1.35 : 1));
     const right = n.x < M.x + M.w * 0.62;
-    return { s: `손님 +${U.fmt(c.n)}명${c.ring ? '!' : ''}`, size, hot: c.ring, x: n.x + (right ? 1 : -1) * (30 * s + 10), y: Math.max(P ? 236 : 0, n.y - 50 * s), align: right ? 'left' : 'right' };
+    const y = Math.max(P ? 236 : 0, n.y - 50 * s);
+    return { s: plusText(c.n, c.ring), num: c.n, ring: c.ring, size, hot: c.ring, x: n.x + (right ? 1 : -1) * (30 * s + 10), y: big ? Math.min(y, M.y + M.h - 12) : y, align: right ? 'left' : 'right' };
   }
   // 호스 불룩이가 정거장 입구에 닿았다 — 도착!
   function bumpArrive(b) {
@@ -529,7 +731,7 @@
     if (b.figs >= 3) G.guestKick = Math.max(G.guestKick, 0.25 + 0.75 * k);
     if (b.ring || k >= 0.9) {
       const h = G.L.hatch;
-      pop('도착!', G.L.hatchDir === 'right' ? h.x + 8 : h.x + 16, h.y - 14, true);
+      pop(T('float.arrive'), G.L.hatchDir === 'right' ? h.x + 8 : h.x + 16, h.y - 14, true);
       EC.sound.plop(k);
     }
   }
@@ -545,7 +747,7 @@
     }
     if (G.rings.length && finalRun()) for (const R of G.rings) if (R.state !== 'release') Wd.dissolveRing(G.world, R, Math.random);   // 판 끝 — 무리도 풀고 달려온다
     if (G.rings.length) G.rings = G.rings.filter((R) => R.state !== 'done' && R.members.length);
-    const cfg = RING_CFG[G.run.stage];
+    const cfg = ringCfg(G.run.stage);
     if (!cfg || G.stageDone) return;
     G.ringWait -= dt;
     if (G.ringWait > 0 || G.rings.length >= cfg[2] || z.lc) return;
@@ -561,7 +763,7 @@
     if (e.type === 'burstEnd') {
       G.burstEndAt = G.clock;
       EC.sound.burstEnd();
-      if (G.st.gaugeAfter > 0) pop('한 번 더!', G.noz.x - 30, G.noz.y - 70, true);
+      if (G.st.gaugeAfter > 0) pop(T('burst.again'), G.noz.x - 30, G.noz.y - 70, true);
     }
   }
   // 신바람이 터진다 — 화면 전체에서 느껴지게(대표 11/26 「신바람이 있는지도 모르겠다」) · 무음이어도 보이게
@@ -578,7 +780,7 @@
     let k = 0;
     for (let i = 0; i < 40 && k < 5 && G.crowd.length; i++) {
       const p = G.crowd[(Math.random() * G.crowd.length) | 0];
-      if (p.st !== 3 && Math.hypot(p.x - n.x, p.y - n.y) > 140 && p.y > G.L.gauge.y + 30) { pop('와아~', p.x - 16, p.y - G.spr.h - 6); k++; }
+      if (p.st !== 3 && Math.hypot(p.x - n.x, p.y - n.y) > 140 && p.y > G.L.gauge.y + 30) { pop(T('float.wow'), p.x - 16, p.y - G.spr.h - 6); k++; }
     }
   }
   const PHASE_MUL = [
@@ -587,10 +789,10 @@
     { plaza: 1.2, park: 2.5, market: 0.6, shop: 1, av: 1 },
     { plaza: 1.4, park: 1, market: 1, shop: 1, av: 1.6 },
   ];
-  const PHASE_NAME = ['아침', '낮', '오후', '저녁'];
+  const PHASE_NAME = [0, 1, 2, 3].map((i) => T('phase.' + i));
   function phase() {
-    if (G.run.stage !== 2) return -1;
-    const p = 1 - G.run.left / N.STAGES[2].people;
+    if (G.run.stage < 2 || N.STAGES[G.run.stage].last) return -1;   // 첫 도시와 본편 맵마다(끝 장면 판 빼고)
+    const p = 1 - G.run.left / N.STAGES[G.run.stage].people;
     return p < 0.18 ? 0 : p < 0.5 ? 1 : p < 0.82 ? 2 : 3;
   }
   const cx = { dt: 0, stamp: 0, walkIn: B.walkIn, R: Math.random, spotMul: () => 1, avMul: 1, rings: null, home: null };
@@ -614,7 +816,9 @@
     if (BOT) updateBot(dt);
     if (G.hand.pending) { G.hand.pending = false; G.hand.lastMove = G.run.playSec; }
     const handOn = G.run.playSec - G.hand.lastMove < 0.3;
-    const tk = N.tick(G.run, G.st, dt, handOn);
+    // 본편 「신바람 단추」 — 가득 찬 게이지는 누를 때(PC 마우스 왼쪽 · 휴대폰 두 번째 손가락) 터진다 · 봇은 차면 바로 누른다
+    const tk = N.tick(G.run, G.st, dt, handOn, BOT || !!G.releaseReq);
+    G.releaseReq = false;
     G.run = tk.state;
     for (const e of tk.events) onTickEvent(e);
     if (Math.floor(G.run.playSec) !== G.secAt) { G.maxSec = Math.max(G.maxSec, G.secN); G.secN = 0; G.secAt = Math.floor(G.run.playSec); }
@@ -623,12 +827,15 @@
     syncRobots(false);
     moveBots(G.robots, dt, z.rr, z.rv);
     moveBots(G.walkers, dt, z.rr * Math.sqrt(B.walkerShare), z.rv * Math.sqrt(B.walkerShare));
+    if (FULL) crewTrips(dt);
     manageRings(dt, z);
     catchAll(z);
     arrivedBuf.length = 0;
     Wd.step(G.world, G.crowd, crowdCtx(dt), arrivedBuf);
     for (const p of arrivedBuf) { onArrive(p); if (G.mode !== 'play') break; }
+    if (G.mode === 'play' && N.STAGES[G.run.stage].wide) crewAway(dt, handOn);
     G.rate += ((G.rateAcc || 0) / dt - G.rate) * (1 - Math.exp(-dt / 1.5)); G.rateAcc = 0;
+    if (FULL) { G.crewRate += (G.crewAcc / dt - G.crewRate) * (1 - Math.exp(-dt / 1.5)); G.crewAcc = 0; }
     if (G.mode !== 'play') return;
     refill();
     const due = N.nextChoice(G.run);
@@ -651,12 +858,13 @@
       botAt: BOT ? G.uiClock + (SPEED >= 5 ? 0.15 : 0.8) : Infinity };
     if (G.pointer) hoverUpdate(G.pointer);
   }
-  const BOT_ORDER = ['twin', 'jumbo', 'robot3', 'window', 'fof', 'fest', 'stroll', 'chubby', 'spin', 'again', 'robot', 'wide', 'friend', 'trail', 'pull', 'joy'];
+  // 봇이 고르는 차례 — 맛보기 16장(본편은 ui-full.js 의 EC.botOrderFull · 맛보기 16장의 앞뒤를 지킨 채 본편 카드를 사이에 끼운 것)
+  const BOT_ORDER = EC.botOrderFull || ['twin', 'jumbo', 'robot3', 'window', 'fof', 'fest', 'stroll', 'chubby', 'spin', 'again', 'robot', 'wide', 'friend', 'trail', 'pull', 'joy'];
   function botPick() {
     const ids = G.choice.ids;
     if (Math.random() < 0.35) return (Math.random() * ids.length) | 0;
     let bi = 0, bo = 99;
-    ids.forEach((id, i) => { const o = BOT_ORDER.indexOf(id); if (o < bo) { bo = o; bi = i; } });
+    ids.forEach((id, i) => { const o0 = BOT_ORDER.indexOf(id), o = o0 < 0 ? 98 : o0; if (o < bo) { bo = o; bi = i; } });   // 표에 없는 새 카드는 맨 뒤로(설계 담당이 카드를 더해도 봇이 새 카드만 고르지 않게)
     return bi;
   }
   function choose(i) {
@@ -668,7 +876,7 @@
     G.fly = { t0: G.uiClock, rects: ch.rects, cards: ch.cards, idx: i, to: U.rowRect(G.L, G.pickOrder.indexOf(id)) };
     G.choice = null; G.mode = 'play';
     syncRobots(false);
-    pop(N.cardById(id).name + '!', G.noz.x - 30, G.noz.y - 80, true);
+    pop(U.cardText(id).name + '!', G.noz.x - 30, G.noz.y - 80, true);
     save();
     if (G.pointer) hoverUpdate(G.pointer);
   }
@@ -678,7 +886,9 @@
     G.stageDone = true;
     EC.sound.clear();
     const S = N.STAGES[G.run.stage];
-    const label = G.run.stage === 0 ? `내 방 친구 ${U.fmt(S.people)}명 모두 도착!` : `${S.name} 사람 ${U.fmt(S.people)}명 모두 도착!`;
+    // 본편 깃발은 「모두」를 뺀다 — 「(판 이름) 손님 N명 도착!」(design-full.md 「넘어가는 연출」)
+    const label = FULL ? T('banner.clear', { stage: T('stage.' + S.id), n: U.fmt(S.people) })
+      : G.run.stage === 0 ? T('banner.room', { n: U.fmt(S.people) }) : T('banner.demo', { stage: T('stage.' + S.id), n: U.fmt(S.people) });
     G.stn.banner = { s: label, t: 0 };
     for (const p of G.crowd) addRider(p.v, G.noz);
     G.crowd = []; G.rings = [];
@@ -724,7 +934,102 @@
   }
   function endInfo(prevBest) {
     const guests = Math.round(G.run.guests);
-    return { guests, earth: N.EARTH_START - guests, playSec: G.run.playSec, bursts: G.run.bursts, maxSec: G.maxSec, prevBest };
+    const o = { guests, earth: N.EARTH_START - guests, playSec: G.run.playSec, bursts: G.run.bursts, maxSec: G.maxSec, prevBest };
+    if (FULL) {
+      // 본편 엔딩 카드 — 맵마다 걸린 시간(stageSec = 판마다 끝난 놀이 시간 · 맛보기 코드로 왔으면 맛보기 판은 「맛보기에서」) · 마지막 손님이 있던 곳
+      const ss = G.run.stageSec || [], demo = G.run.from === 'demo';
+      o.maps = [];
+      for (let i = 0; i < N.STAGES.length - 1; i++) {
+        const a = i === 0 ? 0 : ss[i - 1], b = ss[i];
+        o.maps.push({ id: N.STAGES[i].id, sec: (demo && i < N.FULL_FROM) || a == null || b == null ? null : b - a });
+      }
+      o.place = LAST_PLACES[G.run.seed % LAST_PLACES.length];
+    }
+    return o;
+  }
+
+  // ---------- 본편 끝 장면 · 엔딩(design-full.md 「끝 장면」 ① ~ ⑥ · 단순한 그림) ----------
+  // ① 끝 넓은 판이 끝나면 줌아웃 없이 끝 장면 판 — 맨 위 「1」 · 정거장 「어? 한 명이 안 보여!」 · 어딘가 주황 연 하나(화살표 · 표적 없음 · 시간 제한 없음)
+  function startLast() {
+    G.stageDone = true;
+    EC.sound.clear();
+    for (const p of G.crowd) addRider(p.v, G.noz);
+    G.crowd = []; G.rings = []; G.tail.length = 0;
+    G.floats = []; G.pops = []; G.waves = []; G.confetti = []; G.calls = []; G.burstFx = null;   // 앞 판에서 떠 있던 「손님 +N명」 · 말풍선 글자를 지우고 조용히
+    G.combo = { n: 0, figs: 0, age: 0, idle: 0, ring: false };
+    G.run = N.nextStage(G.run);
+    syncRobots(false);
+    buildStage();
+    G.stageDone = false;
+    initLast();
+    save();
+  }
+  function initLast() {
+    const M = G.L.map, R = A.mulberry((G.run.seed ^ 0x2545f491) >>> 0);
+    // 연은 늘 보이는 곳 — 둥근 지구 그림 안(world-full.js 와 같은 원) · 맨 위 숫자 밑 · 흡입구에서 조금 떨어진 곳
+    const gcx = M.x + M.w / 2, gcy = M.y + M.h / 2 + 24, gr = Math.min(M.w, M.h) * 0.44;
+    let x = gcx + gr * 0.4, y = gcy + gr * 0.3;
+    for (let i = 0; i < 40; i++) {
+      const a = R() * 6.283, d = gr * (0.25 + 0.55 * R()), qx = gcx + Math.cos(a) * d, qy = gcy + Math.sin(a) * d;
+      if (qy < M.y + 260 || qy > M.y + M.h - 40) continue;
+      x = qx; y = qy;
+      if (Math.hypot(qx - G.noz.x, qy - G.noz.y) > 260) break;
+    }
+    G.mode = 'find'; G.meet = null;
+    G.last = { x, y, t: 0, hinted: false, place: LAST_PLACES[G.run.seed % LAST_PLACES.length] };
+    stationSay(TX.T('last.where'), 4);
+  }
+  function stationSay(s, dur) {
+    const cand = G.stn.guests.filter((q) => !q.sleep);
+    if (cand.length) G.stn.bubble = { g: cand[(Math.random() * cand.length) | 0], s, t: 0, dur };
+  }
+  // ② 연을 찾아간다(손 · 봇) — 20초가 지나면 정거장 손님이 「저기 연이 보여!」 · 연 꼬리가 반짝
+  function stepFind(dt) {
+    G.stamp++;
+    buildGrid();
+    const Lt = G.last;
+    Lt.t += dt;
+    G.run = Object.assign({}, G.run, { playSec: G.run.playSec + dt });
+    if (BOT) {
+      const h = G.hand, dx = Lt.x - h.x, dy = Lt.y - h.y, d = Math.hypot(dx, dy), s = Math.min(d, 520 * dt);
+      if (d > 0.01) { h.x += dx / d * s; h.y += dy / d * s; }
+      h.has = true; h.lastMove = G.run.playSec;
+    }
+    if (G.hand.pending) { G.hand.pending = false; G.hand.lastMove = G.run.playSec; }
+    const z = sizes();
+    moveNozzle(dt, z);
+    if (!Lt.hinted && Lt.t > 20) { Lt.hinted = true; stationSay(TX.T('last.hint'), 4); }
+    if (Math.hypot(G.noz.x - Lt.x, G.noz.y - Lt.y) < z.rc + 26) startMeet();
+  }
+  // ③ ~ ⑥ 흡입구가 닿으면 — 그곳으로 다가감(2.5초) → 「어? 다들 거기 있었어?」 → 「나도 갈래!」 → 손님이 스스로 흡입구에 쏙(빨아들이는 바람 없음) → 1 → 0 → 정거장 「어서 와!」 → 다 같이 찰칵 → 엔딩 카드
+  const MEET = { zoom: 2.5, surprise: 2.5, join: 4.6, walk: 6.4, inside: 7.6, photo: 10.4 };
+  function startMeet() {
+    G.mode = 'meet';
+    G.meet = { t: 0, welcomed: false };
+    if (!G.meetSpr) G.meetSpr = A.sprites(4, G.RS);
+    EC.sound.ring(6);
+  }
+  function stepMeet(rdt) {
+    const m = G.meet;
+    m.t += rdt;
+    if (!m.welcomed && m.t >= MEET.inside) {
+      m.welcomed = true;
+      const w = N.welcome(G.run, 1);
+      // 82억 번 넘게 더하고 뺀 소수 오차를 끝에서 정수로(손님 + 지구 = 82억 · 맨 위 0)
+      m.drift = w.state.guests - N.EARTH_START;   // 확인용(얼마나 어긋났었나)
+      G.run = Object.assign({}, w.state, { guests: N.EARTH_START, earth: 0, left: 0 });
+      G.ended = true;
+      G.maxSec = Math.max(G.maxSec, G.secN);
+      const prev = bestGet();
+      G.endInfo = endInfo(prev || null);
+      if (!prev || G.run.playSec < prev) bestSet(G.run.playSec);
+      addGuest(0, false);
+      stationSay(TX.T('last.welcome'), 3);
+      G.stn.flashes.push({ t: 0, k: 2.4 }); G.guestKick = 1;
+      EC.sound.finale();
+      save();
+    }
+    if (m.t >= MEET.photo) { G.mode = 'finale'; G.finale = { t: 0 }; }
   }
 
   // ---------- 손님 · 호스 탄 사람 · 말풍선 ----------
@@ -757,6 +1062,8 @@
     const rooms = U.unlockedRooms(guests);
     if (rooms.length > S.rooms.length) {
       const nr = rooms[rooms.length - 1];
+      // 본편 — 「손님 1억 명!」 같은 잔치는 정거장 창에서만(맨 위 숫자 쪽에서는 축하하지 않는다 · design-full.md 「맨 위 숫자」)
+      if (FULL && nr.party && S.rooms.length) { S.party = { s: T('banner.milestone', { short: TX.fmtShort(nr.at) }), t: 0 }; EC.sound.ring(8); }
       S.rooms = rooms; S.room = nr; S.roomT = 0;
       const cand = S.guests.filter((q) => !q.sleep);
       if (cand.length) S.bubble = { g: cand[(Math.random() * cand.length) | 0], s: nr.talk, t: 0 };
@@ -792,8 +1099,10 @@
     }
     for (const o of S.flashes) o.t += dt; S.flashes = S.flashes.filter((o) => o.t < 0.35);
     if (S.banner) S.banner.t += dt;
+    if (S.party && (S.party.t += dt) > 4) S.party = null;
   }
   function updateFx(dt, vdt) {
+    if (FULL) updateEdge(dt, vdt);
     for (const r of G.riders) r.t += vdt * r.sp;
     for (const r of G.riders) if (r.t >= 1) {
       G.stn.flashes.push({ t: 0 });
@@ -858,6 +1167,11 @@
         if (zt >= ZOOM_FLAG && !G.zoom.switched) switchWorld();
         if (G.zoom.switched) { G.stamp++; arrivedBuf.length = 0; Wd.step(G.world, G.crowd, crowdCtx(rdt), arrivedBuf); }
         if (zt >= ZOOM_FLAG + ZOOM_SEC) finishZoom();
+      } else if (G.mode === 'find') {
+        let gdt = rdt * SPEED;
+        while (gdt > 1e-6 && G.mode === 'find' && !G.menu) { const d = Math.min(STEP, gdt); stepFind(d); gdt -= d; }
+      } else if (G.mode === 'meet') {
+        stepMeet(rdt);
       } else if (G.mode === 'finale') {
         G.finale.t += rdt;
         if (G.finale.t >= FINALE_SEC) { G.mode = 'end'; G.finale = null; countOnce('end'); if (G.pointer) hoverUpdate(G.pointer); }   // 끝 카드에 닿음(다시 열어 끝 카드부터 뜰 때는 안 셈)
@@ -956,8 +1270,20 @@
       path(); ctx.setLineDash([4, 7]); ctx.lineDashOffset = -G.clock * 40; ctx.strokeStyle = 'rgba(255,90,44,0.55)'; ctx.stroke(); ctx.setLineDash([]);
       for (const r of list) { const tt = r.t / t0; const [qx, qy] = bez(Q, Math.min(1, tt)); const sp = G.riderSpr; ctx.drawImage(sp.spr[r.v][6], qx - sp.ax * 0.7, qy - sp.ay * 0.7 + 3, sp.size * 0.7, sp.size * 0.7); }
     };
-    for (const b of G.robots) if (!b.drop) thin(b.x, b.y - 22 * (b.r / 16), bots.get(b) || [], 0.35);
+    if (manyBots()) {
+      // 본편 — 로봇이 많으면 가는 호스를 한 길로 묶어 세 번만 그린다(로봇마다 세 번씩 그리던 것이 뒤 판에서 프레임을 떨어뜨렸다 · 11/27 실측)
+      const Qs = [];
+      for (const b of G.robots) if (!b.drop) { const x = b.x, y = b.y - 22 * (b.r / 16); Qs.push([b, [x, y, x, y - 40, join[0], join[1] + 30, join[0], join[1]]]); }
+      const path = () => { ctx.beginPath(); for (const [, Q] of Qs) { ctx.moveTo(Q[0], Q[1]); ctx.bezierCurveTo(Q[2], Q[3], Q[4], Q[5], Q[6], Q[7]); } };
+      ctx.lineCap = 'round';
+      path(); ctx.strokeStyle = 'rgba(27,27,27,0.28)'; ctx.lineWidth = 4.2; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,227,216,0.9)'; ctx.lineWidth = 2.4; ctx.stroke();
+      ctx.setLineDash([4, 7]); ctx.lineDashOffset = -G.clock * 40; ctx.strokeStyle = 'rgba(255,90,44,0.55)'; ctx.stroke(); ctx.setLineDash([]);
+      const sp = G.riderSpr;
+      for (const [b, Q] of Qs) for (const r of bots.get(b) || []) { const [qx, qy] = bez(Q, Math.min(1, r.t / 0.35)); ctx.drawImage(sp.spr[r.v][6], qx - sp.ax * 0.7, qy - sp.ay * 0.7 + 3, sp.size * 0.7, sp.size * 0.7); }
+    } else for (const b of G.robots) if (!b.drop) thin(b.x, b.y - 22 * (b.r / 16), bots.get(b) || [], 0.35);
     if (G.st.twin > 1) { const ts = nozScale(G.twin.r); thin(G.twin.x, A.nozzleTop(G.twin.y, ts), twinR, 0.2); }
+    if (G.run.picks.trio && G.twin2) { const ts = nozScale(G.twin2.r); thin(G.twin2.x, A.nozzleTop(G.twin2.y, ts), [], 0.2); }
     drawHosePath(P, 17, main, G.bumps);
     ctx.save(); ctx.translate(0.9, -0.7); ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.moveTo(P[0], P[1]); ctx.bezierCurveTo(P[2], P[3], P[4], P[5], P[6], P[7]); ctx.strokeStyle = INK; ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
     const h = G.L.hatch;
@@ -985,7 +1311,17 @@
     const s = nozDrawScale(), fl = G.nozFlare;
     if (G.mode === 'play') drawSpeedLines(n, s);
     if (G.st.twin > 1) A.nozzle(ctx, G.twin.x, G.twin.y, nozScale(G.twin.r), { gauge: G.run.gauge, burst: z.burst, jumbo: !!picks.jumbo, t, flare: fl });
+    if (picks.trio && G.twin2) A.nozzle(ctx, G.twin2.x, G.twin2.y, nozScale(G.twin2.r), { gauge: G.run.gauge, burst: z.burst, jumbo: !!picks.jumbo, t, flare: fl });
+    if (picks.flat) { ctx.save(); ctx.translate(n.x, n.y); ctx.scale(1.35, 1); ctx.translate(-n.x, -n.y); }   // 본편 넓적 흡입구(임시 — 머리를 옆으로 늘림)
     A.nozzle(ctx, n.x, n.y - bounce, s, { gauge: G.run.gauge, burst: z.burst, jumbo: !!picks.jumbo, notes: picks.joy || 0, t, flare: fl });
+    if (picks.flat) ctx.restore();
+    if (G.st.burstHold && !z.burst && G.run.gauge >= 1 && G.mode === 'play') {
+      // 본편 신바람 단추 — 가득 찬 게이지가 반짝이며 「눌러요!」
+      const s2 = TX.T(G.touchUI ? 'burst.readyTap' : 'burst.ready'), by = n.y - 70 * s - 18 - Math.abs(Math.sin(t * 6)) * 6;
+      ctx.font = `800 20px ${KO}`; ctx.textAlign = 'center'; ctx.lineJoin = 'round';
+      ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.strokeText(s2, n.x, by);
+      ctx.fillStyle = ((t * 4) | 0) % 2 ? PT : INK; ctx.fillText(s2, n.x, by); ctx.textAlign = 'left';
+    }
     if (z.burst) {
       // 신바람 중 — 흡입구 둘레를 음표가 돈다
       ctx.fillStyle = PT; ctx.strokeStyle = INK; ctx.lineWidth = 1.2;
@@ -1002,7 +1338,47 @@
       ctx.restore(); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(bx, by, R - 5, 0, 7); ctx.stroke();
     }
   }
+  // 본편 — 로봇 · 마중대가 많을 때(화면 안 12대 넘게) 그리기를 가볍게: 점선 고리 생략 · 로봇 몸은 미리 그린 조각 · 프로펠러 모자는 한 번에(맛보기는 예전 그대로)
+  const manyBots = () => FULL && G.robots.length + G.walkers.length > 12;
+  let robotCache = null;
+  function robotFrames(k, prop) {
+    const key = k.toFixed(3) + (prop ? 'p' : '') + G.RS;
+    if (robotCache && robotCache.key === key) return robotCache;
+    const RS = G.RS, W = 76, H = 64, ox = 30, oy = 52, NF = 6, frames = [];
+    for (let f = 0; f < NF; f++) {
+      const c = A.mk(W * RS, H * RS), g = c.getContext('2d');
+      g.setTransform(RS, 0, 0, RS, 0, 0);
+      A.robot(g, ox, oy, k, { t: f / NF * (2 * Math.PI / 7), prop });   // 팔 흔들기 한 바퀴를 여섯 장으로
+      frames.push(c);
+    }
+    robotCache = { key, frames, W, H, ox, oy, NF };
+    return robotCache;
+  }
+  function drawBotsLight(z) {
+    const t = G.clock, chubby = !!G.run.picks.chubby;
+    if (G.robots.length) {
+      const b0 = G.robots[0], RF = robotFrames((chubby ? 1.2 : 0.95) * Math.min(1.3, Math.sqrt(b0.r / 16)), chubby);
+      for (const b of G.robots) {
+        const ph = ((t + b.ph) * 7 / (2 * Math.PI)) % 1, img = RF.frames[Math.floor(ph * RF.NF) % RF.NF];
+        const y = b.y + 6 - b.drop * 120 - (z.burst && G.st.burstAll ? Math.abs(Math.sin(t * 12 + b.ph)) * 4 : 0);
+        ctx.drawImage(img, b.x - RF.ox, y - RF.oy, RF.W, RF.H);
+      }
+    }
+    const sp = G.walkSpr;
+    ctx.strokeStyle = INK; ctx.lineWidth = 1;
+    const sticks = new Path2D(), hats = new Path2D();
+    for (const w of G.walkers) {
+      if (w.away) continue;
+      const x = w.x, y = w.y + 4 - w.drop * 120;
+      ctx.drawImage(sp.spr[w.v][(w.ph * 6 | 0) & 3], x - sp.ax, y - sp.ay, sp.size, sp.size);
+      sticks.moveTo(x, y - sp.h * 0.98); sticks.lineTo(x, y - sp.h * 1.15);
+      const hx = x + Math.cos(t * 15 + w.ph) * 2, hy = y - sp.h * 1.17;
+      hats.moveTo(hx + 5, hy); hats.ellipse(hx, hy, 5, 1.6, 0, 0, 7);
+    }
+    ctx.stroke(sticks); ctx.fillStyle = PT; ctx.fill(hats); ctx.stroke(hats);
+  }
   function drawBots(z) {
+    if (manyBots()) { drawBotsLight(z); return; }
     const t = G.clock, chubby = !!G.run.picks.chubby;
     for (const b of G.robots) {
       const dy = b.drop * 120;
@@ -1013,6 +1389,7 @@
     }
     const sp = G.walkSpr;
     for (const w of G.walkers) {
+      if (w.away) continue;   // 본편 — 화면 밖으로 마중 나감
       const dy = w.drop * 120;
       if (!w.drop) { ctx.strokeStyle = 'rgba(255,90,44,0.45)'; ctx.lineWidth = 1; ctx.setLineDash([3, 5]); ctx.beginPath(); ctx.ellipse(w.x, w.y, w.r, w.r * 0.92, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
       const x = w.x, y = w.y + 4 - dy;
@@ -1047,8 +1424,9 @@
       const p = b.p, a = Math.min(1, b.t * 6, (1.3 - b.t) * 4), x = p.x, y = p.y - G.spr.h - 10;
       ctx.globalAlpha = Math.max(0, a);
       ctx.fillStyle = '#fff'; ctx.strokeStyle = INK; ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.roundRect(x - 18, y - 16, 36, 17, 8); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.fillText('나도!', x, y - 3.5); ctx.textAlign = 'left';
+      const cw = KO_L ? 36 : ctx.measureText(T('float.metoo')).width + 12;   // 영어 「Me too!」는 말풍선을 넓게
+      ctx.beginPath(); ctx.roundRect(x - cw / 2, y - 16, cw, 17, 8); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.fillText(T('float.metoo'), x, y - 3.5); ctx.textAlign = 'left';
     }
     ctx.globalAlpha = 1;
     // 마지막 몇 명 — 머리 위 화살표
@@ -1098,19 +1476,41 @@
   }
   // 「손님 +N명」 — 모시는 동안 흡입구 옆에서 세고, 끝나면 떠오르며 사라진다
   function drawPlus(f, x, y, alpha, sc) {
-    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(sc, sc);
+    ctx.save(); ctx.globalAlpha = alpha;
     ctx.font = `700 ${f.size}px ${A.HAND}`; ctx.textAlign = f.align; ctx.lineJoin = 'round';
+    // 글자가 지도 밖으로 잘리지 않게 안쪽으로 당긴다(영어 「guests」가 오른쪽 끝에서 잘렸다 · 11/27)
+    const M = G.L.map, w = ctx.measureText(f.s).width * sc + 6;
+    if (f.align === 'left') x = Math.max(M.x + 6, Math.min(x, M.x + M.w - w));
+    else if (f.align === 'right') x = Math.min(M.x + M.w - 6, Math.max(x, M.x + w));
+    ctx.translate(x, y); ctx.scale(sc, sc);
     ctx.lineWidth = Math.max(4, f.size * 0.22); ctx.strokeStyle = '#fff'; ctx.strokeText(f.s, 0, 0);
     ctx.fillStyle = f.hot ? PT : INK; ctx.fillText(f.s, 0, 0);
     ctx.restore();
   }
   function drawCombo() {
     const c = G.combo, top = G.L.portrait ? 236 : 178;   // 맨 위 「남은 사람」 숫자 · 신바람 줄 위에 겹치지 않게(반대 읽기 11/26 — 줄어드는 숫자 위의 환호로 읽힌다)
-    if (G.mode === 'play' && (c.figs >= 4 || (c.ring && c.figs))) { const f = plusAt(c); drawPlus(f, f.x, Math.max(top, f.y), 1, 1); }
-    for (const f of G.floats) {
+    const full2 = bigMap() && G.floats.length >= 2;   // 본편 맵 — 떠 있는 글자가 둘이면 모으는 중 글자는 안 그린다(둘까지)
+    // 본편 맵 — 흡입구가 맨 위 가까이면 글자가 모두 top 줄에 붙어 서로 겹친다 → 먼저 뜬 글자부터 자리를 잡고, 겹치는 글자는 그 아래 줄로 비킨다(맛보기는 예전 그대로)
+    const big = bigMap(), used = [];
+    const spot = (f, y) => {
+      if (big) for (const u of used) if (Math.abs(u.x - f.x) < 320 && Math.abs(u.y - y) < (u.size + f.size) / 2 + 4) y = u.y + (u.size + f.size) / 2 + 4;
+      y = offBanner(f, y);
+      if (big) used.push({ x: f.x, y, size: f.size });
+      return y;
+    };
+    const fl = G.floats.map((f) => {
       const e = f.t / 1.1, sc = f.t < 0.12 ? 1 + 0.18 * (1 - f.t / 0.12) : 1;
-      drawPlus(f, f.x, Math.max(top, f.y - 46 * (1 - (1 - e) * (1 - e))), f.t < 0.7 ? 1 : Math.max(0, 1 - (f.t - 0.7) / 0.4), sc);
-    }
+      return [f, spot(f, Math.max(top, f.y - 46 * (1 - (1 - e) * (1 - e)))), f.t < 0.7 ? 1 : Math.max(0, 1 - (f.t - 0.7) / 0.4), sc];
+    });
+    if (G.mode === 'play' && (c.figs >= 4 || (c.ring && c.figs)) && !full2) { const f = plusAt(c); drawPlus(f, f.x, spot(f, Math.max(top, f.y)), 1, 1); }
+    for (const [f, y, a, sc] of fl) drawPlus(f, f.x, y, a, sc);
+  }
+  // 본편 맵 — 「신바람!」 큰 글자가 떠 있는 동안 「손님 +N」을 그 아래로 비켜 그린다(맛보기는 y 그대로)
+  function offBanner(f, y) {
+    if (!bigMap() || !G.burstFx || !G.burstFx.art) return y;
+    const M = G.L.map, P = G.L.portrait, b = G.burstFx.art, by = M.y + M.h * (P ? 0.34 : 0.42);
+    const y0 = by - b.cy * 1.25 - 10, y1 = by + (b.h - b.cy) * 1.25 + f.size;
+    return y > y0 && y < y1 ? y1 : y;
   }
   // 신바람 — 터지는 순간 큰 글자(터질 때 한 번 그려 두고 1.3초 동안 키웠다 줄였다만) · 이어지는 동안 화면 테두리
   function burstBannerArt() {
@@ -1118,10 +1518,12 @@
     const c = A.mk(w * RS, h * RS), g = c.getContext('2d');
     g.setTransform(RS, 0, 0, RS, 0, 0); g.textAlign = 'center'; g.lineJoin = 'round';
     g.font = `800 ${P ? 104 : 80}px ${KO}`;
-    g.lineWidth = 18; g.strokeStyle = '#fff'; g.strokeText('신바람!', cx, cy);
-    g.lineWidth = 5; g.strokeStyle = INK; g.strokeText('신바람!', cx, cy);
-    g.fillStyle = PT; g.fillText('신바람!', cx, cy);
-    const sub = `${Math.round(G.st.burstSec)}초 동안 흡입구가 커져요`, sy = cy + (P ? 54 : 42);
+    const big = T('burst.big');
+    if (!KO_L) { let fs = P ? 104 : 80; while (fs > 40 && g.measureText(big).width > w - 40) g.font = `800 ${--fs}px ${KO}`; }   // 영어 「Joy Rush!」가 그림 칸을 넘지 않게
+    g.lineWidth = 18; g.strokeStyle = '#fff'; g.strokeText(big, cx, cy);
+    g.lineWidth = 5; g.strokeStyle = INK; g.strokeText(big, cx, cy);
+    g.fillStyle = PT; g.fillText(big, cx, cy);
+    const sub = T('burst.sub', { s: Math.round(G.st.burstSec) }), sy = cy + (P ? 54 : 42);
     g.font = `700 ${P ? 30 : 22}px ${KO}`; g.lineWidth = 7; g.strokeStyle = '#fff'; g.strokeText(sub, cx, sy);
     g.fillStyle = INK; g.fillText(sub, cx, sy);
     return { c, w, h, cx, cy };
@@ -1155,20 +1557,23 @@
       for (const l of G.world.lamps) { ctx.fillStyle = 'rgba(255,90,44,0.12)'; ctx.beginPath(); ctx.arc(l.x + 2, l.y - 13, 16, 0, 7); ctx.fill(); ctx.fillStyle = PT; ctx.beginPath(); ctx.arc(l.x + 2, l.y - 13, 2.2, 0, 7); ctx.fill(); }
     }
     if (G.mode !== 'zoom' && G.mode !== 'end') {
-      drawGround(G.noz.x, G.noz.y, z.r, z.ring, G.clock, true);
+      drawGround(G.noz.x, G.noz.y, z.rc, z.ring, G.clock, true);
       if (G.st.twin > 1) drawGround(G.twin.x, G.twin.y, G.twin.r, G.twin.r, G.clock, false);
+      if (G.run.picks.trio && G.twin2) drawGround(G.twin2.x, G.twin2.y, G.twin2.r, G.twin2.r, G.clock, false);
       drawTail(z);
     }
     if (G.rings.length) Wd.drawRings(ctx, G.rings, G.spr, G.clock);
     // 신바람이 터지면 온 동네가 팔 벌려 들썩(「와아~」 · 그림만)
     Wd.drawCrowd(ctx, G.crowd, G.spr, G.clock, G.stamp, (G.mode === 'play' && G.run.stage > 0 && z.lc) || G.clock < G.cheerUntil);
     drawHearts(); drawCalls();
-    if (G.mode !== 'zoom' && G.mode !== 'end') drawBots(z);
+    if (G.mode !== 'zoom' && G.mode !== 'end') { drawBots(z); if (FULL) drawCrewFriends(); }
     drawConfetti();
     drawWaves();
+    if (G.mode === 'find' && G.last) drawFindKite();
     if (ph >= 0 && !G.L.portrait) {
       // 도시의 때(아침 → 낮 → 오후 → 저녁) — 휴대폰에서는 위 띠에 가려 잘리므로 뺀다
-      const tx = M.x + M.w - 62, ty = M.y + 30;
+      ctx.font = `700 14px ${KO}`;
+      const tx = KO_L ? M.x + M.w - 62 : Math.min(M.x + M.w - 62, M.x + M.w - 30 - ctx.measureText(PHASE_NAME[ph]).width), ty = M.y + 30;   // 영어 「Afternoon」이 지도 밖으로 안 나가게
       ctx.strokeStyle = INK; ctx.lineWidth = 1.3; ctx.fillStyle = ph === 3 ? INK : '#fff';
       ctx.beginPath(); ctx.arc(tx, ty, 9, 0, 7); ctx.fill(); ctx.stroke();
       if (ph < 3) for (let k = 0; k < 8; k++) { const a = k * 0.785; ctx.beginPath(); ctx.moveTo(tx + Math.cos(a) * 12, ty + Math.sin(a) * 12); ctx.lineTo(tx + Math.cos(a) * 16, ty + Math.sin(a) * 16); ctx.stroke(); }
@@ -1206,8 +1611,12 @@
     if (sh) { ctx.setTransform(RS, 0, 0, RS, 0, 0); ctx.fillStyle = A.PAPER; ctx.fillRect(0, 0, L.W, L.H); }
     ctx.setTransform(RS, 0, 0, RS, shakeX * RS, shakeY * RS);
     const z = sizes();
+    const meet = G.meet && (G.mode === 'meet' || G.mode === 'finale');   // 본편 마지막 손님 가까이
     if (G.mode === 'zoom') {
       drawZoom(bi);
+    } else if (meet) {
+      ctx.drawImage(G.bg[bi], 0, 0, L.W, L.H);
+      drawMeet();
     } else {
       ctx.drawImage(G.bg[bi], 0, 0, L.W, L.H);
       drawWorldLayer(z);
@@ -1216,14 +1625,14 @@
     if (L.portrait) { ctx.fillStyle = A.PAPER; } // 칸 바탕은 bg 에 있다
     if (L.ui) { ctx.save(); ctx.translate(L.ui.x, L.ui.y); ctx.scale(L.ui.k, L.ui.k); U.drawStation(ctx, G); ctx.restore(); }
     else { U.drawStation(ctx, G); ctx.drawImage(G.picksCanvas, L.picks.x, L.picks.y, L.picks.w, L.picks.h); }
-    if (G.mode !== 'zoom' && G.mode !== 'end') { drawHoses(); drawNozzles(z); }
+    if (G.mode !== 'zoom' && G.mode !== 'end' && !meet) { if (FULL) drawEdgeHose(); drawHoses(); drawNozzles(z); }
     if (G.burstFrame > 0.02 && G.mode !== 'end') drawBurstFrame();
     if (G.hint && G.run.stage === 0 && G.mode === 'play') {
       const M = L.map;
       ctx.font = `700 22px ${KO}`; ctx.textAlign = 'center';
       const hx = M.x + M.w / 2, hy = M.y + M.h - 40 + Math.sin(G.clock * 3) * 3;
-      ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.lineJoin = 'round'; ctx.strokeText('화면을 쓸어 보세요', hx, hy);
-      ctx.fillStyle = INK; ctx.fillText('화면을 쓸어 보세요', hx, hy); ctx.textAlign = 'left';
+      ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.lineJoin = 'round'; ctx.strokeText(T('hint.swipe'), hx, hy);
+      ctx.fillStyle = INK; ctx.fillText(T('hint.swipe'), hx, hy); ctx.textAlign = 'left';
     }
     U.drawMenuButton(ctx, G);
     drawPops();
@@ -1238,9 +1647,14 @@
       ctx.fillStyle = 'rgba(253,253,251,0.72)'; ctx.fillRect(0, 0, L.W, L.H);
       U.drawEnd(ctx, G, U.endRect(L), true);
     }
-    if (G.menu) U.drawMenu(ctx, G);
+    if (G.menu === 'paste') { ctx.fillStyle = 'rgba(253,253,251,0.7)'; ctx.fillRect(0, 0, L.W, L.H); }   // 본편 — 코드 넣는 칸(HTML)이 위에 떠 있다
+    else if (G.menu) U.drawMenu(ctx, G);
     if (G.toast) U.drawToast(ctx, G);
   }
+
+  // 본편 끝 장면 그림 — world-full.js(본편만 · 공개 맛보기에는 안 실림)
+  const drawFindKite = () => Wd.drawFindKite(ctx, G);
+  const drawMeet = () => Wd.drawMeet(ctx, G, MEET);
   function drawFinale() {
     // 정거장으로 다가가며 다 같이 찰칵
     const L = G.L, RS = G.RS, t = G.finale.t, wn = Wd.toStage(L, L.win);
@@ -1260,7 +1674,7 @@
       const a = Math.max(0, 1 - (t - 1.7) / 0.6);
       ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.fillRect(0, 0, L.W, L.H);
       ctx.fillStyle = INK; ctx.font = `700 40px ${A.HAND}`; ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, (t - 1.7) * 4);
-      ctx.fillText('찰칵!', M.x + M.w / 2, y - 20); ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+      ctx.fillText(T('photo.snap'), M.x + M.w / 2, y - 20); ctx.textAlign = 'left'; ctx.globalAlpha = 1;
     }
   }
 
@@ -1276,8 +1690,8 @@
       const a = document.createElement('a');
       a.href = c.toDataURL('image/png'); a.download = 'space-station-photo.png';
       document.body.appendChild(a); a.click(); a.remove();
-      toast('그림을 저장했어요');
-    } catch (e) { toast('그림을 저장하지 못했어요'); }
+      toast(T('toast.picSaved'));
+    } catch (e) { toast(T('toast.picFail')); }
   }
   async function copyCode() {
     const code = btoa(JSON.stringify(N.toSave(G.run)));
@@ -1289,14 +1703,16 @@
       try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
       ta.remove();
     }
-    toast(ok ? '이어하기 코드를 복사했어요' : '복사하지 못했어요');
+    toast(T(ok ? 'toast.codeCopied' : 'toast.copyFail'));
   }
 
   // ---------- 시험용 문(화면에 안내하지 않는다) ----------
   window.__state = () => {
     const guests = Math.round(G.run.guests);
-    return { stage: G.run.stage, left: Math.round(G.run.left), guests, earth: N.EARTH_START - guests, picks: Object.assign({}, G.run.picks),
+    const o = { stage: G.run.stage, left: Math.round(G.run.left), guests, earth: N.EARTH_START - guests, picks: Object.assign({}, G.run.picks),
       playSeconds: G.run.playSec, choosing: G.mode === 'choose' && G.choice ? G.choice.tier : null, ended: G.ended };
+    if (FULL) Object.assign(o, { full: true, v: G.run.v, from: G.run.from, stageSec: (G.run.stageSec || []).slice(), mode: G.mode, bursts: G.run.bursts, gauge: G.run.gauge, lastDrift: G.meet ? G.meet.drift : null });
+    return o;
   };
   window.__frames = 0;
 
